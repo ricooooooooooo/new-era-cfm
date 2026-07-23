@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";import { NextRequest, NextResponse } from "next/server";
 import nacl from "tweetnacl";
 
 export const runtime = "nodejs";
@@ -106,7 +106,10 @@ export async function POST(request: NextRequest) {
     const checkedInNames = parseCheckedInNames(
       checkedInField?.value
     );
-
+const activeCheckId =
+  interaction.message?.id ??
+  interaction.message?.interaction_metadata?.id ??
+  "default";
     const mention = userId ? `<@${userId}>` : displayName;
 
     const alreadyCheckedIn = checkedInNames.some(
@@ -124,7 +127,22 @@ export async function POST(request: NextRequest) {
         },
       });
     }
+const { data, error } = await supabaseAdmin
+  .from("active_check_clicks")
+  .upsert(
+    {
+      discord_id: userId,
+      display_name: displayName,
+      active_check_id: activeCheckId,
+      checked_in_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "discord_id,active_check_id",
+    }
+  );
 
+console.log("Supabase data:", data);
+console.log("Supabase error:", error);
     const updatedCheckedInNames = [
       ...checkedInNames,
       `${displayName} — ${mention}`,
