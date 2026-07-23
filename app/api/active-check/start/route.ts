@@ -2,41 +2,6 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const NFL_TEAMS = [
-  "Cardinals",
-  "Falcons",
-  "Ravens",
-  "Bills",
-  "Panthers",
-  "Bears",
-  "Bengals",
-  "Browns",
-  "Cowboys",
-  "Broncos",
-  "Lions",
-  "Packers",
-  "Texans",
-  "Colts",
-  "Jaguars",
-  "Chiefs",
-  "Raiders",
-  "Chargers",
-  "Rams",
-  "Dolphins",
-  "Vikings",
-  "Patriots",
-  "Saints",
-  "Giants",
-  "Jets",
-  "Eagles",
-  "Steelers",
-  "49ers",
-  "Seahawks",
-  "Buccaneers",
-  "Titans",
-  "Commanders",
-];
-
 export async function POST() {
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_ACTIVE_CHECK_CHANNEL_ID;
@@ -73,12 +38,8 @@ export async function POST() {
               color: 0x22c55e,
               fields: [
                 {
-                  name: "✅ Checked In — 0/32",
+                  name: "✅ Checked In — 0",
                   value: "No one has checked in yet.",
-                },
-                {
-                  name: "❌ Did Not Check In — 32/32",
-                  value: NFL_TEAMS.join("\n"),
                 },
               ],
               footer: {
