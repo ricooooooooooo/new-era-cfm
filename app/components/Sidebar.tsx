@@ -3,65 +3,121 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/", ready: true },
-  { label: "League News", href: "/news", ready: false },
-  { label: "Standings", href: "/standings", ready: true },
-  { label: "Schedule", href: "/schedule", ready: false },
-  { label: "Teams", href: "/teams", ready: true },
-  { label: "Roster", href: "/roster", ready: false },
-  { label: "Trades", href: "/trades", ready: false },
-  { label: "Power Rankings", href: "/power-rankings", ready: false },
-  { label: "Statistics", href: "/statistics", ready: false },
-  { label: "Settings", href: "/settings", ready: false },
+const leagueLinks = [
+  { label: "Dashboard", href: "/" },
+  { label: "Standings", href: "/standings" },
+  { label: "Teams", href: "/teams" },
+  { label: "Schedule", href: "/schedule" },
+];
+
+const commissionerLinks = [
+  { label: "League Health", href: "/commissioner" },
+  { label: "Active Checks", href: "/active-checks" },
+  { label: "Staff Applications", href: "/staff" },
+  { label: "Trades", href: "/trade-center" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden min-h-[calc(100vh-4rem)] w-64 shrink-0 border-r border-zinc-800 bg-zinc-950 p-4 lg:block">
-      <div className="mb-4 px-3 text-xs font-bold uppercase tracking-[0.25em] text-zinc-600">
-        League Menu
+    <aside className="fixed left-0 top-0 flex h-screen w-72 flex-col border-r border-zinc-800 bg-[#050505] px-6 py-8">
+
+      <div>
+
+        <h1 className="text-3xl font-black tracking-tight">
+          NEW ERA
+        </h1>
+
+        <p className="mt-1 text-sm text-zinc-500">
+          Madden 27 Franchise
+        </p>
+
       </div>
 
-      <nav className="space-y-1">
-        {sidebarLinks.map((link) => {
-          const isActive =
-            link.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(link.href);
+      <div className="mt-12">
 
-          if (!link.ready) {
+        <p className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-600">
+          League
+        </p>
+
+        <div className="space-y-2">
+
+          {leagueLinks.map((link) => {
+
+            const active =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
+
             return (
-              <div
+              <Link
                 key={link.href}
-                className="flex cursor-not-allowed items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold text-zinc-600"
+                href={link.href}
+                className={`block rounded-xl px-4 py-3 transition ${
+                  active
+                    ? "bg-red-600 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
               >
-                <span>{link.label}</span>
-
-                <span className="rounded bg-zinc-900 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-zinc-700">
-                  Soon
-                </span>
-              </div>
+                {link.label}
+              </Link>
             );
-          }
 
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`block w-full rounded-lg px-3 py-3 text-sm font-semibold transition ${
-                isActive
-                  ? "bg-red-600 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
+          })}
+
+        </div>
+
+      </div>
+
+      <div className="mt-10">
+
+        <p className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-600">
+          Commissioner
+        </p>
+
+        <div className="space-y-2">
+
+          {commissionerLinks.map((link) => {
+
+            const active = pathname.startsWith(link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`block rounded-xl px-4 py-3 transition ${
+                  active
+                    ? "bg-red-600 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+
+          })}
+
+        </div>
+
+      </div>
+
+      <div className="mt-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+
+        <p className="text-sm text-zinc-400">
+          League Status
+        </p>
+
+        <h2 className="mt-2 text-xl font-black text-green-400">
+          Healthy
+        </h2>
+
+        <p className="mt-1 text-sm text-zinc-500">
+          32 / 32 Owners Active
+        </p>
+
+      </div>
+
     </aside>
   );
 }
