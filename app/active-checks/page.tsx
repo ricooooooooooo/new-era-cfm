@@ -1,4 +1,6 @@
 import ActiveCheckActions from "../components/ActiveCheckActions";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 type TeamStatus = "checked" | "missing";
 
 type EspnTeam = {
@@ -20,41 +22,16 @@ type EspnResponse = {
   }[];
 };
 
-/*
-  Temporary sample statuses.
+type ActiveCheckRow = {
+  discord_id: string;
+  active_check_id: string;
+  checked_in_at: string;
+};
 
-  Later, these will come directly from your database and Discord active-check
-  responses instead of being written here manually.
-*/
-const checkedInTeams = new Set([
-  "ARI",
-  "ATL",
-  "BAL",
-  "CAR",
-  "CHI",
-  "CLE",
-  "DAL",
-  "DEN",
-  "DET",
-  "HOU",
-  "IND",
-  "JAX",
-  "KC",
-  "LAC",
-  "LAR",
-  "MIA",
-  "MIN",
-  "NE",
-  "NYG",
-  "NYJ",
-  "PHI",
-  "PIT",
-  "SF",
-  "SEA",
-  "TB",
-  "TEN",
-  "WSH",
-]);
+type OwnerRow = {
+  discord_id: string;
+  team: string | null;
+};
 
 async function getNflTeams(): Promise<EspnTeam[]> {
   try {
@@ -81,6 +58,61 @@ async function getNflTeams(): Promise<EspnTeam[]> {
     console.error("Unable to load NFL teams:", error);
     return [];
   }
+}
+
+async function getCheckedInTeams(): Promise<Set<string>> {
+  const { data: latestCheck, error: latestCheckError } = await supabaseAdmin
+    .from("active_check_clicks")
+    .select("active_check_id, checked_in_at")
+    .order("checked_in_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestCheckError || !latestCheck) {
+    if (latestCheckError) {
+      console.error("Unable to load latest active check:", latestCheckError);
+    }
+
+    return new Set();
+  }
+
+  const [
+    { data: checkIns, error: checkInsError },
+    { data: owners, error: ownersError },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("active_check_clicks")
+      .select("discord_id, active_check_id, checked_in_at")
+      .eq("active_check_id", latestCheck.active_check_id),
+    supabaseAdmin.from("owners").select("discord_id, team"),
+  ]);
+
+  if (checkInsError || ownersError) {
+    if (checkInsError) {
+      console.error("Unable to load active-check responses:", checkInsError);
+    }
+
+    if (ownersError) {
+      console.error("Unable to load owners:", ownersError);
+    }
+
+    return new Set();
+  }
+
+  const ownerMap = new Map(
+    ((owners ?? []) as OwnerRow[])
+      .filter((owner) => owner.team)
+      .map((owner) => [
+        owner.discord_id,
+        owner.team!.trim().toUpperCase(),
+      ]),
+  );
+
+  const checkedTeams = ((checkIns ?? []) as ActiveCheckRow[])
+    .map((checkIn) => ownerMap.get(checkIn.discord_id))
+    .filter((team): team is string => Boolean(team));
+
+  return new Set(checkedTeams);
 }
 
 function TeamLogo({
@@ -216,7 +248,10 @@ function TeamSection({
 }
 
 export default async function ActiveChecksPage() {
-  const teams = await getNflTeams();
+  const [teams, checkedInTeams] = await Promise.all([
+    getNflTeams(),
+    getCheckedInTeams(),
+  ]);
 
   const checkedTeams = teams.filter((team) =>
     checkedInTeams.has(team.abbreviation),
@@ -248,7 +283,7 @@ export default async function ActiveChecksPage() {
               </h1>
 
               <p className="mt-3 text-zinc-400">
-                Week 1 check-in status for all 32 teams.
+                Current check-in status for all 32 teams.
               </p>
             </div>
 
