@@ -47,16 +47,22 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           cache: "no-store",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+          return;
+        }
 
         const data = (await response.json()) as DiscordSessionResponse;
 
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
-        setIsStaff(data.isStaff);
-        setStaffRole(data.staffRole);
+        setIsStaff(Boolean(data.isStaff));
+        setStaffRole(data.staffRole ?? null);
       } catch {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         setIsStaff(false);
         setStaffRole(null);
@@ -72,15 +78,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   useEffect(() => {
     onClose();
-  }, [pathname, onClose]);
+    // Only close when the route itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (!open) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [open, onClose]);
 
   function linkClasses(active: boolean) {
     return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
@@ -92,25 +114,29 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <>
-      {open && (
-        <button
-          type="button"
-          aria-label="Close navigation"
-          onClick={onClose}
-          className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm lg:hidden"
-        />
-      )}
+      <button
+        type="button"
+        aria-label="Close navigation"
+        onClick={onClose}
+        className={`fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      />
 
       <aside
-        className={`fixed left-0 top-0 z-[70] flex h-dvh w-[85vw] max-w-72 flex-col overflow-y-auto border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[20px_0_60px_rgba(0,0,0,0.35)] transition-transform duration-300 lg:w-72 lg:translate-x-0 lg:py-8 ${
+        aria-label="Main navigation"
+        aria-hidden={!open}
+        className={`fixed inset-y-0 left-0 z-[90] flex w-[86vw] max-w-72 flex-col overflow-y-auto overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[20px_0_60px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out lg:w-72 lg:translate-x-0 lg:py-8 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <Link
             href="/"
             aria-label="Go to New Era dashboard"
-            className="group flex items-center gap-3"
+            className="group flex min-w-0 items-center gap-3"
           >
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(168,85,247,0.45)]">
               <Image
@@ -119,16 +145,16 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 fill
                 priority
                 sizes="56px"
-                className="object-cover"
+                className="object-contain"
               />
             </div>
 
-            <div>
-              <h1 className="text-2xl font-black tracking-[-0.04em] text-white">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-black tracking-[-0.04em] text-white">
                 NEW ERA
               </h1>
 
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/75">
+              <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/75">
                 Madden 27 Franchise
               </p>
             </div>
@@ -138,7 +164,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-xl text-zinc-400 transition hover:bg-white/[0.07] hover:text-white lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-2xl leading-none text-zinc-400 transition hover:bg-white/[0.07] hover:text-white lg:hidden"
           >
             ×
           </button>
@@ -160,6 +186,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={onClose}
                   className={linkClasses(active)}
                 >
                   {link.label}
@@ -171,7 +198,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         {isStaff && (
           <div className="mt-10">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
                 Commissioner
               </p>
@@ -189,6 +216,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   <Link
                     key={link.href}
                     href={link.href}
+                    onClick={onClose}
                     className={linkClasses(active)}
                   >
                     {link.label}
@@ -199,22 +227,24 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         )}
 
-        <div className="mt-auto overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
-              League Status
+        <div className="mt-auto pt-8">
+          <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
+                League Status
+              </p>
+
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
+            </div>
+
+            <h2 className="mt-3 text-xl font-black text-white">
+              Healthy
+            </h2>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              32 / 32 Owners Active
             </p>
-
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
           </div>
-
-          <h2 className="mt-3 text-xl font-black text-white">
-            Healthy
-          </h2>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            32 / 32 Owners Active
-          </p>
         </div>
       </aside>
     </>
