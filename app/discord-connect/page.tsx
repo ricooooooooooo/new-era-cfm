@@ -53,6 +53,20 @@ function getErrorMessage(error?: string) {
   }
 }
 
+function DiscordIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 127.14 96.36"
+      fill="currentColor"
+    >
+      <path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83A97.68 97.68 0 0 0 49 6.83 72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.27 8.07C2.79 33.15-1.71 57.5.54 81.53A105.73 105.73 0 0 0 32.71 96.36a77.7 77.7 0 0 0 6.89-11.3 68.42 68.42 0 0 1-10.84-5.18c.91-.67 1.8-1.37 2.66-2.1 20.87 9.54 43.57 9.54 64.19 0 .87.73 1.76 1.43 2.66 2.1a68.68 68.68 0 0 1-10.86 5.19 77.22 77.22 0 0 0 6.9 11.29A105.25 105.25 0 0 0 126.6 81.53c2.64-27.84-4.5-51.97-18.9-73.46ZM42.45 65.69C36.18 65.69 31 59.98 31 52.94c0-7.03 5.05-12.75 11.45-12.75 6.46 0 11.56 5.78 11.45 12.75 0 7.04-5.05 12.75-11.45 12.75Zm42.24 0c-6.27 0-11.45-5.71-11.45-12.75 0-7.03 5.05-12.75 11.45-12.75 6.46 0 11.56 5.78 11.45 12.75 0 7.04-5.05 12.75-11.45 12.75Z" />
+    </svg>
+  );
+}
+
 export default async function DiscordConnectPage({
   searchParams,
 }: DiscordConnectPageProps) {
@@ -72,7 +86,7 @@ export default async function DiscordConnectPage({
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 text-white">
-      <section className="mx-auto max-w-xl overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
+      <section className="mx-auto max-w-xl overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl">
         <div className="h-2 bg-red-600" />
 
         <div className="p-8 md:p-10">
@@ -106,7 +120,7 @@ export default async function DiscordConnectPage({
                   <img
                     src={avatarUrl}
                     alt={`${savedUser.displayName}'s Discord avatar`}
-                    className="h-16 w-16 rounded-full"
+                    className="h-16 w-16 rounded-full object-cover"
                   />
                 ) : (
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800 text-2xl font-black">
@@ -149,9 +163,10 @@ export default async function DiscordConnectPage({
           ) : (
             <a
               href="/api/discord/login"
-              className="mt-8 inline-flex rounded-xl bg-indigo-600 px-6 py-3 text-sm font-black text-white transition hover:bg-indigo-500"
+              className="mt-8 inline-flex items-center justify-center gap-3 rounded-2xl border border-indigo-400/30 bg-[#5865F2] px-7 py-4 text-sm font-black tracking-wide text-white shadow-[0_0_35px_rgba(88,101,242,0.45)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#6672F5] hover:shadow-[0_0_45px_rgba(88,101,242,0.65)] active:scale-95"
             >
-              Sign in with Discord
+              <DiscordIcon />
+              <span>Continue with Discord</span>
             </a>
           )}
         </div>

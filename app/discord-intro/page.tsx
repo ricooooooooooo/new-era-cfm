@@ -1,27 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function DiscordIntroPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [started, setStarted] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const [syncFinished, setSyncFinished] = useState(false);
 
-  async function startIntro() {
-    const video = videoRef.current;
+  useEffect(() => {
+    let cancelled = false;
 
-    if (!video) return;
-
-    setFadeOut(true);
-
-    setTimeout(async () => {
-      setStarted(true);
-
+    async function syncMember() {
       try {
         const response = await fetch("/api/member/sync", {
           method: "POST",
           credentials: "include",
+          cache: "no-store",
         });
 
         const result = await response.json();
@@ -33,7 +29,29 @@ export default function DiscordIntroPage() {
         }
       } catch (error) {
         console.error("Member sync request failed:", error);
+      } finally {
+        if (!cancelled) {
+          setSyncFinished(true);
+        }
       }
+    }
+
+    syncMember();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function startIntro() {
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    setFadeOut(true);
+
+    setTimeout(async () => {
+      setStarted(true);
 
       try {
         video.currentTime = 0;
@@ -55,16 +73,16 @@ export default function DiscordIntroPage() {
     <main className="fixed inset-0 overflow-hidden bg-black text-white">
       {!started && (
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${
+          className={`absolute inset-0 flex items-center justify-center px-5 transition-opacity duration-700 ${
             fadeOut ? "opacity-0" : "opacity-100"
           }`}
         >
-          <div className="w-full max-w-xl rounded-3xl border border-purple-700/40 bg-zinc-950/90 p-10 text-center shadow-2xl backdrop-blur">
+          <div className="w-full max-w-xl rounded-3xl border border-purple-700/40 bg-zinc-950/90 p-8 text-center shadow-2xl backdrop-blur sm:p-10">
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-purple-400">
               NEW ERA CFM
             </p>
 
-            <h1 className="mt-5 text-5xl font-black">
+            <h1 className="mt-5 text-4xl font-black sm:text-5xl">
               Discord Linked
             </h1>
 
@@ -79,10 +97,16 @@ export default function DiscordIntroPage() {
             <button
               type="button"
               onClick={startIntro}
-              className="mt-10 rounded-full bg-purple-600 px-10 py-4 text-sm font-black uppercase tracking-[0.25em] transition hover:bg-purple-500 active:scale-95"
+              className="mt-10 rounded-full bg-purple-600 px-10 py-4 text-sm font-black uppercase tracking-[0.25em] shadow-[0_0_30px_rgba(147,51,234,0.28)] transition duration-200 hover:scale-[1.02] hover:bg-purple-500 active:scale-95"
             >
               Enter New Era
             </button>
+
+            {!syncFinished && (
+              <p className="mt-4 text-xs text-zinc-600">
+                Finalizing your league profile…
+              </p>
+            )}
           </div>
         </div>
       )}
