@@ -1,75 +1,193 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
 import { teams } from "../data/teams";
 
+type LeagueSummary = {
+  success: boolean;
+  league: {
+    id: string | null;
+    name: string;
+    currentWeek: number | null;
+    season: number | null;
+  };
+  counts: {
+    members: number;
+    totalTeams: number;
+    claimedTeams: number;
+    openTeams: number;
+    gamesPlayed: number;
+  };
+  syncStatus: string;
+};
+
 export default function TeamsPage() {
-  const claimedTeams = teams.filter((team) => team.owner !== "Open").length;
-  const openTeams = teams.filter((team) => team.owner === "Open").length;
+  const [summary, setSummary] = useState<LeagueSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLeagueSummary() {
+      try {
+        const response = await fetch("/api/league/summary", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load league summary.");
+        }
+
+        const data = (await response.json()) as LeagueSummary;
+
+        if (active) {
+          setSummary(data);
+          setLoadError(false);
+        }
+      } catch (error) {
+        console.error("Failed to load league summary:", error);
+
+        if (active) {
+          setLoadError(true);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadLeagueSummary();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const totalTeams = summary?.counts.totalTeams ?? teams.length;
+  const claimedTeams = summary?.counts.claimedTeams ?? 0;
+  const openTeams = summary?.counts.openTeams ?? totalTeams;
+  const currentWeek = summary?.league.currentWeek;
+
+  /*
+   * Individual team-owner assignments are not connected yet.
+   * Until that API exists, every franchise card displays an honest
+   * "Not Assigned" state instead of using fake data from teams.ts.
+   */
+  const visibleTeams = teams;
 
   return (
     <AppLayout>
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <section className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.35em] text-red-500">
               New Era CFM
             </p>
 
-            <h1 className="mt-3 text-5xl font-black tracking-tight">
+            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">
               League Teams
             </h1>
 
             <p className="mt-3 max-w-2xl text-zinc-400">
-              View every franchise, owner, record, conference, division, and
-              team headquarters.
+              View all 32 franchises. Team owners, records, schedules, and
+              standings will populate as league data is connected.
             </p>
           </div>
 
           <div className="flex gap-3">
-            <button className="rounded-xl bg-red-600 px-5 py-3 text-sm font-black transition hover:bg-red-500">
+            <button
+              type="button"
+              onClick={() => setShowOpenOnly(false)}
+              className={`rounded-xl px-5 py-3 text-sm font-black transition ${
+                !showOpenOnly
+                  ? "bg-red-600 text-white hover:bg-red-500"
+                  : "border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-white"
+              }`}
+            >
               All Teams
             </button>
 
-            <button className="rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-3 text-sm font-bold text-zinc-400 transition hover:text-white">
+            <button
+              type="button"
+              onClick={() => setShowOpenOnly(true)}
+              className={`rounded-xl px-5 py-3 text-sm font-black transition ${
+                showOpenOnly
+                  ? "bg-red-600 text-white hover:bg-red-500"
+                  : "border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-white"
+              }`}
+            >
               Open Teams
             </button>
           </div>
         </section>
 
+        {loadError && (
+          <section className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+            <p className="text-sm font-bold text-red-300">
+              League totals could not be loaded. The franchise list is still
+              available below.
+            </p>
+          </section>
+        )}
+
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
-              Total Teams
-            </p>
-            <p className="mt-2 text-4xl font-black">{teams.length}</p>
-          </div>
+          <SummaryCard
+            label="Total Teams"
+            value={loading ? "—" : String(totalTeams)}
+          />
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
-              Claimed
-            </p>
-            <p className="mt-2 text-4xl font-black">{claimedTeams}</p>
-          </div>
+          <SummaryCard
+            label="Claimed"
+            value={loading ? "—" : String(claimedTeams)}
+          />
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
-              Open Teams
-            </p>
-            <p className="mt-2 text-4xl font-black text-red-500">
-              {openTeams}
-            </p>
-          </div>
+          <SummaryCard
+            label="Open Teams"
+            value={loading ? "—" : String(openTeams)}
+            valueClassName="text-red-500"
+          />
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
-              Current Week
-            </p>
-            <p className="mt-2 text-4xl font-black">8</p>
+          <SummaryCard
+            label="Current Week"
+            value={
+              loading
+                ? "—"
+                : currentWeek !== null && currentWeek !== undefined
+                  ? `Week ${currentWeek}`
+                  : "Not synced"
+            }
+            smallValue={currentWeek === null || currentWeek === undefined}
+          />
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] px-5 py-4">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-black text-white">
+                Team assignments are awaiting league setup
+              </p>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                Connected Discord members:{" "}
+                <span className="font-bold text-zinc-300">
+                  {loading ? "—" : (summary?.counts.members ?? 0)}
+                </span>
+              </p>
+            </div>
+
+            <span className="w-fit rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-black uppercase tracking-[0.15em] text-amber-300">
+              Madden data not synced
+            </span>
           </div>
         </section>
 
         <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {teams.map((team) => (
+          {visibleTeams.map((team) => (
             <article
               key={team.slug}
               className="group overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 transition duration-300 hover:-translate-y-1 hover:border-zinc-700"
@@ -91,14 +209,8 @@ export default function TeamsPage() {
                     {team.short}
                   </div>
 
-                  <span
-                    className={`rounded-lg px-3 py-2 text-xs font-black ${
-                      team.owner === "Open"
-                        ? "bg-red-950/90 text-red-400"
-                        : "bg-emerald-950/90 text-emerald-400"
-                    }`}
-                  >
-                    {team.owner === "Open" ? "OPEN TEAM" : "CLAIMED"}
+                  <span className="rounded-lg bg-zinc-900/90 px-3 py-2 text-xs font-black text-zinc-400">
+                    NOT ASSIGNED
                   </span>
                 </div>
 
@@ -115,21 +227,24 @@ export default function TeamsPage() {
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-600">
                       Record
                     </p>
-                    <p className="mt-2 text-2xl font-black">{team.record}</p>
+
+                    <p className="mt-2 text-2xl font-black text-zinc-400">—</p>
                   </div>
 
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-600">
                       Owner
                     </p>
-                    <p className="mt-2 truncate text-lg font-black">
-                      {team.owner}
+
+                    <p className="mt-2 truncate text-lg font-black text-zinc-400">
+                      Not assigned
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
                   <p className="text-sm font-bold">{team.division}</p>
+
                   <p className="mt-1 text-xs text-zinc-500">
                     {team.conference} Conference
                   </p>
@@ -147,5 +262,35 @@ export default function TeamsPage() {
         </section>
       </main>
     </AppLayout>
+  );
+}
+
+type SummaryCardProps = {
+  label: string;
+  value: string;
+  valueClassName?: string;
+  smallValue?: boolean;
+};
+
+function SummaryCard({
+  label,
+  value,
+  valueClassName = "",
+  smallValue = false,
+}: SummaryCardProps) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+      <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 font-black ${
+          smallValue ? "text-2xl" : "text-4xl"
+        } ${valueClassName}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
