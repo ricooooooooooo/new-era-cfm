@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -32,25 +33,37 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     async function loadDiscordUser() {
       try {
         const response = await fetch("/api/discord/me", {
           cache: "no-store",
         });
 
+        if (!response.ok) {
+          return;
+        }
+
         const data = await response.json();
 
-        if (data.connected && data.user) {
+        if (active && data.connected && data.user) {
           setUser(data.user);
         }
       } catch (error) {
         console.error("Failed to load Discord user:", error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
     loadDiscordUser();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -70,6 +83,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     };
   }, []);
 
+  useEffect(() => {
+    setDropdownOpen(false);
+  }, [pathname]);
+
   const avatarUrl =
     user?.avatar && user.id
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
@@ -82,17 +99,36 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           type="button"
           onClick={onMenuClick}
           aria-label="Open menu"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-lg text-zinc-200 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white lg:hidden"
+          className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-zinc-200 transition active:scale-95 active:bg-white/[0.08] lg:hidden"
         >
-          ☰
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="h-5 w-5"
+          >
+            <path
+              d="M5 7h14M5 12h14M5 17h14"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
 
         <Link
           href="/"
-          className="group flex shrink-0 items-center gap-2"
+          className="group flex min-w-0 shrink items-center gap-2.5"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-gradient-to-br from-zinc-100 to-zinc-400 text-xs font-black text-black shadow-[0_0_22px_rgba(255,255,255,0.08)]">
-            8
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_14px_rgba(168,85,247,0.4)]">
+            <Image
+              src="/ne-icon.png"
+              alt="New Era logo"
+              fill
+              priority
+              sizes="36px"
+              className="object-contain"
+            />
           </div>
 
           <div className="min-w-0 leading-none">
@@ -137,7 +173,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 {link.label}
 
                 {isActive && (
-                  <span className="absolute inset-x-3 -bottom-[9px] h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
+                  <span className="absolute inset-x-3 -bottom-[9px] h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
                 )}
               </Link>
             );
@@ -164,7 +200,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <input
             type="text"
             placeholder="Search league..."
-            className="w-52 rounded-xl border border-white/10 bg-white/[0.035] py-2 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-zinc-500 focus:bg-white/[0.055]"
+            className="w-52 rounded-xl border border-white/10 bg-white/[0.035] py-2 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-400/40 focus:bg-white/[0.055]"
           />
         </div>
 
@@ -175,7 +211,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             <button
               type="button"
               onClick={() => setDropdownOpen((current) => !current)}
-              className={`flex items-center gap-2 rounded-xl border px-2 py-2 transition sm:px-3 ${
+              aria-expanded={dropdownOpen}
+              className={`flex touch-manipulation items-center gap-2 rounded-xl border px-2 py-2 transition active:scale-[0.98] sm:px-3 ${
                 dropdownOpen
                   ? "border-white/25 bg-white/[0.08]"
                   : "border-white/10 bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.065]"
@@ -269,13 +306,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             href="/api/discord/login"
             className="rounded-xl border border-white bg-white px-3 py-2 text-sm font-black text-black transition hover:bg-zinc-200 sm:px-4"
           >
-            <span className="hidden sm:inline">
-              Sign in with Discord
-            </span>
-
-            <span className="sm:hidden">
-              Sign In
-            </span>
+            <span className="hidden sm:inline">Sign in with Discord</span>
+            <span className="sm:hidden">Sign In</span>
           </a>
         )}
       </div>
