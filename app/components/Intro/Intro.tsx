@@ -14,11 +14,11 @@ export default function Intro({
   const [fadeOut, setFadeOut] = useState(false);
 
   async function startIntro() {
-    setStarted(true);
-
     const video = videoRef.current;
 
     if (!video) return;
+
+    setStarted(true);
 
     video.muted = false;
     video.volume = 1;
@@ -45,52 +45,42 @@ export default function Intro({
   }
 
   return (
-    <>
-      <div
-        className={`fixed inset-0 z-[9999] overflow-hidden bg-black transition-opacity duration-700 ${
-          fadeOut ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
-      >
-        {!started && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black">
-            <button
-              type="button"
-              onClick={startIntro}
-              className="rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-md transition hover:bg-white hover:text-black active:scale-95"
-            >
-              Enter New Era
-            </button>
-          </div>
-        )}
-
-        <video
-          ref={videoRef}
-          className="absolute inset-0 h-full w-full bg-black object-contain"
-          playsInline
-          preload="auto"
-          onEnded={finishIntro}
-        >
-          <source src="/0723.mp4" type="video/mp4" />
-        </video>
-
-        {started && (
+    <div
+      className={`fixed inset-0 z-[99999] overflow-hidden bg-black transition-opacity duration-700 ${
+        fadeOut ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      {!started && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black">
           <button
             type="button"
-            onClick={finishIntro}
-            className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-4 z-10 rounded-full border border-white/30 bg-black/50 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white hover:text-black sm:bottom-8 sm:right-8 sm:px-6 sm:py-3 sm:text-sm"
+            onClick={startIntro}
+            className="rounded-full border border-white/30 bg-white/10 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-md transition active:scale-95 sm:hover:bg-white sm:hover:text-black"
           >
-            Skip Intro
+            Enter New Era
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div
-        className={`transition-opacity duration-700 ${
-          fadeOut ? "opacity-100" : "opacity-0"
-        }`}
+      <video
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full bg-black object-contain"
+        playsInline
+        preload="auto"
+        onEnded={finishIntro}
       >
-        {children}
-      </div>
-    </>
+        <source src="/0723.mp4" type="video/mp4" />
+      </video>
+
+      {started && (
+        <button
+          type="button"
+          onClick={finishIntro}
+          className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-4 z-30 rounded-full border border-white/30 bg-black/60 px-5 py-2.5 text-xs font-semibold text-white backdrop-blur-md sm:bottom-8 sm:right-8 sm:px-6 sm:py-3 sm:text-sm"
+        >
+          Skip Intro
+        </button>
+      )}
+    </div>
   );
 }

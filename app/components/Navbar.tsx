@@ -4,6 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+type NavbarProps = {
+  onMenuClick: () => void;
+};
+
 type DiscordUser = {
   id: string;
   username: string;
@@ -19,7 +23,7 @@ const navLinks = [
   { label: "Trades", href: "/trades", ready: false },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick }: NavbarProps) {
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -72,14 +76,26 @@ export default function Navbar() {
       : null;
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-zinc-800 bg-[#080909]/95 px-4 backdrop-blur sm:px-6">
-      <div className="flex items-center gap-8">
-        <Link href="/" className="text-xl font-black tracking-tight">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-zinc-800 bg-[#080909]/95 px-3 backdrop-blur sm:px-6 lg:ml-72">
+      <div className="flex min-w-0 items-center gap-3 lg:gap-8">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-xl text-white lg:hidden"
+        >
+          ☰
+        </button>
+
+        <Link
+          href="/"
+          className="truncate text-lg font-black tracking-tight sm:text-xl"
+        >
           NEW ERA
           <span className="ml-1 text-red-500">CFM</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-semibold lg:flex">
+        <nav className="hidden items-center gap-6 text-sm font-semibold xl:flex">
           {navLinks.map((link) => {
             const isActive =
               link.href === "/"
@@ -114,21 +130,21 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <input
           type="text"
           placeholder="Search league..."
-          className="hidden w-52 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-red-600 md:block"
+          className="hidden w-52 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-red-600 2xl:block"
         />
 
         {loading ? (
-          <div className="h-10 w-32 animate-pulse rounded-lg bg-zinc-800" />
+          <div className="h-10 w-10 animate-pulse rounded-xl bg-zinc-800 sm:w-32" />
         ) : user ? (
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
               onClick={() => setDropdownOpen((current) => !current)}
-              className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 transition hover:border-zinc-700 hover:bg-zinc-900"
+              className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-2 py-2 transition hover:border-zinc-700 hover:bg-zinc-900 sm:px-3"
             >
               {avatarUrl ? (
                 <img
@@ -146,13 +162,14 @@ export default function Navbar() {
                 <p className="max-w-28 truncate text-sm font-bold text-white">
                   {user.displayName}
                 </p>
+
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-green-500">
                   Connected
                 </p>
               </div>
 
               <span
-                className={`text-xs text-zinc-500 transition ${
+                className={`hidden text-xs text-zinc-500 transition sm:block ${
                   dropdownOpen ? "rotate-180" : ""
                 }`}
               >
@@ -166,6 +183,7 @@ export default function Navbar() {
                   <p className="truncate text-sm font-bold text-white">
                     {user.displayName}
                   </p>
+
                   <p className="truncate text-xs text-zinc-500">
                     @{user.username}
                   </p>
@@ -199,10 +217,15 @@ export default function Navbar() {
         ) : (
           <a
             href="/api/discord/login"
-            className="rounded-lg bg-[#5865F2] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#4752c4]"
+            className="rounded-lg bg-[#5865F2] px-3 py-2 text-sm font-bold text-white transition hover:bg-[#4752c4] sm:px-4"
           >
-            <span className="hidden sm:inline">Sign in with Discord</span>
-            <span className="sm:hidden">Sign In</span>
+            <span className="hidden sm:inline">
+              Sign in with Discord
+            </span>
+
+            <span className="sm:hidden">
+              Sign In
+            </span>
           </a>
         )}
       </div>
