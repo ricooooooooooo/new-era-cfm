@@ -1,3 +1,4 @@
+import { sendSignupNotification } from "@/lib/discord/webhooks";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type DiscordMemberInput = {
@@ -22,11 +23,40 @@ export type MemberRecord = {
   updated_at: string;
 };
 
+const MEMBER_SELECT = `
+  id,
+  discord_id,
+  discord_username,
+  display_name,
+  avatar_hash,
+  role,
+  is_staff,
+  is_active,
+  first_connected_at,
+  last_seen_at,
+  created_at,
+  updated_at
+`;
+
 export async function syncDiscordMember(
   input: DiscordMemberInput,
 ): Promise<MemberRecord> {
   const supabase = createServerSupabaseClient();
   const now = new Date().toISOString();
+
+  const { data: existingMember, error: lookupError } = await supabase
+    .from("members")
+    .select("id")
+    .eq("discord_id", input.discordId)
+    .maybeSingle();
+
+  if (lookupError) {
+    console.error("Supabase member pre-sync lookup error:", lookupError);
+
+    throw new Error("Unable to check member registration status.");
+  }
+
+  const isNewMember = !existingMember;
 
   const { data, error } = await supabase
     .from("members")
@@ -44,22 +74,7 @@ export async function syncDiscordMember(
         ignoreDuplicates: false,
       },
     )
-    .select(
-      `
-        id,
-        discord_id,
-        discord_username,
-        display_name,
-        avatar_hash,
-        role,
-        is_staff,
-        is_active,
-        first_connected_at,
-        last_seen_at,
-        created_at,
-        updated_at
-      `,
-    )
+    .select(MEMBER_SELECT)
     .single();
 
   if (error || !data) {
@@ -68,7 +83,34 @@ export async function syncDiscordMember(
     throw new Error("Unable to create or update member.");
   }
 
-  return data as MemberRecord;
+  const member = data as MemberRecord;
+
+  if (isNewMember) {
+    const { count, error: countError } = await supabase
+      .from("members")
+      .select("*", {
+        count: "exact",
+        head: true,
+      });
+
+    if (countError) {
+      console.error("Supabase member count error:", countError);
+    }
+
+    try {
+      await sendSignupNotification({
+        member,
+        registeredMemberCount: count ?? 1,
+      });
+    } catch (notificationError) {
+      console.error(
+        "Discord signup notification error:",
+        notificationError,
+      );
+    }
+  }
+
+  return member;
 }
 
 export async function getMemberByDiscordId(
@@ -78,22 +120,7 @@ export async function getMemberByDiscordId(
 
   const { data, error } = await supabase
     .from("members")
-    .select(
-      `
-        id,
-        discord_id,
-        discord_username,
-        display_name,
-        avatar_hash,
-        role,
-        is_staff,
-        is_active,
-        first_connected_at,
-        last_seen_at,
-        created_at,
-        updated_at
-      `,
-    )
+    .select(MEMBER_SELECT)
     .eq("discord_id", discordId)
     .maybeSingle();
 
