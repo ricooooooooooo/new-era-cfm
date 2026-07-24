@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 const launchSteps = [
   {
@@ -33,7 +34,12 @@ const comingSoon = [
   "League news",
 ];
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const cookieStore = await cookies();
+  const isDiscordConnected = Boolean(
+    cookieStore.get("new_era_discord_user")?.value,
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0d0e10] shadow-[0_30px_100px_rgba(0,0,0,0.45)]">
@@ -89,27 +95,29 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="w-full max-w-sm rounded-2xl border border-purple-400/20 bg-purple-400/[0.07] p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-purple-300">
-                Before team selection
-              </p>
+            {!isDiscordConnected && (
+              <div className="w-full max-w-sm rounded-2xl border border-purple-400/20 bg-purple-400/[0.07] p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-purple-300">
+                  Before team selection
+                </p>
 
-              <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
-                Create your profile
-              </h2>
+                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-white">
+                  Create your profile
+                </h2>
 
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
-                Every league member should connect Discord before teams are
-                officially claimed.
-              </p>
+                <p className="mt-3 text-sm leading-6 text-zinc-400">
+                  Every league member should connect Discord before teams are
+                  officially claimed.
+                </p>
 
-              <a
-                href="/api/discord/login"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-purple-500/20 transition duration-200 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/30 active:scale-[0.98]"
-              >
-                Connect Discord
-              </a>
-            </div>
+                <a
+                  href="/api/discord/login"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-purple-500/20 transition duration-200 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/30 active:scale-[0.98]"
+                >
+                  Connect Discord
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
