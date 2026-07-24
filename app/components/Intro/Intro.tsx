@@ -12,7 +12,6 @@ import {
 const ENDING_START_TIME = 12.2;
 const AUDIO_FADE_SECONDS = 0.85;
 
-const INTRO_STORAGE_KEY = "new-era-season-1-intro-seen";
 const REPLAY_INTRO_EVENT = "new-era:replay-intro";
 
 /**
@@ -79,27 +78,12 @@ export default function Intro({ children }: { children: ReactNode }) {
   }, [stopAnimationFrames]);
 
   useEffect(() => {
-    const replayFromUrl =
-      new URLSearchParams(window.location.search).get("intro") === "1";
-
-    const hasSeenIntro =
-      window.localStorage.getItem(INTRO_STORAGE_KEY) === "true";
-
-    if (replayFromUrl || !hasSeenIntro) {
-      setShowIntro(true);
-      setDashboardVisible(false);
-    } else {
-      setShowIntro(false);
-
-      window.requestAnimationFrame(() => {
-        setDashboardVisible(true);
-      });
-    }
+    setShowIntro(true);
+    setDashboardVisible(false);
 
     setReady(true);
 
     function handleReplayIntro() {
-      window.localStorage.removeItem(INTRO_STORAGE_KEY);
       resetIntro();
     }
 
@@ -164,8 +148,6 @@ export default function Intro({ children }: { children: ReactNode }) {
 
       fadeAudio(fadeDuration, () => {
         video?.pause();
-
-        window.localStorage.setItem(INTRO_STORAGE_KEY, "true");
 
         setIntroFadeOut(true);
         setDashboardVisible(true);
