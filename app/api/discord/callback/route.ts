@@ -100,8 +100,9 @@ export async function GET(request: NextRequest) {
       "utf8",
     ).toString("base64url");
 
+    // 👇 Redirect to the NEW Discord intro page
     const response = NextResponse.redirect(
-      new URL("/discord-connect?connected=true", request.url),
+      new URL("/discord-intro", request.url),
     );
 
     response.cookies.set("new_era_discord_user", encodedUser, {
