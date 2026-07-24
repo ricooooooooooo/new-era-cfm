@@ -113,7 +113,7 @@ export default function Intro({
             />
           </div>
 
-          <div className="-mt-5 flex w-full max-w-sm items-center gap-4 sm:-mt-8">
+          <div className="mt-3 flex w-full max-w-sm items-center gap-4 sm:mt-1">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-purple-500/80" />
 
             <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.42em] text-white/45 sm:text-xs">
@@ -123,7 +123,7 @@ export default function Intro({
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-purple-500/80" />
           </div>
 
-          <h2 className="mt-4 text-center text-4xl font-black uppercase tracking-[0.16em] text-white sm:text-5xl">
+          <h2 className="mt-3 text-center text-4xl font-black uppercase tracking-[0.16em] text-white sm:text-5xl">
             Season 1
           </h2>
 
