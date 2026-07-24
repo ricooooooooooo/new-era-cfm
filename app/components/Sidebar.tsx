@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -84,7 +85,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   function linkClasses(active: boolean) {
     return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
       active
-        ? "border-white/20 bg-white/[0.09] text-white shadow-[inset_3px_0_0_rgba(255,255,255,0.9),0_12px_35px_rgba(0,0,0,0.28)]"
+        ? "border-purple-400/30 bg-purple-500/[0.10] text-white shadow-[inset_3px_0_0_rgba(168,85,247,0.95),0_12px_35px_rgba(0,0,0,0.28)]"
         : "border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
     }`;
   }
@@ -106,9 +107,20 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         }`}
       >
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-br from-zinc-100 to-zinc-400 text-sm font-black text-black">
-              8
+          <Link
+            href="/"
+            aria-label="Go to New Era dashboard"
+            className="group flex items-center gap-3"
+          >
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(168,85,247,0.45)]">
+              <Image
+                src="/ne-icon.png"
+                alt="New Era logo"
+                fill
+                priority
+                sizes="56px"
+                className="object-cover"
+              />
             </div>
 
             <div>
@@ -116,11 +128,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 NEW ERA
               </h1>
 
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/75">
                 Madden 27 Franchise
               </p>
             </div>
-          </div>
+          </Link>
 
           <button
             type="button"
@@ -133,7 +145,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <div className="mt-10">
-          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">
+          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
             League
           </p>
 
@@ -160,11 +172,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {isStaff && (
           <div className="mt-10">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
                 Commissioner
               </p>
 
-              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-zinc-400">
+              <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-amber-200">
                 {staffRole === "owner" ? "Owner" : "Staff"}
               </span>
             </div>
@@ -187,9 +199,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         )}
 
-        <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.025] p-4">
+        <div className="mt-auto overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
               League Status
             </p>
 
