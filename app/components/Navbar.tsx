@@ -24,6 +24,19 @@ const navLinks = [
   { label: "Trades", href: "/trades", ready: false },
 ];
 
+function DiscordIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 127.14 96.36"
+      fill="currentColor"
+      className="h-5 w-5 shrink-0"
+    >
+      <path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83A97.68 97.68 0 0 0 49 6.83 72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.27 8.07C2.79 33.15-1.71 57.5.54 81.53A105.73 105.73 0 0 0 32.71 96.36a77.7 77.7 0 0 0 6.89-11.3 68.42 68.42 0 0 1-10.84-5.18c.91-.67 1.8-1.37 2.66-2.1 20.87 9.54 43.57 9.54 64.19 0 .87.73 1.76 1.43 2.66 2.1a68.68 68.68 0 0 1-10.86 5.19 77.22 77.22 0 0 0 6.9 11.29A105.25 105.25 0 0 0 126.6 81.53c2.64-27.84-4.5-51.97-18.9-73.46ZM42.45 65.69C36.18 65.69 31 59.98 31 52.94c0-7.03 5.05-12.75 11.45-12.75 6.46 0 11.56 5.78 11.45 12.75 0 7.04-5.05 12.75-11.45 12.75Zm42.24 0c-6.27 0-11.45-5.71-11.45-12.75 0-7.03 5.05-12.75 11.45-12.75 6.46 0 11.56 5.78 11.45 12.75 0 7.04-5.05 12.75-11.45 12.75Z" />
+    </svg>
+  );
+}
+
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -205,7 +218,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </div>
 
         {loading ? (
-          <div className="h-10 w-10 animate-pulse rounded-xl bg-white/[0.06] sm:w-32" />
+          <div className="h-10 w-24 animate-pulse rounded-xl bg-white/[0.06] sm:w-32" />
         ) : user ? (
           <div ref={dropdownRef} className="relative">
             <button
@@ -304,10 +317,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         ) : (
           <a
             href="/api/discord/login"
-            className="rounded-xl border border-white bg-white px-3 py-2 text-sm font-black text-black transition hover:bg-zinc-200 sm:px-4"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7289ff]/40 bg-[#5865F2] px-3 py-2 text-sm font-black text-white shadow-[0_0_20px_rgba(88,101,242,0.35)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#6672F5] hover:shadow-[0_0_28px_rgba(88,101,242,0.55)] active:scale-95 sm:px-4"
           >
-            <span className="hidden sm:inline">Sign in with Discord</span>
-            <span className="sm:hidden">Sign In</span>
+            <DiscordIcon />
+
+            <span className="hidden sm:inline">Connect Discord</span>
+            <span className="sm:hidden">Connect</span>
           </a>
         )}
       </div>
