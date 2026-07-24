@@ -105,7 +105,7 @@ export default function Dashboard() {
 
               <a
                 href="/api/discord/login"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-black transition hover:bg-zinc-200 active:scale-[0.98]"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-purple-500/20 transition duration-200 hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-500/30 active:scale-[0.98]"
               >
                 Connect Discord
               </a>
