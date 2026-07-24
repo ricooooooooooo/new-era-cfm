@@ -20,6 +20,7 @@ const leagueLinks = [
   { label: "Dashboard", href: "/" },
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
+  { label: "Members", href: "/members" },
   { label: "Schedule", href: "/schedule" },
 ];
 
@@ -51,7 +52,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           return;
         }
 
-        const data = (await response.json()) as DiscordSessionResponse;
+        const data =
+          (await response.json()) as DiscordSessionResponse;
 
         if (!active) {
           return;
@@ -78,7 +80,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   useEffect(() => {
     onClose();
-    // Only close when the route itself changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 

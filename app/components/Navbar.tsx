@@ -20,6 +20,7 @@ const navLinks = [
   { label: "Dashboard", href: "/", ready: true },
   { label: "Standings", href: "/standings", ready: true },
   { label: "Teams", href: "/teams", ready: true },
+  { label: "Members", href: "/members", ready: true },
   { label: "Schedule", href: "/schedule", ready: false },
   { label: "Trades", href: "/trades", ready: false },
 ];
@@ -78,6 +79,64 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let stopped = false;
+
+    async function updatePresence() {
+      if (stopped || document.visibilityState === "hidden") {
+        return;
+      }
+
+      try {
+        await fetch("/api/member/sync", {
+          method: "POST",
+          cache: "no-store",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        console.error("Presence update failed:", error);
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        updatePresence();
+      }
+    }
+
+    updatePresence();
+
+    const heartbeat = window.setInterval(() => {
+      updatePresence();
+    }, 60_000);
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    window.addEventListener("focus", updatePresence);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(heartbeat);
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
+      );
+
+      window.removeEventListener("focus", updatePresence);
+    };
+  }, [user]);
 
   useEffect(() => {
     function closeDropdown(event: MouseEvent) {
@@ -223,7 +282,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
-              onClick={() => setDropdownOpen((current) => !current)}
+              onClick={() =>
+                setDropdownOpen((current) => !current)
+              }
               aria-expanded={dropdownOpen}
               className={`flex touch-manipulation items-center gap-2 rounded-xl border px-2 py-2 transition active:scale-[0.98] sm:px-3 ${
                 dropdownOpen
@@ -252,7 +313,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
 
                   <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                    Connected
+                    Online
                   </p>
                 </div>
               </div>
@@ -289,11 +350,19 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
                 <div className="pt-2">
                   <Link
-                    href="/discord-connect"
+                    href={`/members/${user.id}`}
                     onClick={() => setDropdownOpen(false)}
                     className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
                   >
-                    Discord Profile
+                    My NEW ERA Profile
+                  </Link>
+
+                  <Link
+                    href="/members"
+                    onClick={() => setDropdownOpen(false)}
+                    className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+                  >
+                    League Members
                   </Link>
 
                   <Link
@@ -321,7 +390,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           >
             <DiscordIcon />
 
-            <span className="hidden sm:inline">Connect Discord</span>
+            <span className="hidden sm:inline">
+              Connect Discord
+            </span>
+
             <span className="sm:hidden">Connect</span>
           </a>
         )}
