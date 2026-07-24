@@ -12,15 +12,9 @@ import {
 const ENDING_START_TIME = 12.2;
 const AUDIO_FADE_SECONDS = 0.85;
 
+const INTRO_SESSION_KEY = "new-era-intro-played";
 const REPLAY_INTRO_EVENT = "new-era:replay-intro";
 
-/**
- * Call this from any client-side Replay Intro button:
- *
- * import { replayNewEraIntro } from "@/app/components/Intro/Intro";
- *
- * replayNewEraIntro();
- */
 export function replayNewEraIntro() {
   if (typeof window === "undefined") return;
 
@@ -78,8 +72,16 @@ export default function Intro({ children }: { children: ReactNode }) {
   }, [stopAnimationFrames]);
 
   useEffect(() => {
-    setShowIntro(true);
-    setDashboardVisible(false);
+    const introAlreadyPlayed =
+      window.sessionStorage.getItem(INTRO_SESSION_KEY) === "true";
+
+    if (introAlreadyPlayed) {
+      setShowIntro(false);
+      setDashboardVisible(true);
+    } else {
+      setShowIntro(true);
+      setDashboardVisible(false);
+    }
 
     setReady(true);
 
@@ -143,6 +145,8 @@ export default function Intro({ children }: { children: ReactNode }) {
       finishingRef.current = true;
       stopAnimationFrames();
 
+      window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
+
       const video = videoRef.current;
       const fadeDuration = skipImmediately ? 250 : 650;
 
@@ -179,10 +183,6 @@ export default function Intro({ children }: { children: ReactNode }) {
       return;
     }
 
-    /*
-     * RAF checks more frequently than onTimeUpdate, preventing the original
-     * blurry logo from flashing before the website ending card appears.
-     */
     if (video.currentTime >= ENDING_START_TIME && !showEnding) {
       setShowEnding(true);
     }
@@ -259,7 +259,7 @@ export default function Intro({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={startIntro}
-                className="rounded-full border border-white/25 bg-white/10 px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-md transition duration-300 hover:border-purple-400/60 hover:bg-purple-500/20 active:scale-95"
+                className="rounded-full border border-white/20 bg-white/[0.08] px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-md transition duration-300 hover:border-white/40 hover:bg-white/[0.14] active:scale-95"
               >
                 Enter New Era
               </button>
@@ -294,7 +294,7 @@ export default function Intro({ children }: { children: ReactNode }) {
               showEnding ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(88,28,135,0.28)_0%,rgba(15,5,25,0.65)_35%,black_72%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.10)_0%,rgba(15,15,15,0.68)_38%,black_74%)]" />
 
             <div
               className={`relative flex w-full max-w-xl flex-col items-center px-8 transition-all duration-[1600ms] ease-out ${
@@ -310,7 +310,7 @@ export default function Intro({ children }: { children: ReactNode }) {
                   fill
                   priority
                   sizes="(max-width: 768px) 74vw, 560px"
-                  className="object-contain drop-shadow-[0_0_26px_rgba(126,34,206,0.45)]"
+                  className="object-contain drop-shadow-[0_0_26px_rgba(255,255,255,0.16)]"
                 />
               </div>
 
@@ -321,13 +321,13 @@ export default function Intro({ children }: { children: ReactNode }) {
                     : "translate-y-2 opacity-0"
                 }`}
               >
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-purple-500/80" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/60" />
 
                 <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.42em] text-white/45 sm:text-xs">
                   The Beginning
                 </p>
 
-                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-purple-500/80" />
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/60" />
               </div>
 
               <h2
@@ -341,7 +341,7 @@ export default function Intro({ children }: { children: ReactNode }) {
               </h2>
 
               <div
-                className={`mt-4 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent transition-all delay-500 duration-700 ${
+                className={`mt-4 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-all delay-500 duration-700 ${
                   showEnding ? "w-28 opacity-100" : "w-0 opacity-0"
                 }`}
               />

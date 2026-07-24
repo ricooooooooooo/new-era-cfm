@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
+};
+
+type DiscordSessionResponse = {
+  connected: boolean;
+  isStaff: boolean;
+  staffRole: "owner" | "commissioner" | null;
 };
 
 const leagueLinks = [
@@ -26,6 +32,43 @@ const commissionerLinks = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
 
+  const [isStaff, setIsStaff] = useState(false);
+  const [staffRole, setStaffRole] = useState<
+    "owner" | "commissioner" | null
+  >(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSession() {
+      try {
+        const response = await fetch("/api/discord/me", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = (await response.json()) as DiscordSessionResponse;
+
+        if (!active) return;
+
+        setIsStaff(data.isStaff);
+        setStaffRole(data.staffRole);
+      } catch {
+        if (!active) return;
+
+        setIsStaff(false);
+        setStaffRole(null);
+      }
+    }
+
+    loadSession();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     onClose();
   }, [pathname, onClose]);
@@ -37,6 +80,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  function linkClasses(active: boolean) {
+    return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
+      active
+        ? "border-white/20 bg-white/[0.09] text-white shadow-[inset_3px_0_0_rgba(255,255,255,0.9),0_12px_35px_rgba(0,0,0,0.28)]"
+        : "border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
+    }`;
+  }
 
   return (
     <>
@@ -56,7 +107,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-br from-zinc-100 to-zinc-400 text-sm font-black text-black shadow-[0_0_25px_rgba(255,255,255,0.08)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-gradient-to-br from-zinc-100 to-zinc-400 text-sm font-black text-black">
               8
             </div>
 
@@ -75,7 +126,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-xl text-zinc-400 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-xl text-zinc-400 transition hover:bg-white/[0.07] hover:text-white lg:hidden"
           >
             ×
           </button>
@@ -97,54 +148,46 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`group relative block overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                    active
-                      ? "border border-white/15 bg-white text-black shadow-[0_10px_35px_rgba(255,255,255,0.08)]"
-                      : "border border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
-                  }`}
+                  className={linkClasses(active)}
                 >
-                  <span className="relative z-10">{link.label}</span>
-
-                  {active && (
-                    <span className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-zinc-300/50 to-transparent" />
-                  )}
+                  {link.label}
                 </Link>
               );
             })}
           </div>
         </div>
 
-        <div className="mt-10">
-          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">
-            Commissioner
-          </p>
+        {isStaff && (
+          <div className="mt-10">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-600">
+                Commissioner
+              </p>
 
-          <div className="space-y-2">
-            {commissionerLinks.map((link) => {
-              const active = pathname.startsWith(link.href);
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-zinc-400">
+                {staffRole === "owner" ? "Owner" : "Staff"}
+              </span>
+            </div>
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`group relative block overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                    active
-                      ? "border border-white/15 bg-white text-black shadow-[0_10px_35px_rgba(255,255,255,0.08)]"
-                      : "border border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
-                  }`}
-                >
-                  <span className="relative z-10">{link.label}</span>
+            <div className="space-y-2">
+              {commissionerLinks.map((link) => {
+                const active = pathname.startsWith(link.href);
 
-                  {active && (
-                    <span className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-zinc-300/50 to-transparent" />
-                  )}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={linkClasses(active)}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.025] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.3)]">
+        <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.025] p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
               League Status
