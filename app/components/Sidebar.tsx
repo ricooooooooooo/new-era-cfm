@@ -20,15 +20,15 @@ const leagueLinks = [
   { label: "Dashboard", href: "/" },
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
-  { label: "Members", href: "/members" },
   { label: "Schedule", href: "/schedule" },
 ];
 
 const commissionerLinks = [
-  { label: "League Health", href: "/commissioner" },
+  { label: "Commissioner Dashboard", href: "/commissioner" },
+  { label: "Manage Members", href: "/commissioner/members" },
+  { label: "Review Staff Applications", href: "/commissioner/staff" },
+  { label: "Manage Teams", href: "/commissioner/teams" },
   { label: "Active Checks", href: "/active-checks" },
-  { label: "Staff Applications", href: "/staff" },
-  { label: "Trades", href: "/trade-center" },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -52,8 +52,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           return;
         }
 
-        const data =
-          (await response.json()) as DiscordSessionResponse;
+        const data = (await response.json()) as DiscordSessionResponse;
 
         if (!active) {
           return;
@@ -80,6 +79,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   useEffect(() => {
     onClose();
+    // Only close when the route itself changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -211,7 +211,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
             <div className="space-y-2">
               {commissionerLinks.map((link) => {
-                const active = pathname.startsWith(link.href);
+                const active =
+                  link.href === "/commissioner"
+                    ? pathname === "/commissioner"
+                    : pathname.startsWith(link.href);
 
                 return (
                   <Link
