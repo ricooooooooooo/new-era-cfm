@@ -62,16 +62,20 @@ export default async function CommissionerPage() {
     staffMembersResult,
     recentMembersResult,
     recentlySeenResult,
+    pendingApplicationsResult,
   ] = await Promise.all([
     supabase.from("members").select("*", { count: "exact", head: true }),
+
     supabase
       .from("members")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true),
+
     supabase
       .from("members")
       .select("*", { count: "exact", head: true })
       .eq("is_staff", true),
+
     supabase
       .from("members")
       .select(
@@ -79,10 +83,16 @@ export default async function CommissionerPage() {
       )
       .order("first_connected_at", { ascending: false })
       .limit(6),
+
     supabase
       .from("members")
       .select("*", { count: "exact", head: true })
       .gte("last_seen_at", oneDayAgo),
+
+    supabase
+      .from("staff_applications")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
   ]);
 
   const errors = [
@@ -91,11 +101,14 @@ export default async function CommissionerPage() {
     staffMembersResult.error,
     recentMembersResult.error,
     recentlySeenResult.error,
+    pendingApplicationsResult.error,
   ].filter(Boolean);
 
   if (errors.length > 0) {
     console.error("Commissioner dashboard data error:", errors);
   }
+
+  const pendingApplications = pendingApplicationsResult.count ?? 0;
 
   const overview = [
     {
@@ -117,10 +130,11 @@ export default async function CommissionerPage() {
       valueClass: "text-purple-300",
     },
     {
-      title: "Seen Last 24 Hours",
-      value: recentlySeenResult.count ?? 0,
-      subtitle: "Recent website activity",
-      valueClass: "text-sky-300",
+      title: "Pending Applications",
+      value: pendingApplications,
+      subtitle: "Staff applications awaiting review",
+      valueClass:
+        pendingApplications > 0 ? "text-amber-300" : "text-zinc-400",
     },
   ];
 
@@ -133,7 +147,10 @@ export default async function CommissionerPage() {
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-purple-200">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              {staffRole === "owner" ? "Owner Access" : "Commissioner Access"}
+
+              {staffRole === "owner"
+                ? "Owner Access"
+                : "Commissioner Access"}
             </div>
 
             <h1 className="text-4xl font-black tracking-[-0.05em] sm:text-5xl">
@@ -179,6 +196,7 @@ export default async function CommissionerPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
                   Live Members
                 </p>
+
                 <h2 className="mt-1 text-2xl font-black tracking-[-0.03em]">
                   Recent Signups
                 </h2>
@@ -200,6 +218,7 @@ export default async function CommissionerPage() {
                       <p className="font-black text-white">
                         {member.display_name}
                       </p>
+
                       <p className="mt-1 text-sm text-zinc-500">
                         @{member.discord_username ?? "unknown"}
                       </p>
@@ -245,6 +264,17 @@ export default async function CommissionerPage() {
                 className="block w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-center font-black text-white transition hover:from-purple-500 hover:to-indigo-500"
               >
                 Manage Members
+              </a>
+
+              <a
+                href="/commissioner/staff"
+                className="flex w-full items-center justify-between rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-4 py-3 font-black text-amber-200 transition hover:border-amber-400/40 hover:bg-amber-400/[0.12]"
+              >
+                <span>Review Staff Applications</span>
+
+                <span className="rounded-full bg-amber-300/15 px-2.5 py-1 text-xs text-amber-200">
+                  {pendingApplications}
+                </span>
               </a>
 
               <button
