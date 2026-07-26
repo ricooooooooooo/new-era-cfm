@@ -88,8 +88,15 @@ console.error("rolesText:", rolesText);
     .map((role) => role.name);
 
   const detectedTeam = findTeamFromDiscordRoleNames(roleNames);
-  const nextTeam = detectedTeam?.slug ?? null;
+const nextTeam = detectedTeam?.slug ?? null;
 
+console.log("================================");
+console.log("Discord ID:", discordId);
+console.log("Role names:", roleNames);
+console.log("Detected team:", nextTeam);
+console.log("================================");
+console.log("Discord role names:", roleNames);
+console.log("Detected NFL team:", nextTeam);
   const { data: currentMember, error: currentMemberError } =
     await supabaseAdmin
       .from("members")
@@ -102,7 +109,7 @@ console.error("rolesText:", rolesText);
       "Unable to load current member team:",
       currentMemberError,
     );
-
+console.error(currentMemberError);
     throw new Error("Unable to load current website team.");
   }
 
@@ -159,7 +166,7 @@ console.error("rolesText:", rolesText);
       "Unable to update member team:",
       updateError,
     );
-
+console.error(updateError);
     throw new Error("Unable to update website team.");
   }
 
