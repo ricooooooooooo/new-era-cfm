@@ -46,13 +46,21 @@ export async function syncDiscordTeamAssignment(
     }),
   ]);
 
-  if (memberResponse.status === 404) {
-    return {
+ if (memberResponse.status === 404) {
+  await supabaseAdmin
+    .from("members")
+    .update({
       team: null,
-      changed: false,
-      roleNames: [],
-    };
-  }
+      updated_at: new Date().toISOString(),
+    })
+    .eq("discord_id", discordId);
+
+  return {
+    team: null,
+    changed: true,
+    roleNames: [],
+  };
+}
 
   if (!memberResponse.ok || !rolesResponse.ok) {
     const memberText = await memberResponse.text();
