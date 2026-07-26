@@ -123,13 +123,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         setIsStaff(Boolean(data.isStaff));
         setStaffRole(data.staffRole ?? null);
 
-        const returnedRoles =
+        const returnedRoles: WebsiteRole[] =
           Array.isArray(data.roles) && data.roles.length > 0
-            ? data.roles
+            ? (data.roles as WebsiteRole[])
             : data.role
-              ? [data.role]
+              ? [data.role as WebsiteRole]
               : data.staffRole
-                ? [data.staffRole]
+                ? [data.staffRole as WebsiteRole]
                 : ["member"];
 
         setRoles(returnedRoles);
