@@ -27,7 +27,8 @@ type DiscordSessionResponse = {
 };
 
 const leagueLinks = [
-  { label: "Dashboard", href: "/" },
+  { label: "Franchise HQ", href: "/dashboard" },
+  { label: "League Hub", href: "/" },
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
@@ -47,32 +48,50 @@ const roleSections: Record<
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Manage Roles", href: "/commissioner/roles" },
-      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      {
+        label: "Review Staff Applications",
+        href: "/commissioner/staff",
+      },
       { label: "Manage Teams", href: "/commissioner/teams" },
       { label: "Active Checks", href: "/active-checks" },
-      { label: "Trade Administration", href: "/commissioner/trades" },
+      {
+        label: "Trade Administration",
+        href: "/commissioner/trades",
+      },
       { label: "Media Center", href: "/media" },
     ],
   },
+
   commissioner: {
     title: "Commissioner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
-      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      {
+        label: "Review Staff Applications",
+        href: "/commissioner/staff",
+      },
       { label: "Manage Teams", href: "/commissioner/teams" },
       { label: "Active Checks", href: "/active-checks" },
-      { label: "Trade Administration", href: "/commissioner/trades" },
+      {
+        label: "Trade Administration",
+        href: "/commissioner/trades",
+      },
     ],
   },
+
   admin: {
     title: "Admin Center",
     links: [
       { label: "Manage Members", href: "/commissioner/members" },
-      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      {
+        label: "Review Staff Applications",
+        href: "/commissioner/staff",
+      },
       { label: "Active Checks", href: "/active-checks" },
     ],
   },
+
   trade_committee: {
     title: "Trade Committee",
     links: [
@@ -81,25 +100,28 @@ const roleSections: Record<
       { label: "Trade History", href: "/trade-center/history" },
     ],
   },
+
   media_team: {
     title: "Media Center",
     links: [
       { label: "Media Dashboard", href: "/media" },
       { label: "League News", href: "/media/news" },
-      { label: "Game of the Week", href: "/media/game-of-the-week" },
+      {
+        label: "Game of the Week",
+        href: "/media/game-of-the-week",
+      },
       { label: "Power Rankings", href: "/media/power-rankings" },
       { label: "Awards", href: "/media/awards" },
     ],
   },
 };
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({
+  open,
+  onClose,
+}: SidebarProps) {
   const pathname = usePathname();
 
-  const [isStaff, setIsStaff] = useState(false);
-  const [staffRole, setStaffRole] = useState<
-    "owner" | "commissioner" | null
-  >(null);
   const [roles, setRoles] = useState<WebsiteRole[]>(["member"]);
 
   useEffect(() => {
@@ -115,32 +137,28 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           return;
         }
 
-        const data = (await response.json()) as DiscordSessionResponse;
+        const data =
+          (await response.json()) as DiscordSessionResponse;
 
         if (!active) {
           return;
         }
 
-        setIsStaff(Boolean(data.isStaff));
-        setStaffRole(data.staffRole ?? null);
-
         const returnedRoles: WebsiteRole[] =
-  Array.isArray(data.roles) && data.roles.length > 0
-    ? (data.roles as WebsiteRole[])
-    : data.role
-      ? [data.role as WebsiteRole]
-      : data.staffRole
-        ? [data.staffRole as WebsiteRole]
-        : ["member"];
+          Array.isArray(data.roles) && data.roles.length > 0
+            ? data.roles
+            : data.role
+              ? [data.role]
+              : data.staffRole
+                ? [data.staffRole]
+                : ["member"];
 
-setRoles(returnedRoles);
+        setRoles(returnedRoles);
       } catch {
         if (!active) {
           return;
         }
 
-        setIsStaff(false);
-        setStaffRole(null);
         setRoles(["member"]);
       }
     }
@@ -153,13 +171,22 @@ setRoles(returnedRoles);
   }, []);
 
   useEffect(() => {
-    onClose();
-    // Only close when the route itself changes.
+    function closeMobileSidebar() {
+      if (window.innerWidth < 1024) {
+        onClose();
+      }
+    }
+
+    closeMobileSidebar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
     if (!open) {
+      return;
+    }
+
+    if (window.innerWidth >= 1024) {
       return;
     }
 
@@ -180,12 +207,34 @@ setRoles(returnedRoles);
     };
   }, [open, onClose]);
 
+  function handleNavigationClick() {
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  }
+
   function linkClasses(active: boolean) {
     return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
       active
         ? "border-purple-400/30 bg-purple-500/[0.10] text-white shadow-[inset_3px_0_0_rgba(168,85,247,0.95),0_12px_35px_rgba(0,0,0,0.28)]"
         : "border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
     }`;
+  }
+
+  function isLinkActive(href: string) {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+
+    if (href === "/commissioner") {
+      return pathname === "/commissioner";
+    }
+
+    return pathname.startsWith(href);
   }
 
   return (
@@ -203,15 +252,15 @@ setRoles(returnedRoles);
 
       <aside
         aria-label="Main navigation"
-        aria-hidden={!open}
         className={`fixed inset-y-0 left-0 z-[90] flex w-[86vw] max-w-72 flex-col overflow-y-auto overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[20px_0_60px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out lg:w-72 lg:translate-x-0 lg:py-8 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-start justify-between gap-3">
           <Link
-            href="/"
-            aria-label="Go to New Era dashboard"
+            href="/dashboard"
+            onClick={handleNavigationClick}
+            aria-label="Go to your Franchise HQ"
             className="group flex min-w-0 items-center gap-3"
           >
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(168,85,247,0.45)]">
@@ -252,29 +301,28 @@ setRoles(returnedRoles);
           </p>
 
           <div className="space-y-2">
-            {leagueLinks.map((link) => {
-              const active =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={onClose}
-                  className={linkClasses(active)}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+            {leagueLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={handleNavigationClick}
+                className={linkClasses(
+                  isLinkActive(link.href),
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
 
         {roles
-          .filter((role): role is Exclude<WebsiteRole, "member"> =>
-            role !== "member" && Boolean(roleSections[role]),
+          .filter(
+            (
+              role,
+            ): role is Exclude<WebsiteRole, "member"> =>
+              role !== "member" &&
+              Boolean(roleSections[role]),
           )
           .map((role) => {
             const section = roleSections[role];
@@ -292,23 +340,18 @@ setRoles(returnedRoles);
                 </div>
 
                 <div className="space-y-2">
-                  {section.links.map((link) => {
-                    const active =
-                      link.href === "/commissioner"
-                        ? pathname === "/commissioner"
-                        : pathname.startsWith(link.href);
-
-                    return (
-                      <Link
-                        key={`${role}-${link.href}`}
-                        href={link.href}
-                        onClick={onClose}
-                        className={linkClasses(active)}
-                      >
-                        {link.label}
-                      </Link>
-                    );
-                  })}
+                  {section.links.map((link) => (
+                    <Link
+                      key={`${role}-${link.href}`}
+                      href={link.href}
+                      onClick={handleNavigationClick}
+                      className={linkClasses(
+                        isLinkActive(link.href),
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
                 </div>
               </div>
             );

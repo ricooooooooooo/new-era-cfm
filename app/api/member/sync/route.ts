@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncDiscordMember } from "@/lib/db/members";
+import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 
 type DiscordMeResponse = {
   connected: boolean;
@@ -61,10 +62,16 @@ export async function POST(request: NextRequest) {
       avatar: discordData.user.avatar,
     });
 
+    const teamSync = await syncDiscordTeamAssignment(
+      discordData.user.id,
+    );
+
     return NextResponse.json(
       {
         success: true,
         member,
+        team: teamSync.team,
+        teamChanged: teamSync.changed,
       },
       {
         status: 200,
@@ -75,12 +82,12 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Member presence sync failed:", error);
+    console.error("Member/team sync failed:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Unable to update member presence.",
+        error: "Unable to update member and team.",
       },
       {
         status: 500,

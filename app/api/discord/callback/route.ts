@@ -1,3 +1,5 @@
+import { syncDiscordMember } from "@/lib/db/members";
+import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 import { NextRequest, NextResponse } from "next/server";
 
 type DiscordTokenResponse = {
@@ -94,7 +96,14 @@ export async function GET(request: NextRequest) {
       displayName: discordUser.global_name ?? discordUser.username,
       avatar: discordUser.avatar,
     };
+await syncDiscordMember({
+  discordId: savedUser.id,
+  username: savedUser.username,
+  displayName: savedUser.displayName,
+  avatar: savedUser.avatar,
+});
 
+await syncDiscordTeamAssignment(savedUser.id);
     const encodedUser = Buffer.from(
       JSON.stringify(savedUser),
       "utf8",
