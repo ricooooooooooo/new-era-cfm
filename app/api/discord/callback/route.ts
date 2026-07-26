@@ -96,20 +96,29 @@ export async function GET(request: NextRequest) {
       displayName: discordUser.global_name ?? discordUser.username,
       avatar: discordUser.avatar,
     };
-await syncDiscordMember({
-  discordId: savedUser.id,
-  username: savedUser.username,
-  displayName: savedUser.displayName,
-  avatar: savedUser.avatar,
-});
 
-await syncDiscordTeamAssignment(savedUser.id);
+    await syncDiscordMember({
+      discordId: savedUser.id,
+      username: savedUser.username,
+      displayName: savedUser.displayName,
+      avatar: savedUser.avatar,
+    });
+
+    // Don't let a team-sync issue break Discord login.
+    try {
+      await syncDiscordTeamAssignment(savedUser.id);
+    } catch (teamSyncError) {
+      console.error(
+        "Discord login succeeded, but team sync failed:",
+        teamSyncError,
+      );
+    }
+
     const encodedUser = Buffer.from(
       JSON.stringify(savedUser),
       "utf8",
     ).toString("base64url");
 
-    // 👇 Redirect to the NEW Discord intro page
     const response = NextResponse.redirect(
       new URL("/discord-intro", request.url),
     );
