@@ -10,33 +10,87 @@ type SidebarProps = {
   onClose: () => void;
 };
 
+type WebsiteRole =
+  | "owner"
+  | "commissioner"
+  | "admin"
+  | "trade_committee"
+  | "media_team"
+  | "member";
+
 type DiscordSessionResponse = {
   connected: boolean;
   isStaff: boolean;
   staffRole: "owner" | "commissioner" | null;
-};
-
-type PendingCountResponse = {
-  count: number;
+  role?: WebsiteRole | null;
+  roles?: WebsiteRole[];
 };
 
 const leagueLinks = [
   { label: "Dashboard", href: "/" },
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
-  { label: "Members", href: "/members" },
   { label: "Schedule", href: "/schedule" },
-  { label: "Trades", href: "/trade-center" },
-  { label: "Apply for Staff", href: "/staff" },
 ];
 
-const commissionerLinks = [
-  { label: "Commissioner Dashboard", href: "/commissioner" },
-  { label: "Manage Members", href: "/commissioner/members" },
-  { label: "Review Staff Applications", href: "/commissioner/staff" },
-  { label: "Manage Teams", href: "/commissioner/teams" },
-  { label: "Active Checks", href: "/active-checks" },
-];
+const roleSections: Record<
+  Exclude<WebsiteRole, "member">,
+  {
+    title: string;
+    links: { label: string; href: string }[];
+  }
+> = {
+  owner: {
+    title: "Owner Center",
+    links: [
+      { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "Manage Members", href: "/commissioner/members" },
+      { label: "Manage Roles", href: "/commissioner/roles" },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      { label: "Manage Teams", href: "/commissioner/teams" },
+      { label: "Active Checks", href: "/active-checks" },
+      { label: "Trade Administration", href: "/commissioner/trades" },
+      { label: "Media Center", href: "/media" },
+    ],
+  },
+  commissioner: {
+    title: "Commissioner Center",
+    links: [
+      { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "Manage Members", href: "/commissioner/members" },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      { label: "Manage Teams", href: "/commissioner/teams" },
+      { label: "Active Checks", href: "/active-checks" },
+      { label: "Trade Administration", href: "/commissioner/trades" },
+    ],
+  },
+  admin: {
+    title: "Admin Center",
+    links: [
+      { label: "Manage Members", href: "/commissioner/members" },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
+      { label: "Active Checks", href: "/active-checks" },
+    ],
+  },
+  trade_committee: {
+    title: "Trade Committee",
+    links: [
+      { label: "Trade Center", href: "/trade-center" },
+      { label: "Pending Trades", href: "/commissioner/trades" },
+      { label: "Trade History", href: "/trade-center/history" },
+    ],
+  },
+  media_team: {
+    title: "Media Center",
+    links: [
+      { label: "Media Dashboard", href: "/media" },
+      { label: "League News", href: "/media/news" },
+      { label: "Game of the Week", href: "/media/game-of-the-week" },
+      { label: "Power Rankings", href: "/media/power-rankings" },
+      { label: "Awards", href: "/media/awards" },
+    ],
+  },
+};
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
@@ -45,7 +99,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const [staffRole, setStaffRole] = useState<
     "owner" | "commissioner" | null
   >(null);
-  const [pendingApplicationCount, setPendingApplicationCount] = useState(0);
+  const [roles, setRoles] = useState<WebsiteRole[]>(["member"]);
 
   useEffect(() => {
     let active = true;
@@ -66,45 +120,19 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           return;
         }
 
-        const userIsStaff = Boolean(data.isStaff);
-
-        setIsStaff(userIsStaff);
+        setIsStaff(Boolean(data.isStaff));
         setStaffRole(data.staffRole ?? null);
 
-        if (!userIsStaff) {
-          setPendingApplicationCount(0);
-          return;
-        }
+        const returnedRoles =
+          Array.isArray(data.roles) && data.roles.length > 0
+            ? data.roles
+            : data.role
+              ? [data.role]
+              : data.staffRole
+                ? [data.staffRole]
+                : ["member"];
 
-        try {
-          const countResponse = await fetch(
-            "/api/commissioner/staff/pending-count",
-            {
-              cache: "no-store",
-            },
-          );
-
-          if (!countResponse.ok) {
-            return;
-          }
-
-          const countData =
-            (await countResponse.json()) as PendingCountResponse;
-
-          if (!active) {
-            return;
-          }
-
-          setPendingApplicationCount(
-            Number.isFinite(countData.count)
-              ? Math.max(0, countData.count)
-              : 0,
-          );
-        } catch {
-          if (active) {
-            setPendingApplicationCount(0);
-          }
-        }
+        setRoles(returnedRoles);
       } catch {
         if (!active) {
           return;
@@ -112,7 +140,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         setIsStaff(false);
         setStaffRole(null);
-        setPendingApplicationCount(0);
+        setRoles(["member"]);
       }
     }
 
@@ -121,7 +149,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     return () => {
       active = false;
     };
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     onClose();
@@ -243,53 +271,47 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {isStaff && (
-          <div className="mt-10">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
-                Commissioner
-              </p>
+        {roles
+          .filter((role): role is Exclude<WebsiteRole, "member"> =>
+            role !== "member" && Boolean(roleSections[role]),
+          )
+          .map((role) => {
+            const section = roleSections[role];
 
-              <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-amber-200">
-                {staffRole === "owner" ? "Owner" : "Staff"}
-              </span>
-            </div>
+            return (
+              <div key={role} className="mt-10">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
+                    {section.title}
+                  </p>
 
-            <div className="space-y-2">
-              {commissionerLinks.map((link) => {
-                const active =
-                  link.href === "/commissioner"
-                    ? pathname === "/commissioner"
-                    : pathname.startsWith(link.href);
+                  <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-amber-200">
+                    {role.replaceAll("_", " ")}
+                  </span>
+                </div>
 
-                const showPendingBadge =
-                  link.href === "/commissioner/staff" &&
-                  pendingApplicationCount > 0;
+                <div className="space-y-2">
+                  {section.links.map((link) => {
+                    const active =
+                      link.href === "/commissioner"
+                        ? pathname === "/commissioner"
+                        : pathname.startsWith(link.href);
 
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={onClose}
-                    className={linkClasses(active)}
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span>{link.label}</span>
-
-                      {showPendingBadge && (
-                        <span className="inline-flex min-w-6 items-center justify-center rounded-full border border-red-300/30 bg-red-500/15 px-2 py-0.5 text-[10px] font-black text-red-200">
-                          {pendingApplicationCount > 99
-                            ? "99+"
-                            : pendingApplicationCount}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    return (
+                      <Link
+                        key={`${role}-${link.href}`}
+                        href={link.href}
+                        onClick={onClose}
+                        className={linkClasses(active)}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
         <div className="mt-auto pt-8">
           <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
