@@ -31,6 +31,7 @@ const leagueLinks = [
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
+  { label: "Apply for Staff", href: "/staff" },
 ];
 
 const roleSections: Record<
@@ -124,15 +125,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         setStaffRole(data.staffRole ?? null);
 
         const returnedRoles: WebsiteRole[] =
-          Array.isArray(data.roles) && data.roles.length > 0
-            ? (data.roles as WebsiteRole[])
-            : data.role
-              ? [data.role as WebsiteRole]
-              : data.staffRole
-                ? [data.staffRole as WebsiteRole]
-                : ["member"];
+  Array.isArray(data.roles) && data.roles.length > 0
+    ? (data.roles as WebsiteRole[])
+    : data.role
+      ? [data.role as WebsiteRole]
+      : data.staffRole
+        ? [data.staffRole as WebsiteRole]
+        : ["member"];
 
-        setRoles(returnedRoles);
+setRoles(returnedRoles);
       } catch {
         if (!active) {
           return;
