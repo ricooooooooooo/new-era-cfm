@@ -84,11 +84,19 @@ console.error("rolesText:", rolesText);
   const memberRoleIds = new Set(guildMember.roles ?? []);
 
   const roleNames = guildRoles
-    .filter((role) => memberRoleIds.has(role.id))
-    .map((role) => role.name);
+  .filter((role) => memberRoleIds.has(role.id))
+  .map((role) => role.name);
 
-  const detectedTeam = findTeamFromDiscordRoleNames(roleNames);
+console.log("========== DISCORD TEAM DEBUG ==========");
+console.log("Discord ID:", discordId);
+console.log("Role IDs:", guildMember.roles);
+console.log("Role Names:", roleNames);
+
+const detectedTeam = findTeamFromDiscordRoleNames(roleNames);
 const nextTeam = detectedTeam?.slug ?? null;
+
+console.log("Detected Team:", nextTeam);
+console.log("========================================");
 
 console.log("================================");
 console.log("Discord ID:", discordId);
