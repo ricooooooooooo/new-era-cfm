@@ -16,11 +16,18 @@ type DiscordSessionResponse = {
   staffRole: "owner" | "commissioner" | null;
 };
 
+type PendingCountResponse = {
+  count: number;
+};
+
 const leagueLinks = [
   { label: "Dashboard", href: "/" },
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
+  { label: "Members", href: "/members" },
   { label: "Schedule", href: "/schedule" },
+  { label: "Trades", href: "/trade-center" },
+  { label: "Apply for Staff", href: "/staff" },
 ];
 
 const commissionerLinks = [
@@ -38,6 +45,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const [staffRole, setStaffRole] = useState<
     "owner" | "commissioner" | null
   >(null);
+  const [pendingApplicationCount, setPendingApplicationCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -58,8 +66,45 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           return;
         }
 
-        setIsStaff(Boolean(data.isStaff));
+        const userIsStaff = Boolean(data.isStaff);
+
+        setIsStaff(userIsStaff);
         setStaffRole(data.staffRole ?? null);
+
+        if (!userIsStaff) {
+          setPendingApplicationCount(0);
+          return;
+        }
+
+        try {
+          const countResponse = await fetch(
+            "/api/commissioner/staff/pending-count",
+            {
+              cache: "no-store",
+            },
+          );
+
+          if (!countResponse.ok) {
+            return;
+          }
+
+          const countData =
+            (await countResponse.json()) as PendingCountResponse;
+
+          if (!active) {
+            return;
+          }
+
+          setPendingApplicationCount(
+            Number.isFinite(countData.count)
+              ? Math.max(0, countData.count)
+              : 0,
+          );
+        } catch {
+          if (active) {
+            setPendingApplicationCount(0);
+          }
+        }
       } catch {
         if (!active) {
           return;
@@ -67,6 +112,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         setIsStaff(false);
         setStaffRole(null);
+        setPendingApplicationCount(0);
       }
     }
 
@@ -75,7 +121,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     onClose();
@@ -216,6 +262,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     ? pathname === "/commissioner"
                     : pathname.startsWith(link.href);
 
+                const showPendingBadge =
+                  link.href === "/commissioner/staff" &&
+                  pendingApplicationCount > 0;
+
                 return (
                   <Link
                     key={link.href}
@@ -223,7 +273,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     onClick={onClose}
                     className={linkClasses(active)}
                   >
-                    {link.label}
+                    <span className="flex items-center justify-between gap-3">
+                      <span>{link.label}</span>
+
+                      {showPendingBadge && (
+                        <span className="inline-flex min-w-6 items-center justify-center rounded-full border border-red-300/30 bg-red-500/15 px-2 py-0.5 text-[10px] font-black text-red-200">
+                          {pendingApplicationCount > 99
+                            ? "99+"
+                            : pendingApplicationCount}
+                        </span>
+                      )}
+                    </span>
                   </Link>
                 );
               })}
