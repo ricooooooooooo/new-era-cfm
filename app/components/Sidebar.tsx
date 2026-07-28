@@ -32,6 +32,7 @@ const leagueLinks = [
   { label: "Standings", href: "/standings" },
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
+  { label: "Trade Center", href: "/trade-center" },
   { label: "Apply for Staff", href: "/staff" },
 ];
 
@@ -48,50 +49,32 @@ const roleSections: Record<
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Manage Roles", href: "/commissioner/roles" },
-      {
-        label: "Review Staff Applications",
-        href: "/commissioner/staff",
-      },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
       { label: "Active Checks", href: "/active-checks" },
-      {
-        label: "Trade Administration",
-        href: "/commissioner/trades",
-      },
+      { label: "Trade Administration", href: "/commissioner/trades" },
       { label: "Media Center", href: "/media" },
     ],
   },
-
   commissioner: {
     title: "Commissioner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
-      {
-        label: "Review Staff Applications",
-        href: "/commissioner/staff",
-      },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
       { label: "Active Checks", href: "/active-checks" },
-      {
-        label: "Trade Administration",
-        href: "/commissioner/trades",
-      },
+      { label: "Trade Administration", href: "/commissioner/trades" },
     ],
   },
-
   admin: {
     title: "Admin Center",
     links: [
       { label: "Manage Members", href: "/commissioner/members" },
-      {
-        label: "Review Staff Applications",
-        href: "/commissioner/staff",
-      },
+      { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Active Checks", href: "/active-checks" },
     ],
   },
-
   trade_committee: {
     title: "Trade Committee",
     links: [
@@ -100,28 +83,20 @@ const roleSections: Record<
       { label: "Trade History", href: "/trade-center/history" },
     ],
   },
-
   media_team: {
     title: "Media Center",
     links: [
       { label: "Media Dashboard", href: "/media" },
       { label: "League News", href: "/media/news" },
-      {
-        label: "Game of the Week",
-        href: "/media/game-of-the-week",
-      },
+      { label: "Game of the Week", href: "/media/game-of-the-week" },
       { label: "Power Rankings", href: "/media/power-rankings" },
       { label: "Awards", href: "/media/awards" },
     ],
   },
 };
 
-export default function Sidebar({
-  open,
-  onClose,
-}: SidebarProps) {
+export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-
   const [roles, setRoles] = useState<WebsiteRole[]>(["member"]);
 
   useEffect(() => {
@@ -133,16 +108,11 @@ export default function Sidebar({
           cache: "no-store",
         });
 
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
 
-        const data =
-          (await response.json()) as DiscordSessionResponse;
+        const data = (await response.json()) as DiscordSessionResponse;
 
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
         const returnedRoles: WebsiteRole[] =
           Array.isArray(data.roles) && data.roles.length > 0
@@ -155,11 +125,7 @@ export default function Sidebar({
 
         setRoles(returnedRoles);
       } catch {
-        if (!active) {
-          return;
-        }
-
-        setRoles(["member"]);
+        if (active) setRoles(["member"]);
       }
     }
 
@@ -171,32 +137,20 @@ export default function Sidebar({
   }, []);
 
   useEffect(() => {
-    function closeMobileSidebar() {
-      if (window.innerWidth < 1024) {
-        onClose();
-      }
+    if (window.innerWidth < 1024) {
+      onClose();
     }
-
-    closeMobileSidebar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    if (window.innerWidth >= 1024) {
-      return;
-    }
+    if (!open || window.innerWidth >= 1024) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
+      if (event.key === "Escape") onClose();
     }
 
     window.addEventListener("keydown", handleEscape);
@@ -208,33 +162,22 @@ export default function Sidebar({
   }, [open, onClose]);
 
   function handleNavigationClick() {
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
+    if (window.innerWidth < 1024) onClose();
+  }
+
+  function isLinkActive(href: string) {
+    if (href === "/") return pathname === "/";
+    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/commissioner") return pathname === "/commissioner";
+    return pathname.startsWith(href);
   }
 
   function linkClasses(active: boolean) {
     return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
       active
-        ? "border-purple-400/30 bg-purple-500/[0.10] text-white shadow-[inset_3px_0_0_rgba(168,85,247,0.95),0_12px_35px_rgba(0,0,0,0.28)]"
+        ? "border-purple-400/35 bg-purple-500/[0.12] text-white shadow-[inset_3px_0_0_rgba(168,85,247,0.95),0_14px_35px_rgba(0,0,0,0.28)]"
         : "border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
     }`;
-  }
-
-  function isLinkActive(href: string) {
-    if (href === "/") {
-      return pathname === "/";
-    }
-
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
-    }
-
-    if (href === "/commissioner") {
-      return pathname === "/commissioner";
-    }
-
-    return pathname.startsWith(href);
   }
 
   return (
@@ -243,7 +186,7 @@ export default function Sidebar({
         type="button"
         aria-label="Close navigation"
         onClick={onClose}
-        className={`fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -252,7 +195,7 @@ export default function Sidebar({
 
       <aside
         aria-label="Main navigation"
-        className={`fixed inset-y-0 left-0 z-[90] flex w-[86vw] max-w-72 flex-col overflow-y-auto overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[20px_0_60px_rgba(0,0,0,0.55)] transition-transform duration-300 ease-out lg:w-72 lg:translate-x-0 lg:py-8 ${
+        className={`fixed inset-y-0 left-0 z-[90] flex w-[86vw] max-w-72 flex-col overflow-y-auto overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[22px_0_70px_rgba(0,0,0,0.62)] transition-transform duration-300 ease-out lg:w-72 lg:translate-x-0 lg:py-8 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -263,23 +206,23 @@ export default function Sidebar({
             aria-label="Go to your Franchise HQ"
             className="group flex min-w-0 items-center gap-3"
           >
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_18px_rgba(168,85,247,0.45)]">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-purple-400/20 bg-white/[0.025] shadow-[0_0_26px_rgba(168,85,247,0.14)] transition duration-300 group-hover:scale-105 group-hover:shadow-[0_0_34px_rgba(168,85,247,0.28)]">
               <Image
                 src="/ne-icon.png"
                 alt="New Era logo"
                 fill
                 priority
-                sizes="56px"
+                sizes="64px"
                 className="object-contain"
               />
             </div>
 
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-black tracking-[-0.04em] text-white">
+              <h1 className="truncate text-2xl font-black tracking-[-0.045em] text-white">
                 NEW ERA
               </h1>
 
-              <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/75">
+              <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.24em] text-amber-300/70">
                 Madden 27 Franchise
               </p>
             </div>
@@ -289,14 +232,16 @@ export default function Sidebar({
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-2xl leading-none text-zinc-400 transition hover:bg-white/[0.07] hover:text-white lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-2xl leading-none text-zinc-400 transition hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white lg:hidden"
           >
             ×
           </button>
         </div>
 
-        <div className="mt-10">
-          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/70">
+        <div className="mt-8 h-px bg-gradient-to-r from-transparent via-purple-400/35 to-transparent" />
+
+        <div className="mt-8">
+          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/70">
             League
           </p>
 
@@ -306,9 +251,7 @@ export default function Sidebar({
                 key={link.href}
                 href={link.href}
                 onClick={handleNavigationClick}
-                className={linkClasses(
-                  isLinkActive(link.href),
-                )}
+                className={linkClasses(isLinkActive(link.href))}
               >
                 {link.label}
               </Link>
@@ -318,11 +261,8 @@ export default function Sidebar({
 
         {roles
           .filter(
-            (
-              role,
-            ): role is Exclude<WebsiteRole, "member"> =>
-              role !== "member" &&
-              Boolean(roleSections[role]),
+            (role): role is Exclude<WebsiteRole, "member"> =>
+              role !== "member" && Boolean(roleSections[role]),
           )
           .map((role) => {
             const section = roleSections[role];
@@ -334,7 +274,7 @@ export default function Sidebar({
                     {section.title}
                   </p>
 
-                  <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-amber-200">
+                  <span className="rounded-full border border-purple-400/25 bg-purple-400/[0.07] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-purple-200">
                     {role.replaceAll("_", " ")}
                   </span>
                 </div>
@@ -345,9 +285,7 @@ export default function Sidebar({
                       key={`${role}-${link.href}`}
                       href={link.href}
                       onClick={handleNavigationClick}
-                      className={linkClasses(
-                        isLinkActive(link.href),
-                      )}
+                      className={linkClasses(isLinkActive(link.href))}
                     >
                       {link.label}
                     </Link>
@@ -357,25 +295,25 @@ export default function Sidebar({
             );
           })}
 
-     <div className="mt-auto pt-8">
-  <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
-    <div className="flex items-center justify-between">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
-        League Status
-      </p>
+        <div className="mt-auto pt-8">
+          <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-purple-300">
+                League Status
+              </p>
 
-      <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
-    </div>
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+            </div>
 
-    <h2 className="mt-3 text-xl font-black text-white">
-      Live Data
-    </h2>
+            <h2 className="mt-3 text-xl font-black text-white">
+              Healthy
+            </h2>
 
-    <p className="mt-1 text-sm text-zinc-500">
-      League health updates will appear once Season 1 begins.
-    </p>
-  </div>
-</div>
+            <p className="mt-1 text-sm text-zinc-500">
+              32 / 32 Owners Active
+            </p>
+          </div>
+        </div>
       </aside>
     </>
   );
