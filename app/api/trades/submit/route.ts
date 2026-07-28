@@ -235,7 +235,202 @@ function sanitizeAnalysis(
   };
 }
 
-async function generateTradeGrade({
+function extractPickValue(text: string): number {
+  const normalized = text.toLowerCase();
+  let value = 0;
+
+  const pickPatterns = [
+    { pattern: /1st round pick|first round pick|\b1st\b/g, value: 42 },
+    { pattern: /2nd round pick|second round pick|\b2nd\b/g, value: 24 },
+    { pattern: /3rd round pick|third round pick|\b3rd\b/g, value: 13 },
+    { pattern: /4th round pick|fourth round pick|\b4th\b/g, value: 7 },
+    { pattern: /5th round pick|fifth round pick|\b5th\b/g, value: 4 },
+    { pattern: /6th round pick|sixth round pick|\b6th\b/g, value: 2 },
+    { pattern: /7th round pick|seventh round pick|\b7th\b/g, value: 1 },
+  ];
+
+  for (const item of pickPatterns) {
+    const matches = normalized.match(item.pattern);
+    value += (matches?.length || 0) * item.value;
+  }
+
+  return value;
+}
+
+function extractPlayerValue(text: string): number {
+  const normalized = text.toLowerCase();
+  let value = 0;
+
+  const elitePlayers: Record<string, number> = {
+    "patrick mahomes": 100,
+    "josh allen": 95,
+    "lamar jackson": 95,
+    "joe burrow": 92,
+    "justin herbert": 90,
+    "jalen hurts": 88,
+    "cj stroud": 88,
+    "caleb williams": 84,
+    "jayden daniels": 88,
+    "drake maye": 82,
+    "trevor lawrence": 78,
+    "dak prescott": 76,
+    "brock purdy": 78,
+    "justin jefferson": 88,
+    "jamarr chase": 88,
+    "ceedee lamb": 86,
+    "amon-ra st. brown": 82,
+    "aj brown": 80,
+    "puka nacua": 80,
+    "garrett wilson": 76,
+    "malik nabers": 80,
+    "marvin harrison jr": 80,
+    "tyreek hill": 72,
+    "micah parsons": 88,
+    "myles garrett": 84,
+    "maxx crosby": 80,
+    "tj watt": 80,
+    "nick bosa": 82,
+    "aidan hutchinson": 82,
+    "sauce gardner": 80,
+    "patrick surtain": 82,
+    "trent williams": 68,
+    "penei sewell": 82,
+    "christian darrisaw": 76,
+    "bijan robinson": 74,
+    "jahmyr gibbs": 74,
+    "breece hall": 68,
+    "vita vea": 56,
+  };
+
+  const found = new Set<string>();
+
+  for (const [name, playerValue] of Object.entries(elitePlayers)) {
+    if (normalized.includes(name) && !found.has(name)) {
+      value += playerValue;
+      found.add(name);
+    }
+  }
+
+  const segments = normalized
+    .split(/,|\n|&|\+|\band\b/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  for (const segment of segments) {
+    if (
+      /round pick|\b1st\b|\b2nd\b|\b3rd\b|\b4th\b|\b5th\b|\b6th\b|\b7th\b/.test(
+        segment,
+      )
+    ) {
+      continue;
+    }
+
+    const alreadyMatched = Array.from(found).some((name) =>
+      segment.includes(name),
+    );
+
+    if (!alreadyMatched && /[a-z]/.test(segment)) {
+      value += 34;
+    }
+  }
+
+  return value;
+}
+
+function calculateAssetValue(text: string): number {
+  return extractPickValue(text) + extractPlayerValue(text);
+}
+
+function gradeFromDifference(
+  receivedValue: number,
+  sentValue: number,
+): string {
+  if (sentValue <= 0) return "B";
+
+  const ratio = receivedValue / sentValue;
+
+  if (ratio >= 1.95) return "A+";
+  if (ratio >= 1.55) return "A";
+  if (ratio >= 1.3) return "A-";
+  if (ratio >= 1.14) return "B+";
+  if (ratio >= 0.92) return "B";
+  if (ratio >= 0.78) return "B-";
+  if (ratio >= 0.64) return "C+";
+  if (ratio >= 0.52) return "C";
+  if (ratio >= 0.42) return "C-";
+  if (ratio >= 0.32) return "D";
+  return "F";
+}
+
+function describePackage(text: string): string {
+  const firsts = (text.match(/1st round pick|first round pick|\b1st\b/gi) || [])
+    .length;
+  const seconds = (
+    text.match(/2nd round pick|second round pick|\b2nd\b/gi) || []
+  ).length;
+  const later = (
+    text.match(
+      /3rd round pick|4th round pick|5th round pick|6th round pick|7th round pick|\b3rd\b|\b4th\b|\b5th\b|\b6th\b|\b7th\b/gi,
+    ) || []
+  ).length;
+
+  if (firsts >= 2) {
+    return "multiple first-round picks and meaningful long-term flexibility";
+  }
+
+  if (firsts === 1 && seconds >= 1) {
+    return "a strong package built around a first-round pick and additional draft capital";
+  }
+
+  if (firsts === 1) {
+    return "a valuable first-round pick";
+  }
+
+  if (seconds >= 2) {
+    return "multiple second-round picks";
+  }
+
+  if (seconds === 1 && later > 0) {
+    return "useful mid-round draft capital";
+  }
+
+  return "the submitted return";
+}
+
+function buildLocalReason({
+  team,
+  received,
+  receivedValue,
+  sentValue,
+}: {
+  team: string;
+  received: string;
+  receivedValue: number;
+  sentValue: number;
+}): string {
+  const ratio = sentValue > 0 ? receivedValue / sentValue : 1;
+  const packageDescription = describePackage(received);
+
+  if (ratio >= 1.55) {
+    return `${team} lands ${packageDescription} at a major value advantage.`;
+  }
+
+  if (ratio >= 1.2) {
+    return `${team} comes out ahead by securing ${packageDescription} without giving up equal value.`;
+  }
+
+  if (ratio >= 0.9) {
+    return `${team} receives fair value in a deal that makes sense for both sides.`;
+  }
+
+  if (ratio >= 0.68) {
+    return `${team} gets a useful return, but the price is slightly heavier than the value coming back.`;
+  }
+
+  return `${team} gives up the stronger package and takes on significant value risk.`;
+}
+
+function generateTradeGrade({
   teamOne,
   teamOneSends,
   teamTwo,
@@ -246,120 +441,66 @@ async function generateTradeGrade({
   teamTwo: string;
   teamTwoSends: string;
 }): Promise<TradeGrade> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const teamOneReceivedValue = calculateAssetValue(teamTwoSends);
+  const teamOneSentValue = calculateAssetValue(teamOneSends);
+  const teamTwoReceivedValue = teamOneSentValue;
+  const teamTwoSentValue = teamOneReceivedValue;
 
-  if (!apiKey) {
-    console.error("OPENAI_API_KEY is missing in this deployment.");
-    return fallbackGrade(teamOne, teamTwo);
+  const teamOneGrade = gradeFromDifference(
+    teamOneReceivedValue,
+    teamOneSentValue,
+  );
+  const teamTwoGrade = gradeFromDifference(
+    teamTwoReceivedValue,
+    teamTwoSentValue,
+  );
+
+  const difference = teamOneReceivedValue - teamOneSentValue;
+  const absoluteDifference = Math.abs(difference);
+  const baseline = Math.max(teamOneReceivedValue, teamOneSentValue, 1);
+  const differenceRatio = absoluteDifference / baseline;
+
+  let winner = "Even";
+
+  if (differenceRatio >= 0.12) {
+    winner = difference > 0 ? teamOne : teamTwo;
   }
 
-  const model =
-    process.env.OPENAI_TRADE_GRADING_MODEL || "gpt-4o-mini";
+  let confidence: TradeGrade["confidence"] = "medium";
 
-  const systemPrompt = `You are the NEW ERA CFM trade analyst for a competitive Madden franchise league.
+  const recognizableValue =
+    extractPlayerValue(teamOneSends) + extractPlayerValue(teamTwoSends);
 
-Grade the submitted trade realistically and conservatively.
-
-Rules:
-- Evaluate positional value, player quality implied by recognizable NFL names, age/career stage when confidently known, scarcity, number of assets, and normal dynasty draft-pick value.
-- Quarterbacks are extremely valuable, especially young franchise starters.
-- Premium positions such as QB, WR, edge rusher, CB, and offensive tackle generally carry more value.
-- Do not invent Madden overalls, development traits, contracts, abilities, injuries, team needs, or league standings.
-- Do not pretend to know custom roster changes that were not supplied.
-- When information is limited or a player is unfamiliar, lower confidence and keep the grades closer together.
-- Avoid rage-bait. A fair trade should usually produce grades from B- through B+.
-- Reserve A+/F gaps for clearly extreme value differences.
-- Reasons must be direct and no longer than two sentences each.
-- The verdict must be one short sentence.
-- Return ONLY a valid JSON object. Do not use markdown or code fences.
-
-Required JSON:
-{
-  "teamOneGrade": "A+ through F",
-  "teamTwoGrade": "A+ through F",
-  "winner": "${teamOne}" or "${teamTwo}" or "Even",
-  "verdict": "one short sentence",
-  "teamOneReason": "maximum two sentences",
-  "teamTwoReason": "maximum two sentences",
-  "confidence": "low" or "medium" or "high"
-}`;
-
-  try {
-    const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.2,
-          response_format: {
-            type: "json_object",
-          },
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
-            },
-            {
-              role: "user",
-              content: `TRADE:
-
-${teamOne} sends:
-${teamOneSends}
-
-${teamTwo} sends:
-${teamTwoSends}
-
-Therefore:
-${teamOne} receives ${teamTwoSends}.
-${teamTwo} receives ${teamOneSends}.`,
-            },
-          ],
-        }),
-        cache: "no-store",
-      },
-    );
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      console.error(
-        `OpenAI trade grading returned ${response.status}: ${responseText}`,
-      );
-      return fallbackGrade(teamOne, teamTwo);
-    }
-
-    const payload = JSON.parse(responseText) as {
-      choices?: Array<{
-        message?: {
-          content?: string | null;
-        };
-      }>;
-    };
-
-    const outputText = payload.choices?.[0]?.message?.content;
-
-    if (!outputText) {
-      console.error(
-        "OpenAI trade grading returned no message content:",
-        responseText,
-      );
-      return fallbackGrade(teamOne, teamTwo);
-    }
-
-    return sanitizeAnalysis(
-      JSON.parse(outputText) as unknown,
-      teamOne,
-      teamTwo,
-    );
-  } catch (error) {
-    console.error("Trade grading failed:", error);
-    return fallbackGrade(teamOne, teamTwo);
+  if (recognizableValue >= 100 || extractPickValue(teamOneSends + teamTwoSends) >= 60) {
+    confidence = "high";
+  } else if (recognizableValue < 50) {
+    confidence = "low";
   }
+
+  const verdict =
+    winner === "Even"
+      ? "The value is close enough to call this a balanced trade."
+      : `${winner} receives the stronger overall value package.`;
+
+  return Promise.resolve({
+    teamOneGrade,
+    teamTwoGrade,
+    winner,
+    verdict,
+    teamOneReason: buildLocalReason({
+      team: teamOne,
+      received: teamTwoSends,
+      receivedValue: teamOneReceivedValue,
+      sentValue: teamOneSentValue,
+    }),
+    teamTwoReason: buildLocalReason({
+      team: teamTwo,
+      received: teamOneSends,
+      receivedValue: teamTwoReceivedValue,
+      sentValue: teamTwoSentValue,
+    }),
+    confidence,
+  });
 }
 
 function buildTradeCaption({
