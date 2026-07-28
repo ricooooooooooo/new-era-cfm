@@ -18,8 +18,9 @@ type DiscordMessageResponse = {
 };
 
 type TeamOwnerRow = {
-  team_name: string | null;
-  team_abbr: string | null;
+  city: string | null;
+  name: string;
+  abbreviation: string;
   members:
     | {
         discord_id: string | null;
@@ -132,14 +133,14 @@ async function findTradeOwnerIds(
     .from("teams")
     .select(
       `
-        team_name,
-        team_abbr,
+        city,
+        name,
+        abbreviation,
         members:owner_member_id (
           discord_id
         )
       `,
-    )
-    .eq("is_active", true);
+    );
 
   if (error) {
     console.error("Unable to load team owners for trade mentions:", error);
@@ -150,10 +151,18 @@ async function findTradeOwnerIds(
 
   const matchedTeams = [
     teams.find((team) =>
-      teamMatches(teamOne, team.team_name, team.team_abbr),
+      teamMatches(
+        teamOne,
+        [team.city, team.name].filter(Boolean).join(" "),
+        team.abbreviation,
+      ),
     ),
     teams.find((team) =>
-      teamMatches(teamTwo, team.team_name, team.team_abbr),
+      teamMatches(
+        teamTwo,
+        [team.city, team.name].filter(Boolean).join(" "),
+        team.abbreviation,
+      ),
     ),
   ];
 
@@ -240,110 +249,64 @@ async function generateTradeGrade({
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    console.warn("OPENAI_API_KEY is missing. Using fallback trade grades.");
+    console.error("OPENAI_API_KEY is missing in this deployment.");
     return fallbackGrade(teamOne, teamTwo);
   }
 
   const model =
-    process.env.OPENAI_TRADE_GRADING_MODEL || "gpt-4.1-mini";
+    process.env.OPENAI_TRADE_GRADING_MODEL || "gpt-4o-mini";
 
-  const schema = {
-    type: "object",
-    additionalProperties: false,
-    required: [
-      "teamOneGrade",
-      "teamTwoGrade",
-      "winner",
-      "verdict",
-      "teamOneReason",
-      "teamTwoReason",
-      "confidence",
-    ],
-    properties: {
-      teamOneGrade: {
-        type: "string",
-        enum: [
-          "A+",
-          "A",
-          "A-",
-          "B+",
-          "B",
-          "B-",
-          "C+",
-          "C",
-          "C-",
-          "D+",
-          "D",
-          "D-",
-          "F",
-        ],
-      },
-      teamTwoGrade: {
-        type: "string",
-        enum: [
-          "A+",
-          "A",
-          "A-",
-          "B+",
-          "B",
-          "B-",
-          "C+",
-          "C",
-          "C-",
-          "D+",
-          "D",
-          "D-",
-          "F",
-        ],
-      },
-      winner: {
-        type: "string",
-        enum: [teamOne, teamTwo, "Even"],
-      },
-      verdict: {
-        type: "string",
-      },
-      teamOneReason: {
-        type: "string",
-      },
-      teamTwoReason: {
-        type: "string",
-      },
-      confidence: {
-        type: "string",
-        enum: ["low", "medium", "high"],
-      },
-    },
-  };
-
-  const instructions = `You are the NEW ERA CFM trade analyst for a competitive Madden franchise league.
+  const systemPrompt = `You are the NEW ERA CFM trade analyst for a competitive Madden franchise league.
 
 Grade the submitted trade realistically and conservatively.
 
 Rules:
 - Evaluate positional value, player quality implied by recognizable NFL names, age/career stage when confidently known, scarcity, number of assets, and normal dynasty draft-pick value.
-- Quarterbacks are highly valuable, especially young starters.
+- Quarterbacks are extremely valuable, especially young franchise starters.
 - Premium positions such as QB, WR, edge rusher, CB, and offensive tackle generally carry more value.
-- Do not invent Madden overalls, development traits, contracts, abilities, injuries, or league standings.
-- Do not pretend to know custom roster changes that are not supplied.
+- Do not invent Madden overalls, development traits, contracts, abilities, injuries, team needs, or league standings.
+- Do not pretend to know custom roster changes that were not supplied.
 - When information is limited or a player is unfamiliar, lower confidence and keep the grades closer together.
 - Avoid rage-bait. A fair trade should usually produce grades from B- through B+.
 - Reserve A+/F gaps for clearly extreme value differences.
 - Reasons must be direct and no longer than two sentences each.
 - The verdict must be one short sentence.
-- winner must be exactly one team name provided or "Even".`;
+- Return ONLY a valid JSON object. Do not use markdown or code fences.
+
+Required JSON:
+{
+  "teamOneGrade": "A+ through F",
+  "teamTwoGrade": "A+ through F",
+  "winner": "${teamOne}" or "${teamTwo}" or "Even",
+  "verdict": "one short sentence",
+  "teamOneReason": "maximum two sentences",
+  "teamTwoReason": "maximum two sentences",
+  "confidence": "low" or "medium" or "high"
+}`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        instructions,
-        input: `TRADE:
+    const response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          response_format: {
+            type: "json_object",
+          },
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: `TRADE:
 
 ${teamOne} sends:
 ${teamOneSends}
@@ -351,20 +314,15 @@ ${teamOneSends}
 ${teamTwo} sends:
 ${teamTwoSends}
 
-Remember:
+Therefore:
 ${teamOne} receives ${teamTwoSends}.
 ${teamTwo} receives ${teamOneSends}.`,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "new_era_trade_grade",
-            strict: true,
-            schema,
-          },
-        },
-      }),
-      cache: "no-store",
-    });
+            },
+          ],
+        }),
+        cache: "no-store",
+      },
+    );
 
     const responseText = await response.text();
 
@@ -376,23 +334,20 @@ ${teamTwo} receives ${teamOneSends}.`,
     }
 
     const payload = JSON.parse(responseText) as {
-      output_text?: string;
-      output?: Array<{
-        content?: Array<{
-          type?: string;
-          text?: string;
-        }>;
+      choices?: Array<{
+        message?: {
+          content?: string | null;
+        };
       }>;
     };
 
-    const outputText =
-      payload.output_text ||
-      payload.output
-        ?.flatMap((item) => item.content || [])
-        .find((item) => item.type === "output_text")?.text;
+    const outputText = payload.choices?.[0]?.message?.content;
 
     if (!outputText) {
-      console.error("OpenAI returned no trade grade output.");
+      console.error(
+        "OpenAI trade grading returned no message content:",
+        responseText,
+      );
       return fallbackGrade(teamOne, teamTwo);
     }
 
