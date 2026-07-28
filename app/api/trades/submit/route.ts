@@ -17,8 +17,29 @@ type DiscordMessageResponse = {
   channel_id: string;
 };
 
+type TeamOwnerRow = {
+  team_name: string | null;
+  team_abbr: string | null;
+  members:
+    | {
+        discord_id: string | null;
+      }
+    | {
+        discord_id: string | null;
+      }[]
+    | null;
+};
+
 function cleanText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeTeam(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ");
 }
 
 function getBaseUrl(request: NextRequest): string {
@@ -36,24 +57,138 @@ function getBaseUrl(request: NextRequest): string {
   return request.nextUrl.origin;
 }
 
+function getOwnerDiscordId(team: TeamOwnerRow): string | null {
+  if (!team.members) {
+    return null;
+  }
+
+  const member = Array.isArray(team.members)
+    ? team.members[0] ?? null
+    : team.members;
+
+  return member?.discord_id?.trim() || null;
+}
+
+function teamMatches(
+  submittedTeam: string,
+  databaseTeamName: string | null,
+  databaseTeamAbbr: string | null,
+): boolean {
+  const submitted = normalizeTeam(submittedTeam);
+  const fullName = normalizeTeam(databaseTeamName || "");
+  const abbreviation = normalizeTeam(databaseTeamAbbr || "");
+
+  if (!submitted) {
+    return false;
+  }
+
+  if (submitted === fullName || submitted === abbreviation) {
+    return true;
+  }
+
+  const submittedWords = submitted.split(" ");
+  const databaseWords = fullName.split(" ");
+  const submittedNickname = submittedWords.at(-1);
+  const databaseNickname = databaseWords.at(-1);
+
+  return Boolean(
+    submittedNickname &&
+      databaseNickname &&
+      submittedNickname === databaseNickname,
+  );
+}
+
+async function findTradeOwnerIds(
+  teamOne: string,
+  teamTwo: string,
+): Promise<string[]> {
+  const { data, error } = await supabaseAdmin
+    .from("teams")
+    .select(
+      `
+        team_name,
+        team_abbr,
+        members:owner_member_id (
+          discord_id
+        )
+      `,
+    )
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("Unable to load team owners for trade mentions:", error);
+    return [];
+  }
+
+  const teams = (data || []) as TeamOwnerRow[];
+
+  const matchedTeams = [
+    teams.find((team) =>
+      teamMatches(teamOne, team.team_name, team.team_abbr),
+    ),
+    teams.find((team) =>
+      teamMatches(teamTwo, team.team_name, team.team_abbr),
+    ),
+  ];
+
+  return Array.from(
+    new Set(
+      matchedTeams
+        .map((team) => (team ? getOwnerDiscordId(team) : null))
+        .filter((discordId): discordId is string => Boolean(discordId)),
+    ),
+  );
+}
+
 function buildTradeCaption({
   teamOne,
   teamOneSends,
   teamTwo,
   teamTwoSends,
+  ownerDiscordIds,
 }: {
   teamOne: string;
   teamOneSends: string;
   teamTwo: string;
   teamTwoSends: string;
+  ownerDiscordIds: string[];
 }) {
-  return `BREAKING: The ${teamOne} and ${teamTwo} have agreed to a trade.
+  const ownerMentions =
+    ownerDiscordIds.length > 0
+      ? `\n${ownerDiscordIds.map((id) => `<@${id}>`).join(" ")}\n`
+      : "\n";
 
-${teamOne} receive ${teamTwoSends}.
+  return `@everyone
 
-${teamTwo} receive ${teamOneSends}.
+# BREAKING: OFFICIAL NEW ERA TRADE
+${ownerMentions}
+The **${teamOne}** and **${teamTwo}** have agreed to a trade.
+
+**${teamOne} receive**
+${teamTwoSends}
+
+**${teamTwo} receive**
+${teamOneSends}
 
 The deal has been approved by the NEW ERA trade committee and is now official.`;
+}
+
+async function downloadTradeGraphic(imageUrl: string): Promise<Blob> {
+  const imageResponse = await fetch(imageUrl, {
+    cache: "no-store",
+  });
+
+  if (!imageResponse.ok) {
+    const responseText = await imageResponse.text();
+
+    throw new Error(
+      `Trade graphic returned ${imageResponse.status}: ${
+        responseText || "Unknown image error"
+      }`,
+    );
+  }
+
+  return imageResponse.blob();
 }
 
 async function sendDiscordTradeAlert({
@@ -61,35 +196,47 @@ async function sendDiscordTradeAlert({
   channelId,
   caption,
   imageUrl,
+  tradeId,
+  ownerDiscordIds,
 }: {
   botToken: string;
   channelId: string;
   caption: string;
   imageUrl: string;
+  tradeId: string;
+  ownerDiscordIds: string[];
 }): Promise<DiscordMessageResponse> {
+  const imageBlob = await downloadTradeGraphic(imageUrl);
+  const filename = `new-era-trade-${tradeId}.png`;
+
+  const payload = {
+    content: caption,
+    allowed_mentions: {
+      parse: ["everyone"],
+      users: ownerDiscordIds,
+      replied_user: false,
+    },
+    attachments: [
+      {
+        id: 0,
+        filename,
+        description: "Official NEW ERA CFM trade graphic",
+      },
+    ],
+  };
+
+  const formData = new FormData();
+  formData.append("payload_json", JSON.stringify(payload));
+  formData.append("files[0]", imageBlob, filename);
+
   const response = await fetch(
     `https://discord.com/api/v10/channels/${channelId}/messages`,
     {
       method: "POST",
       headers: {
         Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        content: caption,
-        embeds: [
-          {
-            title: "NEW ERA INSIDER",
-            description: "Official league transaction",
-            image: {
-              url: imageUrl,
-            },
-          },
-        ],
-        allowed_mentions: {
-          parse: [],
-        },
-      }),
+      body: formData,
       cache: "no-store",
     },
   );
@@ -164,11 +311,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ownerDiscordIds = await findTradeOwnerIds(teamOne, teamTwo);
+
     const reportText = buildTradeCaption({
       teamOne,
       teamOneSends,
       teamTwo,
       teamTwoSends,
+      ownerDiscordIds,
     });
 
     const { data: trade, error: insertError } = await supabaseAdmin
@@ -206,6 +356,8 @@ export async function POST(request: NextRequest) {
         channelId: tradeAlertChannelId,
         caption: reportText,
         imageUrl,
+        tradeId: trade.id,
+        ownerDiscordIds,
       });
 
       const approvedAt = new Date().toISOString();
@@ -238,6 +390,7 @@ export async function POST(request: NextRequest) {
             trade,
             imageUrl,
             discordMessageId: discordMessage.id,
+            mentionedOwnerIds: ownerDiscordIds,
           },
           { status: 207 },
         );
@@ -248,6 +401,7 @@ export async function POST(request: NextRequest) {
           success: true,
           trade: publishedTrade,
           imageUrl,
+          mentionedOwnerIds: ownerDiscordIds,
         },
         { status: 201 },
       );
