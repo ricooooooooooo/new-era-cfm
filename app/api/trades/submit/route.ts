@@ -21,7 +21,22 @@ function cleanText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function buildTradeReport({
+function getBaseUrl(request: NextRequest): string {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return request.nextUrl.origin;
+}
+
+function buildTradeCaption({
   teamOne,
   teamOneSends,
   teamTwo,
@@ -34,11 +49,9 @@ function buildTradeReport({
 }) {
   return `BREAKING: The ${teamOne} and ${teamTwo} have agreed to a trade.
 
-${teamOne} receive:
-${teamTwoSends}
+${teamOne} receive ${teamTwoSends}.
 
-${teamTwo} receive:
-${teamOneSends}
+${teamTwo} receive ${teamOneSends}.
 
 The deal has been approved by the NEW ERA trade committee and is now official.`;
 }
@@ -46,11 +59,13 @@ The deal has been approved by the NEW ERA trade committee and is now official.`;
 async function sendDiscordTradeAlert({
   botToken,
   channelId,
-  reportText,
+  caption,
+  imageUrl,
 }: {
   botToken: string;
   channelId: string;
-  reportText: string;
+  caption: string;
+  imageUrl: string;
 }): Promise<DiscordMessageResponse> {
   const response = await fetch(
     `https://discord.com/api/v10/channels/${channelId}/messages`,
@@ -61,7 +76,16 @@ async function sendDiscordTradeAlert({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: reportText,
+        content: caption,
+        embeds: [
+          {
+            title: "NEW ERA INSIDER",
+            description: "Official league transaction",
+            image: {
+              url: imageUrl,
+            },
+          },
+        ],
         allowed_mentions: {
           parse: [],
         },
@@ -140,7 +164,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const reportText = buildTradeReport({
+    const reportText = buildTradeCaption({
       teamOne,
       teamOneSends,
       teamTwo,
@@ -174,11 +198,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const imageUrl = `${getBaseUrl(request)}/api/trades/${trade.id}/image`;
+
     try {
       const discordMessage = await sendDiscordTradeAlert({
         botToken,
         channelId: tradeAlertChannelId,
-        reportText,
+        caption: reportText,
+        imageUrl,
       });
 
       const approvedAt = new Date().toISOString();
@@ -188,6 +215,7 @@ export async function POST(request: NextRequest) {
         .update({
           status: "approved",
           approved_at: approvedAt,
+          graphic_url: imageUrl,
           discord_message_id: discordMessage.id,
           discord_channel_id: discordMessage.channel_id,
           updated_at: approvedAt,
@@ -208,6 +236,7 @@ export async function POST(request: NextRequest) {
             warning:
               "The trade posted to Discord, but its database status could not be updated.",
             trade,
+            imageUrl,
             discordMessageId: discordMessage.id,
           },
           { status: 207 },
@@ -218,6 +247,7 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           trade: publishedTrade,
+          imageUrl,
         },
         { status: 201 },
       );
