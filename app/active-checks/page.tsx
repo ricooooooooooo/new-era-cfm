@@ -1,5 +1,9 @@
 import ActiveCheckActions from "../components/ActiveCheckActions";
+import { NFL_TEAMS } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type TeamStatus = "checked" | "missing";
 
@@ -23,14 +27,9 @@ type EspnResponse = {
 };
 
 type ActiveCheckRow = {
-  discord_id: string;
   active_check_id: string;
+  team_slug: string | null;
   checked_in_at: string;
-};
-
-type OwnerRow = {
-  discord_id: string;
-  team: string | null;
 };
 
 async function getNflTeams(): Promise<EspnTeam[]> {
@@ -51,68 +50,146 @@ async function getNflTeams(): Promise<EspnTeam[]> {
     const data = (await response.json()) as EspnResponse;
 
     const teams =
-      data.sports?.[0]?.leagues?.[0]?.teams?.map((entry) => entry.team) ?? [];
+      data.sports?.[0]?.leagues?.[0]?.teams?.map(
+        (entry) => entry.team,
+      ) ?? [];
 
-    return teams.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    return teams.sort((a, b) =>
+      a.displayName.localeCompare(b.displayName),
+    );
   } catch (error) {
     console.error("Unable to load NFL teams:", error);
     return [];
   }
 }
 
+function getInternalTeamSlug(team: EspnTeam) {
+  const abbreviation =
+    team.abbreviation.trim().toUpperCase();
+
+  return (
+    NFL_TEAMS.find(
+      (nflTeam) =>
+        nflTeam.abbreviation.toUpperCase() ===
+        abbreviation,
+    )?.slug ?? null
+  );
+}
+
+async function discordMessageStillExists(
+  messageId: string,
+) {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const channelId =
+    process.env.DISCORD_ACTIVE_CHECK_CHANNEL_ID;
+
+  if (!botToken || !channelId) {
+    console.error(
+      "Missing Discord token or active-check channel ID.",
+    );
+    return true;
+  }
+
+  try {
+    const response = await fetch(
+      `https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`,
+      {
+        headers: {
+          Authorization: `Bot ${botToken}`,
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (response.status === 404) {
+      return false;
+    }
+
+    if (!response.ok) {
+      console.error(
+        `Unable to verify Discord active-check message ${messageId}:`,
+        response.status,
+      );
+
+      return true;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "Unable to verify Discord active-check message:",
+      error,
+    );
+
+    return true;
+  }
+}
+
 async function getCheckedInTeams(): Promise<Set<string>> {
-  const { data: latestCheck, error: latestCheckError } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("active_check_clicks")
-    .select("active_check_id, checked_in_at")
+    .select(
+      "active_check_id, team_slug, checked_in_at",
+    )
+    .not("team_slug", "is", null)
     .order("checked_in_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(500);
 
-  if (latestCheckError || !latestCheck) {
-    if (latestCheckError) {
-      console.error("Unable to load latest active check:", latestCheckError);
-    }
-
+  if (error) {
+    console.error(
+      "Unable to load active-check responses:",
+      error,
+    );
     return new Set();
   }
 
-  const [
-    { data: checkIns, error: checkInsError },
-    { data: owners, error: ownersError },
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("active_check_clicks")
-      .select("discord_id, active_check_id, checked_in_at")
-      .eq("active_check_id", latestCheck.active_check_id),
-    supabaseAdmin.from("owners").select("discord_id, team"),
-  ]);
+  const rows = (data ?? []) as ActiveCheckRow[];
 
-  if (checkInsError || ownersError) {
-    if (checkInsError) {
-      console.error("Unable to load active-check responses:", checkInsError);
-    }
-
-    if (ownersError) {
-      console.error("Unable to load owners:", ownersError);
-    }
-
-    return new Set();
-  }
-
-  const ownerMap = new Map(
-    ((owners ?? []) as OwnerRow[])
-      .filter((owner) => owner.team)
-      .map((owner) => [
-        owner.discord_id,
-        owner.team!.trim().toUpperCase(),
-      ]),
+  const activeCheckIds = Array.from(
+    new Set(
+      rows
+        .map((row) => row.active_check_id)
+        .filter(Boolean),
+    ),
   );
 
-  const checkedTeams = ((checkIns ?? []) as ActiveCheckRow[])
-    .map((checkIn) => ownerMap.get(checkIn.discord_id))
-    .filter((team): team is string => Boolean(team));
+  for (const activeCheckId of activeCheckIds) {
+    const messageExists =
+      await discordMessageStillExists(activeCheckId);
 
-  return new Set(checkedTeams);
+    if (!messageExists) {
+      const { error: deleteError } = await supabaseAdmin
+        .from("active_check_clicks")
+        .delete()
+        .eq("active_check_id", activeCheckId);
+
+      if (deleteError) {
+        console.error(
+          `Unable to clear deleted active check ${activeCheckId}:`,
+          deleteError,
+        );
+      }
+
+      continue;
+    }
+
+    return new Set(
+      rows
+        .filter(
+          (row) =>
+            row.active_check_id === activeCheckId,
+        )
+        .map((row) =>
+          row.team_slug?.trim().toLowerCase(),
+        )
+        .filter(
+          (teamSlug): teamSlug is string =>
+            Boolean(teamSlug),
+        ),
+    );
+  }
+
+  return new Set();
 }
 
 function TeamLogo({
@@ -128,7 +205,9 @@ function TeamLogo({
   return (
     <div
       title={`${team.displayName} — ${
-        isChecked ? "Checked in" : "Has not checked in"
+        isChecked
+          ? "Checked in"
+          : "Has not checked in"
       }`}
       className="group flex flex-col items-center gap-2"
     >
@@ -149,7 +228,9 @@ function TeamLogo({
             className={[
               "h-full w-full object-contain transition duration-200",
               "group-hover:scale-110",
-              isChecked ? "" : "opacity-45 grayscale",
+              isChecked
+                ? ""
+                : "opacity-45 grayscale",
             ].join(" ")}
             loading="lazy"
           />
@@ -162,7 +243,9 @@ function TeamLogo({
         <span
           className={[
             "absolute right-2 top-2 h-3 w-3 rounded-full border-2 border-[#111214]",
-            isChecked ? "bg-emerald-400" : "bg-red-500",
+            isChecked
+              ? "bg-emerald-400"
+              : "bg-red-500",
           ].join(" ")}
         />
       </div>
@@ -191,7 +274,9 @@ function TeamSection({
     <section
       className={[
         "overflow-hidden rounded-3xl border bg-[#0d0e10]",
-        isChecked ? "border-emerald-500/20" : "border-red-500/20",
+        isChecked
+          ? "border-emerald-500/20"
+          : "border-red-500/20",
       ].join(" ")}
     >
       <div
@@ -208,21 +293,27 @@ function TeamSection({
             <span
               className={[
                 "h-3 w-3 rounded-full",
-                isChecked ? "bg-emerald-400" : "bg-red-500",
+                isChecked
+                  ? "bg-emerald-400"
+                  : "bg-red-500",
               ].join(" ")}
             />
 
             <h2
               className={[
                 "text-xl font-black uppercase tracking-wide",
-                isChecked ? "text-emerald-400" : "text-red-400",
+                isChecked
+                  ? "text-emerald-400"
+                  : "text-red-400",
               ].join(" ")}
             >
               {title}
             </h2>
           </div>
 
-          <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {subtitle}
+          </p>
         </div>
 
         <div
@@ -240,7 +331,11 @@ function TeamSection({
 
       <div className="grid grid-cols-4 gap-4 p-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
         {teams.map((team) => (
-          <TeamLogo key={team.id} team={team} status={status} />
+          <TeamLogo
+            key={team.id}
+            team={team}
+            status={status}
+          />
         ))}
       </div>
     </section>
@@ -248,25 +343,38 @@ function TeamSection({
 }
 
 export default async function ActiveChecksPage() {
-  const [teams, checkedInTeams] = await Promise.all([
-    getNflTeams(),
-    getCheckedInTeams(),
-  ]);
+  const [teams, checkedInTeams] =
+    await Promise.all([
+      getNflTeams(),
+      getCheckedInTeams(),
+    ]);
 
-  const checkedTeams = teams.filter((team) =>
-    checkedInTeams.has(team.abbreviation),
-  );
+  const checkedTeams = teams.filter((team) => {
+    const teamSlug = getInternalTeamSlug(team);
 
-  const missingTeams = teams.filter(
-    (team) => !checkedInTeams.has(team.abbreviation),
-  );
+    return teamSlug
+      ? checkedInTeams.has(teamSlug)
+      : false;
+  });
 
-  const responseTotal = checkedTeams.length + missingTeams.length;
+  const missingTeams = teams.filter((team) => {
+    const teamSlug = getInternalTeamSlug(team);
+
+    return teamSlug
+      ? !checkedInTeams.has(teamSlug)
+      : true;
+  });
+
+  const responseTotal =
+    checkedTeams.length + missingTeams.length;
 
   const completionPercentage =
     responseTotal === 0
       ? 0
-      : Math.round((checkedTeams.length / responseTotal) * 100);
+      : Math.round(
+          (checkedTeams.length / responseTotal) *
+            100,
+        );
 
   return (
     <main className="min-h-screen bg-[#08090a] text-white">
@@ -283,7 +391,8 @@ export default async function ActiveChecksPage() {
               </h1>
 
               <p className="mt-3 text-zinc-400">
-                Current check-in status for all 32 teams.
+                Current check-in status for all 32
+                teams.
               </p>
             </div>
 
@@ -293,7 +402,8 @@ export default async function ActiveChecksPage() {
           <div className="border-t border-zinc-800 px-6 py-5 lg:px-8">
             <div className="mb-3 flex items-center justify-between text-sm">
               <span className="font-bold text-zinc-300">
-                {checkedTeams.length} of {responseTotal} checked in
+                {checkedTeams.length} of{" "}
+                {responseTotal} checked in
               </span>
 
               <span className="font-black text-emerald-400">
@@ -319,7 +429,8 @@ export default async function ActiveChecksPage() {
             </h2>
 
             <p className="mt-2 text-sm text-zinc-400">
-              Refresh the page and make sure the deployment can access ESPN.
+              Refresh the page and make sure the
+              deployment can access ESPN.
             </p>
           </div>
         ) : (

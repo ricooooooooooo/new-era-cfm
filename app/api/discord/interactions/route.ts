@@ -1,4 +1,6 @@
-import { supabaseAdmin } from "@/lib/supabase-admin";import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
+import { NextRequest, NextResponse } from "next/server";
 import nacl from "tweetnacl";
 
 export const runtime = "nodejs";
@@ -10,10 +12,16 @@ const RESPONSE_PONG = 1;
 const RESPONSE_CHANNEL_MESSAGE = 4;
 const RESPONSE_UPDATE_MESSAGE = 7;
 
+const EMPTY_CHECK_IN_MESSAGES = new Set([
+  "no one has checked in yet.",
+  "no owners have checked in yet.",
+  "no teams have checked in yet.",
+]);
+
 function verifyDiscordRequest(
   rawBody: string,
   signature: string | null,
-  timestamp: string | null
+  timestamp: string | null,
 ) {
   const publicKey = process.env.DISCORD_PUBLIC_KEY;
 
@@ -25,7 +33,7 @@ function verifyDiscordRequest(
     return nacl.sign.detached.verify(
       Buffer.from(timestamp + rawBody),
       Buffer.from(signature, "hex"),
-      Buffer.from(publicKey, "hex")
+      Buffer.from(publicKey, "hex"),
     );
   } catch (error) {
     console.error("Discord signature verification failed:", error);
@@ -34,12 +42,24 @@ function verifyDiscordRequest(
 }
 
 function parseCheckedInNames(value: string | undefined) {
-  if (!value || value === "No one has checked in yet.") {
+  if (!value) {
     return [];
   }
 
   return value
     .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (!line) {
+        return false;
+      }
+
+      if (EMPTY_CHECK_IN_MESSAGES.has(line.toLowerCase())) {
+        return false;
+      }
+
+      return line.startsWith("✅");
+    })
     .map((line) => line.replace(/^✅\s*/, "").trim())
     .filter(Boolean);
 }
@@ -52,7 +72,7 @@ export async function POST(request: NextRequest) {
   const validRequest = verifyDiscordRequest(
     rawBody,
     signature,
-    timestamp
+    timestamp,
   );
 
   if (!validRequest) {
@@ -70,7 +90,9 @@ export async function POST(request: NextRequest) {
       {
         error: "Invalid JSON body.",
       },
-      { status: 400 }
+      {
+        status: 400,
+      },
     );
   }
 
@@ -96,89 +118,175 @@ export async function POST(request: NextRequest) {
       discordUser?.username ||
       "Unknown User";
 
+    if (!userId) {
+      return NextResponse.json({
+        type: RESPONSE_CHANNEL_MESSAGE,
+        data: {
+          content:
+            "Your Discord account could not be identified. Please try again.",
+          flags: 64,
+        },
+      });
+    }
+
+    const teamSync = await syncDiscordTeamAssignment(userId);
+
+    if (!teamSync.team) {
+      return NextResponse.json({
+        type: RESPONSE_CHANNEL_MESSAGE,
+        data: {
+          content:
+            "You don't currently have an NFL team role. Contact a commissioner.",
+          flags: 64,
+        },
+      });
+    }
+
+    const teamSlug = teamSync.team;
+
+    const prettyTeam =
+      teamSync.roleNames.find((roleName) =>
+        roleName.toLowerCase().includes(teamSlug),
+      ) ??
+      teamSlug
+        .split("-")
+        .map(
+          (word) =>
+            word.charAt(0).toUpperCase() + word.slice(1),
+        )
+        .join(" ");
+
     const currentEmbed = interaction.message?.embeds?.[0];
 
     const checkedInField = currentEmbed?.fields?.find(
       (field: { name?: string }) =>
-        field.name?.includes("Checked In")
+        field.name?.includes("Checked In"),
     );
 
-    const checkedInNames = parseCheckedInNames(
-      checkedInField?.value
+    const checkedInTeams = parseCheckedInNames(
+      checkedInField?.value,
     );
-const activeCheckId =
-  interaction.message?.id ??
-  interaction.message?.interaction_metadata?.id ??
-  "default";
-    const mention = userId ? `<@${userId}>` : displayName;
 
-    const alreadyCheckedIn = checkedInNames.some(
-      (name) =>
-        name.toLowerCase().includes(displayName.toLowerCase()) ||
-        (userId && name.includes(`<@${userId}>`))
+    const activeCheckId =
+      interaction.message?.id ??
+      interaction.message?.interaction_metadata?.id ??
+      "default";
+
+    const alreadyCheckedIn = checkedInTeams.some(
+      (team) =>
+        team.toLowerCase() === prettyTeam.toLowerCase(),
     );
 
     if (alreadyCheckedIn) {
       return NextResponse.json({
         type: RESPONSE_CHANNEL_MESSAGE,
         data: {
-          content: `✅ **${displayName}**, you already checked in.`,
+          content: `✅ **${displayName}**, your team already checked in.`,
           flags: 64,
         },
       });
     }
-const { data, error } = await supabaseAdmin
-  .from("active_check_clicks")
-  .upsert(
-    {
-      discord_id: userId,
-      display_name: displayName,
-      active_check_id: activeCheckId,
-      checked_in_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "discord_id,active_check_id",
-    }
-  );
 
-console.log("Supabase data:", data);
-console.log("Supabase error:", error);
-    const updatedCheckedInNames = [
-      ...checkedInNames,
-      `${displayName} — ${mention}`,
+    const { error } = await supabaseAdmin
+      .from("active_check_clicks")
+      .upsert(
+        {
+          discord_id: userId,
+          display_name: displayName,
+          team_slug: teamSlug,
+          team_name: prettyTeam,
+          active_check_id: activeCheckId,
+          checked_in_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "active_check_id,team_slug",
+        },
+      );
+
+    if (error) {
+      console.error(
+        "Unable to save active check response:",
+        error,
+      );
+
+      return NextResponse.json({
+        type: RESPONSE_CHANNEL_MESSAGE,
+        data: {
+          content:
+            "Your response could not be saved. Please try again.",
+          flags: 64,
+        },
+      });
+    }
+
+    const updatedCheckedInTeams = [
+      ...checkedInTeams,
+      prettyTeam,
     ];
 
-    const checkedInValue = updatedCheckedInNames
-      .map((name) => `✅ ${name}`)
+    const checkedInValue = updatedCheckedInTeams
+      .map((team) => `✅ ${team}`)
       .join("\n");
+
+    const existingFields = Array.isArray(
+      currentEmbed?.fields,
+    )
+      ? currentEmbed.fields.filter(
+          (field: { name?: string }) =>
+            !field.name?.includes("Checked In"),
+        )
+      : [];
 
     return NextResponse.json({
       type: RESPONSE_UPDATE_MESSAGE,
       data: {
-        content: interaction.message?.content || "@everyone",
+        content:
+          interaction.message?.content || "@everyone",
+
         allowed_mentions: {
           parse: [],
         },
+
         embeds: [
           {
-            title: "🏈 New Era CFM Active Check",
+            title:
+              currentEmbed?.title ||
+              "🏈 NEW ERA CFM Activity Check",
+
             description:
-              "Click **I’m Active** below to confirm that you are active in the league.",
-            color: 0x22c55e,
+              currentEmbed?.description ||
+              "Click **I'm Active** below to confirm your activity.",
+
+            color:
+              currentEmbed?.color ??
+              0x7c3aed,
+
             fields: [
+              ...existingFields,
               {
-                name: `✅ Checked In — ${updatedCheckedInNames.length}`,
+                name: `🏈 Teams Checked In — ${updatedCheckedInTeams.length}`,
                 value: checkedInValue,
               },
             ],
-            footer: {
-              text: "New Era CFM • Staff can view this list",
-            },
+
+            footer:
+              currentEmbed?.footer || {
+                text:
+                  "NEW ERA CFM • Commissioner Activity Center",
+              },
+
             timestamp:
-              currentEmbed?.timestamp || new Date().toISOString(),
+              currentEmbed?.timestamp ||
+              new Date().toISOString(),
+
+            thumbnail: currentEmbed?.thumbnail,
+            image: currentEmbed?.image,
+            author: currentEmbed?.author,
           },
         ],
-        components: interaction.message?.components || [],
+
+        components:
+          interaction.message?.components || [],
       },
     });
   }

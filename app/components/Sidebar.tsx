@@ -357,25 +357,25 @@ export default function Sidebar({
             );
           })}
 
-        <div className="mt-auto pt-8">
-          <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
-                League Status
-              </p>
+     <div className="mt-auto pt-8">
+  <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4">
+    <div className="flex items-center justify-between">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-purple-300">
+        League Status
+      </p>
 
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
-            </div>
+      <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.85)]" />
+    </div>
 
-            <h2 className="mt-3 text-xl font-black text-white">
-              Healthy
-            </h2>
+    <h2 className="mt-3 text-xl font-black text-white">
+      Live Data
+    </h2>
 
-            <p className="mt-1 text-sm text-zinc-500">
-              32 / 32 Owners Active
-            </p>
-          </div>
-        </div>
+    <p className="mt-1 text-sm text-zinc-500">
+      League health updates will appear once Season 1 begins.
+    </p>
+  </div>
+</div>
       </aside>
     </>
   );
