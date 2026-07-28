@@ -30,6 +30,32 @@ type TeamOwnerRow = {
     | null;
 };
 
+type TradeGrade = {
+  teamOneGrade: string;
+  teamTwoGrade: string;
+  winner: string;
+  verdict: string;
+  teamOneReason: string;
+  teamTwoReason: string;
+  confidence: "low" | "medium" | "high";
+};
+
+const VALID_GRADES = new Set([
+  "A+",
+  "A",
+  "A-",
+  "B+",
+  "B",
+  "B-",
+  "C+",
+  "C",
+  "C-",
+  "D+",
+  "D",
+  "D-",
+  "F",
+]);
+
 function cleanText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -140,23 +166,271 @@ async function findTradeOwnerIds(
   );
 }
 
+function fallbackGrade(
+  teamOne: string,
+  teamTwo: string,
+): TradeGrade {
+  return {
+    teamOneGrade: "B",
+    teamTwoGrade: "B",
+    winner: "Even",
+    verdict: "A balanced deal based on the submitted assets.",
+    teamOneReason: `${teamOne} filled a need without receiving an obviously unfair return.`,
+    teamTwoReason: `${teamTwo} received comparable value based on the information submitted.`,
+    confidence: "low",
+  };
+}
+
+function sanitizeGrade(
+  value: unknown,
+  fallback: string,
+): string {
+  const grade = cleanText(value).toUpperCase();
+  return VALID_GRADES.has(grade) ? grade : fallback;
+}
+
+function sanitizeAnalysis(
+  value: unknown,
+  teamOne: string,
+  teamTwo: string,
+): TradeGrade {
+  const fallback = fallbackGrade(teamOne, teamTwo);
+
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  const raw = value as Record<string, unknown>;
+  const winner = cleanText(raw.winner);
+
+  return {
+    teamOneGrade: sanitizeGrade(raw.teamOneGrade, fallback.teamOneGrade),
+    teamTwoGrade: sanitizeGrade(raw.teamTwoGrade, fallback.teamTwoGrade),
+    winner:
+      winner === teamOne || winner === teamTwo || winner === "Even"
+        ? winner
+        : "Even",
+    verdict: cleanText(raw.verdict).slice(0, 220) || fallback.verdict,
+    teamOneReason:
+      cleanText(raw.teamOneReason).slice(0, 260) ||
+      fallback.teamOneReason,
+    teamTwoReason:
+      cleanText(raw.teamTwoReason).slice(0, 260) ||
+      fallback.teamTwoReason,
+    confidence:
+      raw.confidence === "high" ||
+      raw.confidence === "medium" ||
+      raw.confidence === "low"
+        ? raw.confidence
+        : "low",
+  };
+}
+
+async function generateTradeGrade({
+  teamOne,
+  teamOneSends,
+  teamTwo,
+  teamTwoSends,
+}: {
+  teamOne: string;
+  teamOneSends: string;
+  teamTwo: string;
+  teamTwoSends: string;
+}): Promise<TradeGrade> {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    console.warn("OPENAI_API_KEY is missing. Using fallback trade grades.");
+    return fallbackGrade(teamOne, teamTwo);
+  }
+
+  const model =
+    process.env.OPENAI_TRADE_GRADING_MODEL || "gpt-4.1-mini";
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "teamOneGrade",
+      "teamTwoGrade",
+      "winner",
+      "verdict",
+      "teamOneReason",
+      "teamTwoReason",
+      "confidence",
+    ],
+    properties: {
+      teamOneGrade: {
+        type: "string",
+        enum: [
+          "A+",
+          "A",
+          "A-",
+          "B+",
+          "B",
+          "B-",
+          "C+",
+          "C",
+          "C-",
+          "D+",
+          "D",
+          "D-",
+          "F",
+        ],
+      },
+      teamTwoGrade: {
+        type: "string",
+        enum: [
+          "A+",
+          "A",
+          "A-",
+          "B+",
+          "B",
+          "B-",
+          "C+",
+          "C",
+          "C-",
+          "D+",
+          "D",
+          "D-",
+          "F",
+        ],
+      },
+      winner: {
+        type: "string",
+        enum: [teamOne, teamTwo, "Even"],
+      },
+      verdict: {
+        type: "string",
+      },
+      teamOneReason: {
+        type: "string",
+      },
+      teamTwoReason: {
+        type: "string",
+      },
+      confidence: {
+        type: "string",
+        enum: ["low", "medium", "high"],
+      },
+    },
+  };
+
+  const instructions = `You are the NEW ERA CFM trade analyst for a competitive Madden franchise league.
+
+Grade the submitted trade realistically and conservatively.
+
+Rules:
+- Evaluate positional value, player quality implied by recognizable NFL names, age/career stage when confidently known, scarcity, number of assets, and normal dynasty draft-pick value.
+- Quarterbacks are highly valuable, especially young starters.
+- Premium positions such as QB, WR, edge rusher, CB, and offensive tackle generally carry more value.
+- Do not invent Madden overalls, development traits, contracts, abilities, injuries, or league standings.
+- Do not pretend to know custom roster changes that are not supplied.
+- When information is limited or a player is unfamiliar, lower confidence and keep the grades closer together.
+- Avoid rage-bait. A fair trade should usually produce grades from B- through B+.
+- Reserve A+/F gaps for clearly extreme value differences.
+- Reasons must be direct and no longer than two sentences each.
+- The verdict must be one short sentence.
+- winner must be exactly one team name provided or "Even".`;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        instructions,
+        input: `TRADE:
+
+${teamOne} sends:
+${teamOneSends}
+
+${teamTwo} sends:
+${teamTwoSends}
+
+Remember:
+${teamOne} receives ${teamTwoSends}.
+${teamTwo} receives ${teamOneSends}.`,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "new_era_trade_grade",
+            strict: true,
+            schema,
+          },
+        },
+      }),
+      cache: "no-store",
+    });
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      console.error(
+        `OpenAI trade grading returned ${response.status}: ${responseText}`,
+      );
+      return fallbackGrade(teamOne, teamTwo);
+    }
+
+    const payload = JSON.parse(responseText) as {
+      output_text?: string;
+      output?: Array<{
+        content?: Array<{
+          type?: string;
+          text?: string;
+        }>;
+      }>;
+    };
+
+    const outputText =
+      payload.output_text ||
+      payload.output
+        ?.flatMap((item) => item.content || [])
+        .find((item) => item.type === "output_text")?.text;
+
+    if (!outputText) {
+      console.error("OpenAI returned no trade grade output.");
+      return fallbackGrade(teamOne, teamTwo);
+    }
+
+    return sanitizeAnalysis(
+      JSON.parse(outputText) as unknown,
+      teamOne,
+      teamTwo,
+    );
+  } catch (error) {
+    console.error("Trade grading failed:", error);
+    return fallbackGrade(teamOne, teamTwo);
+  }
+}
+
 function buildTradeCaption({
   teamOne,
   teamOneSends,
   teamTwo,
   teamTwoSends,
   ownerDiscordIds,
+  analysis,
 }: {
   teamOne: string;
   teamOneSends: string;
   teamTwo: string;
   teamTwoSends: string;
   ownerDiscordIds: string[];
+  analysis: TradeGrade;
 }) {
   const ownerMentions =
     ownerDiscordIds.length > 0
       ? `\n${ownerDiscordIds.map((id) => `<@${id}>`).join(" ")}\n`
       : "\n";
+
+  const winnerLine =
+    analysis.winner === "Even"
+      ? "**Analyst verdict:** Even trade"
+      : `**Analyst winner:** ${analysis.winner}`;
 
   return `@everyone
 
@@ -169,6 +443,18 @@ ${teamTwoSends}
 
 **${teamTwo} receive**
 ${teamOneSends}
+
+## NEW ERA TRADE GRADES
+
+**${teamOne}: ${analysis.teamOneGrade}**
+${analysis.teamOneReason}
+
+**${teamTwo}: ${analysis.teamTwoGrade}**
+${analysis.teamTwoReason}
+
+${winnerLine}
+
+*${analysis.verdict}*
 
 The deal has been approved by the NEW ERA trade committee and is now official.`;
 }
@@ -210,7 +496,7 @@ async function sendDiscordTradeAlert({
   const filename = `new-era-trade-${tradeId}.png`;
 
   const payload = {
-    content: caption,
+    content: caption.slice(0, 2000),
     allowed_mentions: {
       parse: ["everyone"],
       users: ownerDiscordIds,
@@ -311,7 +597,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ownerDiscordIds = await findTradeOwnerIds(teamOne, teamTwo);
+    const [ownerDiscordIds, analysis] = await Promise.all([
+      findTradeOwnerIds(teamOne, teamTwo),
+      generateTradeGrade({
+        teamOne,
+        teamOneSends,
+        teamTwo,
+        teamTwoSends,
+      }),
+    ]);
 
     const reportText = buildTradeCaption({
       teamOne,
@@ -319,7 +613,10 @@ export async function POST(request: NextRequest) {
       teamTwo,
       teamTwoSends,
       ownerDiscordIds,
+      analysis,
     });
+
+    const analysisGeneratedAt = new Date().toISOString();
 
     const { data: trade, error: insertError } = await supabaseAdmin
       .from("trades")
@@ -330,6 +627,8 @@ export async function POST(request: NextRequest) {
         team_two_sends: teamTwoSends,
         status: "pending",
         report_text: reportText,
+        trade_analysis: analysis,
+        analysis_generated_at: analysisGeneratedAt,
         source: "google_form",
         google_form_timestamp: googleFormTimestamp || null,
       })
