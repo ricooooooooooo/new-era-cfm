@@ -33,6 +33,9 @@ const leagueLinks = [
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
   { label: "Trade Center", href: "/trade-center" },
+  { label: "Predictions", href: "/predictions" },
+  { label: "My Wallet", href: "/wallet" },
+  { label: "NE Coin Leaderboard", href: "/leaderboard" },
   { label: "Apply for Staff", href: "/staff" },
 ];
 
@@ -51,6 +54,7 @@ const roleSections: Record<
       { label: "Manage Roles", href: "/commissioner/roles" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
+      { label: "Prediction Markets", href: "/commissioner/predictions" },
       { label: "Active Checks", href: "/active-checks" },
       { label: "Trade Administration", href: "/commissioner/trades" },
       { label: "Media Center", href: "/media" },
@@ -63,6 +67,7 @@ const roleSections: Record<
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
+      { label: "Prediction Markets", href: "/commissioner/predictions" },
       { label: "Active Checks", href: "/active-checks" },
       { label: "Trade Administration", href: "/commissioner/trades" },
     ],

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-admin";
 import { getStaffRole } from "../../../lib/staff";
+import { getOrCreateWallet } from "@/lib/db/wallet";
 
 type WebsiteRole =
   | "owner"
@@ -45,6 +46,9 @@ export async function GET(request: NextRequest) {
   try {
     const decodedUser = Buffer.from(encodedUser, "base64url").toString("utf8");
     const user = JSON.parse(decodedUser) as SavedDiscordUser;
+
+    // Automatically create a wallet the first time a user logs in.
+    await getOrCreateWallet(user.id);
 
     const environmentRole = getStaffRole(user.id);
 
