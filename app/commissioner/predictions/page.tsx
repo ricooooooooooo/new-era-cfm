@@ -35,6 +35,7 @@ export default function CommissionerPredictionsPage() {
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [creating, setCreating] = useState(false);
   const [gradingMarketId, setGradingMarketId] = useState<string | null>(null);
+  const [deletingMarketId, setDeletingMarketId] = useState<string | null>(null);
   const [selectedWinners, setSelectedWinners] = useState<Record<string, string>>(
     {}
   );
@@ -223,6 +224,69 @@ export default function CommissionerPredictionsPage() {
       );
     } finally {
       setGradingMarketId(null);
+    }
+  }
+
+
+  async function deleteMarket(market: PredictionMarket) {
+    if (deletingMarketId) return;
+
+    const confirmed = window.confirm(
+      market.status === "graded"
+        ? "Delete this prediction permanently?\n\nThis cannot be undone."
+        : "Delete this prediction?\n\nAll bets will be refunded automatically.\n\nThis cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    setDeletingMarketId(market.id);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch("/api/delete-market", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          marketId: market.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to delete market.");
+      }
+
+      setMarkets((current) =>
+        current.filter((existingMarket) => existingMarket.id !== market.id)
+      );
+
+      setSelectedWinners((current) => {
+        const next = { ...current };
+        delete next[market.id];
+        return next;
+      });
+
+      setMessage(
+        Number(data.totalRefunded ?? 0) > 0
+          ? `Prediction deleted. ${Number(
+              data.totalRefunded
+            ).toLocaleString()} NE Coin refunded.`
+          : "Prediction deleted successfully."
+      );
+
+      await loadWallet();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete market."
+      );
+    } finally {
+      setDeletingMarketId(null);
     }
   }
 
@@ -434,42 +498,59 @@ export default function CommissionerPredictionsPage() {
                         ) : null}
                       </div>
 
-                      {!isGraded ? (
-                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#181818] p-4">
-                          <select
-                            value={selectedWinners[market.id] ?? ""}
-                            onChange={(event) =>
-                              setSelectedWinners((current) => ({
-                                ...current,
-                                [market.id]: event.target.value,
-                              }))
-                            }
-                            className="w-full rounded-xl border border-white/10 bg-[#222222] px-4 py-3 text-white outline-none focus:border-purple-500"
-                          >
-                            <option value="">Choose winner</option>
-                            {(market.prediction_options ?? []).map((option) => (
-                              <option key={option.id} value={option.id}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                      <div className="w-full max-w-md space-y-3">
+                        {!isGraded ? (
+                          <div className="rounded-2xl border border-white/10 bg-[#181818] p-4">
+                            <select
+                              value={selectedWinners[market.id] ?? ""}
+                              onChange={(event) =>
+                                setSelectedWinners((current) => ({
+                                  ...current,
+                                  [market.id]: event.target.value,
+                                }))
+                              }
+                              className="w-full rounded-xl border border-white/10 bg-[#222222] px-4 py-3 text-white outline-none focus:border-purple-500"
+                            >
+                              <option value="">Choose winner</option>
+                              {(market.prediction_options ?? []).map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
 
-                          <button
-                            type="button"
-                            onClick={() => void gradeMarket(market.id)}
-                            disabled={isGrading}
-                            className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black uppercase tracking-wider hover:bg-emerald-500 disabled:opacity-60"
-                          >
-                            {isGrading
-                              ? "Grading & Paying..."
-                              : "Grade Winner & Pay"}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300">
-                          Settled and paid
-                        </div>
-                      )}
+                            <button
+                              type="button"
+                              onClick={() => void gradeMarket(market.id)}
+                              disabled={
+                                isGrading || deletingMarketId === market.id
+                              }
+                              className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black uppercase tracking-wider hover:bg-emerald-500 disabled:opacity-60"
+                            >
+                              {isGrading
+                                ? "Grading & Paying..."
+                                : "Grade Winner & Pay"}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center text-sm font-black text-emerald-300">
+                            Settled and paid
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => void deleteMarket(market)}
+                          disabled={
+                            deletingMarketId === market.id || isGrading
+                          }
+                          className="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-black uppercase tracking-wider text-red-300 hover:bg-red-500/20 disabled:opacity-60"
+                        >
+                          {deletingMarketId === market.id
+                            ? "Deleting..."
+                            : "Delete Market"}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
