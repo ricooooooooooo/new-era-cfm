@@ -33,9 +33,6 @@ const leagueLinks = [
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
   { label: "Trade Center", href: "/trade-center" },
-  { label: "Predictions", href: "/predictions" },
-  { label: "My Wallet", href: "/wallet" },
-  { label: "NE Coin Leaderboard", href: "/leaderboard" },
   { label: "Apply for Staff", href: "/staff" },
 ];
 
@@ -54,7 +51,6 @@ const roleSections: Record<
       { label: "Manage Roles", href: "/commissioner/roles" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
-      { label: "Prediction Markets", href: "/commissioner/predictions" },
       { label: "Active Checks", href: "/active-checks" },
       { label: "Trade Administration", href: "/commissioner/trades" },
       { label: "Media Center", href: "/media" },
@@ -67,7 +63,6 @@ const roleSections: Record<
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
-      { label: "Prediction Markets", href: "/commissioner/predictions" },
       { label: "Active Checks", href: "/active-checks" },
       { label: "Trade Administration", href: "/commissioner/trades" },
     ],
@@ -200,7 +195,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         aria-label="Main navigation"
-        className={`fixed inset-y-0 left-0 z-[90] flex w-[86vw] max-w-72 flex-col overflow-y-auto overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[22px_0_70px_rgba(0,0,0,0.62)] transition-transform duration-300 ease-out lg:w-72 lg:translate-x-0 lg:py-8 ${
+        className={`fixed left-0 top-0 z-[90] flex h-[100dvh] min-h-0 w-[86vw] max-w-72 touch-pan-y flex-col overflow-x-hidden overflow-y-scroll overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[22px_0_70px_rgba(0,0,0,0.62)] transition-transform duration-300 ease-out [-webkit-overflow-scrolling:touch] lg:w-72 lg:translate-x-0 lg:py-8 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
