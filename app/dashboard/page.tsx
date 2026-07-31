@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -103,6 +104,8 @@ export default async function DashboardPage() {
   }
 
   const teamPath = `/teams/${team.slug}`;
+
+  const teamLogo = `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${team.abbreviation}`;
 
   const teamStyles = {
     "--team-primary": team.primary,
@@ -241,13 +244,19 @@ export default async function DashboardPage() {
 
               <div className="flex items-center justify-center">
                 <div
-                  className="flex aspect-square w-full max-w-[260px] items-center justify-center rounded-[2rem] border border-white/15 text-7xl font-black shadow-2xl"
+                  className="relative flex aspect-square w-full max-w-[260px] items-center justify-center overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl"
                   style={{
                     background: `linear-gradient(145deg, ${team.primary}, #050606 70%)`,
                     boxShadow: `0 30px 90px ${team.primary}55`,
                   }}
                 >
-                  {team.abbreviation}
+                  <Image
+                    src={teamLogo}
+                    alt={`${team.city} ${team.name}`}
+                    fill
+                    unoptimized
+                    className="object-contain p-8"
+                  />
                 </div>
               </div>
             </div>
