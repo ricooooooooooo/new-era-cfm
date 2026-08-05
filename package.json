@@ -11,7 +11,8 @@
     "madden:import": "node scripts/import-madden-baseline.mjs",
     "madden:baseline": "npm run madden:scrape && npm run madden:import",
     "madden:verify": "node scripts/verify-madden-baseline.mjs",
-    "owners:check": "node --env-file=.env.local scripts/check-owner-connections.mjs"
+    "owners:check": "node --env-file=.env.local scripts/check-owner-connections.mjs",
+    "pot:verify": "node --env-file=.env.local scripts/verify-prize-pot.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
