@@ -49,6 +49,7 @@ const roleSections: Record<
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
+      { label: "Owner Connections", href: "/commissioner/owner-connections" },
       { label: "Manage Roles", href: "/commissioner/roles" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
@@ -62,6 +63,7 @@ const roleSections: Record<
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
       { label: "Manage Members", href: "/commissioner/members" },
+      { label: "Owner Connections", href: "/commissioner/owner-connections" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
       { label: "Manage Teams", href: "/commissioner/teams" },
       { label: "Active Checks", href: "/active-checks" },
