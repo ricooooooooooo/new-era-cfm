@@ -1,41 +1,19 @@
-import { notFound } from "next/navigation";
-import TeamPageShell, {
-  TeamDataPlaceholder,
-} from "@/app/components/team/TeamPageShell";
-import { getTeamBySlug } from "@/app/data/teams";
+import { notFound, redirect } from "next/navigation";
+import { findTeamBySlug } from "@/lib/nfl-teams";
 
-type SchedulePageProps = {
+type TeamSchedulePageProps = {
   params: Promise<{
     team: string;
   }>;
 };
 
-export default async function SchedulePage({ params }: SchedulePageProps) {
+export default async function TeamSchedulePage({
+  params,
+}: TeamSchedulePageProps) {
   const { team: teamSlug } = await params;
-  const team = getTeamBySlug(teamSlug);
+  const team = findTeamBySlug(teamSlug);
 
-  if (!team) {
-    notFound();
-  }
+  if (!team) notFound();
 
-  return (
-    <TeamPageShell team={team} activeTab="schedule">
-      <TeamDataPlaceholder
-        eyebrow="Team Schedule"
-        title="Schedule waiting for league sync"
-        description="Weekly opponents, home and away games, results, deadlines, primetime matchups, and playoff games will populate here."
-        items={[
-          "Regular Season",
-          "Home Games",
-          "Away Games",
-          "Completed Games",
-          "Upcoming Games",
-          "Primetime Games",
-          "Game Deadlines",
-          "Playoff Schedule",
-          "Final Scores",
-        ]}
-      />
-    </TeamPageShell>
-  );
+  redirect(`/schedule?team=${team.abbreviation}`);
 }

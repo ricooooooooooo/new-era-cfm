@@ -5,92 +5,173 @@ type SavedDiscordUser = {
   id: string;
 };
 
+function readUser(request: NextRequest): SavedDiscordUser | null {
+  try {
+    const encoded = request.cookies.get("new_era_discord_user")?.value;
+    if (!encoded) return null;
+
+    return JSON.parse(
+      Buffer.from(encoded, "base64url").toString("utf8"),
+    ) as SavedDiscordUser;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const encodedUser = request.cookies.get("new_era_discord_user")?.value;
+    const user = readUser(request);
 
-    if (!encodedUser) {
+    if (!user?.id) {
       return NextResponse.json(
         { error: "Not authenticated." },
-        { status: 401 }
+        { status: 401 },
       );
     }
-
-    const decodedUser = Buffer.from(encodedUser, "base64url").toString("utf8");
-    const user = JSON.parse(decodedUser) as SavedDiscordUser;
 
     const body = await request.json();
-
-    const marketId = body.marketId;
-    const optionId = body.optionId;
+    const marketId =
+      typeof body.marketId === "string" ? body.marketId.trim() : "";
+    const optionId =
+      typeof body.optionId === "string" ? body.optionId.trim() : "";
     const amount = Number(body.amount);
 
-    if (!marketId || !optionId || !amount || amount <= 0) {
+    if (
+      !marketId ||
+      !optionId ||
+      !Number.isInteger(amount) ||
+      amount <= 0
+    ) {
       return NextResponse.json(
-        { error: "Invalid bet." },
-        { status: 400 }
+        { error: "Enter a valid whole-number bet." },
+        { status: 400 },
       );
     }
 
-    const { data: wallet, error: walletError } = await supabaseAdmin
+    const marketResult = await supabaseAdmin
+      .from("prediction_markets")
+      .select("id, status, closes_at")
+      .eq("id", marketId)
+      .maybeSingle();
+
+    if (marketResult.error) throw marketResult.error;
+
+    if (!marketResult.data || marketResult.data.status !== "open") {
+      return NextResponse.json(
+        { error: "This market is not open." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      marketResult.data.closes_at &&
+      new Date(marketResult.data.closes_at).getTime() <= Date.now()
+    ) {
+      await supabaseAdmin
+        .from("prediction_markets")
+        .update({ status: "closed" })
+        .eq("id", marketId);
+
+      return NextResponse.json(
+        { error: "Betting has closed for this market." },
+        { status: 400 },
+      );
+    }
+
+    const optionResult = await supabaseAdmin
+      .from("prediction_options")
+      .select("id")
+      .eq("id", optionId)
+      .eq("market_id", marketId)
+      .maybeSingle();
+
+    if (optionResult.error) throw optionResult.error;
+
+    if (!optionResult.data) {
+      return NextResponse.json(
+        { error: "That option does not belong to this market." },
+        { status: 400 },
+      );
+    }
+
+    const walletResult = await supabaseAdmin
       .from("wallets")
-      .select("*")
+      .select("balance, lifetime_wagered")
       .eq("discord_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (walletError) throw walletError;
+    if (walletResult.error) throw walletResult.error;
 
-    if (wallet.balance < amount) {
+    if (!walletResult.data) {
+      return NextResponse.json(
+        { error: "Open your wallet once before placing a bet." },
+        { status: 400 },
+      );
+    }
+
+    if (Number(walletResult.data.balance ?? 0) < amount) {
       return NextResponse.json(
         { error: "Not enough NE Coin." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const newBalance = wallet.balance - amount;
+    const newBalance = Number(walletResult.data.balance) - amount;
 
-    const { error: updateError } = await supabaseAdmin
+    const walletUpdate = await supabaseAdmin
       .from("wallets")
       .update({
         balance: newBalance,
-        lifetime_wagered: wallet.lifetime_wagered + amount,
+        lifetime_wagered:
+          Number(walletResult.data.lifetime_wagered ?? 0) + amount,
       })
       .eq("discord_id", user.id);
 
-    if (updateError) throw updateError;
+    if (walletUpdate.error) throw walletUpdate.error;
 
-    const { error: betError } = await supabaseAdmin
+    const betResult = await supabaseAdmin
       .from("prediction_bets")
       .insert({
         discord_id: user.id,
         market_id: marketId,
         option_id: optionId,
         amount,
-      });
+        result: "pending",
+        payout: 0,
+      })
+      .select("id")
+      .single();
 
-    if (betError) throw betError;
+    if (betResult.error) throw betResult.error;
 
-    const { error: transactionError } = await supabaseAdmin
+    const transactionResult = await supabaseAdmin
       .from("wallet_transactions")
       .insert({
         discord_id: user.id,
         amount: -amount,
         type: "bet",
+        reference_id: `prediction-bet:${betResult.data.id}`,
         description: "Prediction Market Bet",
+        metadata: {
+          marketId,
+          optionId,
+          betId: betResult.data.id,
+        },
       });
 
-    if (transactionError) throw transactionError;
+    if (transactionResult.error) throw transactionResult.error;
 
     return NextResponse.json({
       success: true,
       balance: newBalance,
+      betId: betResult.data.id,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Failed to place prediction bet:", error);
 
     return NextResponse.json(
       { error: "Failed to place bet." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

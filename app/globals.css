@@ -132,3 +132,68 @@ a {
     display: none;
   }
 }
+
+/* NEW ERA mobile dashboard polish */
+@media (max-width: 640px) {
+  .dashboard-mobile-fix {
+    overflow-x: clip;
+  }
+
+  .dashboard-mobile-fix h1,
+  .dashboard-mobile-fix h2 {
+    max-width: 100%;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 0.98;
+  }
+
+  .dashboard-mobile-fix a,
+  .dashboard-mobile-fix button,
+  .dashboard-mobile-fix [role="button"] {
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.14);
+    transition:
+      opacity 90ms ease,
+      filter 90ms ease,
+      transform 90ms ease,
+      border-color 140ms ease,
+      background-color 140ms ease;
+  }
+
+  .dashboard-mobile-fix a:active,
+  .dashboard-mobile-fix button:active,
+  .dashboard-mobile-fix [role="button"]:active {
+    opacity: 0.78;
+    filter: brightness(1.18);
+    transform: scale(0.985);
+  }
+
+  .dashboard-mobile-fix [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  .dashboard-mobile-fix [class*="bg-fixed"] {
+    background-attachment: scroll !important;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  a,
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(124, 58, 237, 0.2);
+  }
+
+  a:active,
+  button:active,
+  [role="button"]:active {
+    opacity: 0.8;
+    filter: brightness(1.12);
+  }
+}

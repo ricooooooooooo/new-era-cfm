@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AppLayout from "@/app/components/layout/AppLayout";
 
 type PredictionOption = {
   id: string;
@@ -17,11 +17,29 @@ type PredictionMarket = {
   closes_at: string | null;
   winning_option: string | null;
   created_at: string;
+  auto_generated: boolean;
+  season: number | null;
+  week: number | null;
   prediction_options: PredictionOption[];
 };
 
-type WalletResponse = {
-  balance?: number;
+type AutomationResponse = {
+  settings: {
+    enabled: boolean;
+    auto_grade: boolean;
+    close_minutes_before: number;
+    templates: string[];
+    discord_post_enabled: boolean;
+  };
+  league: {
+    id: string;
+    season: number;
+    currentWeek: number;
+  };
+  counts: {
+    currentWeekGames: number;
+    currentWeekAutoMarkets: number;
+  };
 };
 
 export default function CommissionerPredictionsPage() {
@@ -31,13 +49,16 @@ export default function CommissionerPredictionsPage() {
   const [options, setOptions] = useState(["", ""]);
 
   const [markets, setMarkets] = useState<PredictionMarket[]>([]);
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [loadingMarkets, setLoadingMarkets] = useState(true);
+  const [automation, setAutomation] =
+    useState<AutomationResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [savingAutomation, setSavingAutomation] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [gradingMarketId, setGradingMarketId] = useState<string | null>(null);
   const [deletingMarketId, setDeletingMarketId] = useState<string | null>(null);
   const [selectedWinners, setSelectedWinners] = useState<Record<string, string>>(
-    {}
+    {},
   );
 
   const [message, setMessage] = useState("");
@@ -45,73 +66,153 @@ export default function CommissionerPredictionsPage() {
 
   const cleanOptions = useMemo(
     () => options.map((option) => option.trim()).filter(Boolean),
-    [options]
+    [options],
   );
 
-  const loadMarkets = useCallback(async () => {
-    setLoadingMarkets(true);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch("/api/prediction-markets", {
-        cache: "no-store",
+      const [marketsResponse, automationResponse] = await Promise.all([
+        fetch("/api/prediction-markets", { cache: "no-store" }),
+        fetch("/api/predictions/automation", { cache: "no-store" }),
+      ]);
+
+      const marketsData = await marketsResponse.json();
+      const automationData = await automationResponse.json();
+
+      if (!marketsResponse.ok) {
+        throw new Error(
+          marketsData.error ?? "Failed to load prediction markets.",
+        );
+      }
+
+      if (!automationResponse.ok) {
+        throw new Error(
+          automationData.error ?? "Failed to load market automation.",
+        );
+      }
+
+      setMarkets(Array.isArray(marketsData) ? marketsData : []);
+      setAutomation(automationData as AutomationResponse);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load prediction controls.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  function updateAutomation(
+    key: keyof AutomationResponse["settings"],
+    value: boolean | number | string[],
+  ) {
+    setAutomation((current) =>
+      current
+        ? {
+            ...current,
+            settings: {
+              ...current.settings,
+              [key]: value,
+            },
+          }
+        : current,
+    );
+  }
+
+  async function saveAutomation() {
+    if (!automation || savingAutomation) return;
+
+    setSavingAutomation(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch("/api/predictions/automation", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled: automation.settings.enabled,
+          autoGrade: automation.settings.auto_grade,
+          closeMinutesBefore:
+            automation.settings.close_minutes_before,
+          templates: automation.settings.templates,
+          discordPostEnabled:
+            automation.settings.discord_post_enabled,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Failed to load prediction markets.");
+        throw new Error(data.error ?? "Unable to save automation.");
       }
 
-      setMarkets(Array.isArray(data) ? data : []);
-    } catch (loadError) {
+      setMessage("Prediction automation settings saved.");
+      await loadData();
+    } catch (saveError) {
       setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Failed to load prediction markets."
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save automation.",
       );
     } finally {
-      setLoadingMarkets(false);
+      setSavingAutomation(false);
     }
-  }, []);
+  }
 
-  const loadWallet = useCallback(async () => {
+  async function generateCurrentWeek() {
+    if (!automation || generating) return;
+
+    setGenerating(true);
+    setMessage("");
+    setError("");
+
     try {
-      const response = await fetch("/api/wallet", {
-        cache: "no-store",
+      const response = await fetch("/api/predictions/automation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          season: automation.league.season,
+          week: automation.league.currentWeek,
+        }),
       });
 
-      const data = (await response.json()) as WalletResponse;
+      const data = await response.json();
 
-      if (response.ok && typeof data.balance === "number") {
-        setWalletBalance(data.balance);
+      if (!response.ok) {
+        throw new Error(data.error ?? "Unable to generate markets.");
       }
-    } catch {
-      setWalletBalance(null);
-    }
-  }, []);
 
-  useEffect(() => {
-    void loadMarkets();
-    void loadWallet();
-  }, [loadMarkets, loadWallet]);
+      setMessage(
+        `Week ${data.week}: ${data.createdMarkets} markets created and ${data.settledMarkets} settled.`,
+      );
+      await loadData();
+    } catch (generateError) {
+      setError(
+        generateError instanceof Error
+          ? generateError.message
+          : "Unable to generate markets.",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   function updateOption(index: number, value: string) {
     setOptions((current) =>
       current.map((option, optionIndex) =>
-        optionIndex === index ? value : option
-      )
+        optionIndex === index ? value : option,
+      ),
     );
-  }
-
-  function addOption() {
-    setOptions((current) => [...current, ""]);
-  }
-
-  function removeOption(index: number) {
-    setOptions((current) => {
-      if (current.length <= 2) return current;
-      return current.filter((_, optionIndex) => optionIndex !== index);
-    });
   }
 
   async function createMarket() {
@@ -120,13 +221,8 @@ export default function CommissionerPredictionsPage() {
     setMessage("");
     setError("");
 
-    if (!title.trim()) {
-      setError("Enter a market title.");
-      return;
-    }
-
-    if (cleanOptions.length < 2) {
-      setError("Add at least two valid options.");
+    if (!title.trim() || cleanOptions.length < 2) {
+      setError("Enter a title and at least two options.");
       return;
     }
 
@@ -135,9 +231,7 @@ export default function CommissionerPredictionsPage() {
     try {
       const response = await fetch("/api/prediction-markets", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
@@ -156,14 +250,13 @@ export default function CommissionerPredictionsPage() {
       setDescription("");
       setClosesAt("");
       setOptions(["", ""]);
-      setMessage("Market created successfully.");
-
-      await loadMarkets();
+      setMessage("Manual market created.");
+      await loadData();
     } catch (createError) {
       setError(
         createError instanceof Error
           ? createError.message
-          : "Failed to create market."
+          : "Failed to create market.",
       );
     } finally {
       setCreating(false);
@@ -171,36 +264,30 @@ export default function CommissionerPredictionsPage() {
   }
 
   async function gradeMarket(marketId: string) {
-    if (gradingMarketId) return;
-
     const optionId = selectedWinners[marketId];
 
-    setMessage("");
-    setError("");
-
-    if (!optionId) {
+    if (!optionId || gradingMarketId) {
       setError("Choose the winning option first.");
       return;
     }
 
-    const confirmed = window.confirm(
-      "Grade this market and immediately pay every winning bettor?"
-    );
-
-    if (!confirmed) return;
+    if (
+      !window.confirm(
+        "Grade this market and immediately pay every winning bettor?",
+      )
+    ) {
+      return;
+    }
 
     setGradingMarketId(marketId);
+    setMessage("");
+    setError("");
 
     try {
       const response = await fetch("/api/grade-market", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          marketId,
-          optionId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketId, optionId }),
       });
 
       const data = await response.json();
@@ -211,47 +298,41 @@ export default function CommissionerPredictionsPage() {
 
       setMessage(
         `Market graded. ${data.paidBets ?? 0} winning bets paid for ${Number(
-          data.totalPaid ?? 0
-        ).toLocaleString()} NE Coin.`
+          data.totalPaid ?? 0,
+        ).toLocaleString()} NE Coin.`,
       );
-
-      await Promise.all([loadMarkets(), loadWallet()]);
+      await loadData();
     } catch (gradeError) {
       setError(
         gradeError instanceof Error
           ? gradeError.message
-          : "Failed to grade market."
+          : "Failed to grade market.",
       );
     } finally {
       setGradingMarketId(null);
     }
   }
 
-
-  async function deleteMarket(market: PredictionMarket) {
+  async function deleteMarket(marketId: string) {
     if (deletingMarketId) return;
 
-    const confirmed = window.confirm(
-      market.status === "graded"
-        ? "Delete this prediction permanently?\n\nThis cannot be undone."
-        : "Delete this prediction?\n\nAll bets will be refunded automatically.\n\nThis cannot be undone."
-    );
+    if (
+      !window.confirm(
+        "Delete this market? Open bets will be refunded by the existing refund route.",
+      )
+    ) {
+      return;
+    }
 
-    if (!confirmed) return;
-
-    setDeletingMarketId(market.id);
+    setDeletingMarketId(marketId);
     setMessage("");
     setError("");
 
     try {
       const response = await fetch("/api/delete-market", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          marketId: market.id,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketId }),
       });
 
       const data = await response.json();
@@ -260,30 +341,17 @@ export default function CommissionerPredictionsPage() {
         throw new Error(data.error ?? "Failed to delete market.");
       }
 
-      setMarkets((current) =>
-        current.filter((existingMarket) => existingMarket.id !== market.id)
-      );
-
-      setSelectedWinners((current) => {
-        const next = { ...current };
-        delete next[market.id];
-        return next;
-      });
-
       setMessage(
-        Number(data.totalRefunded ?? 0) > 0
-          ? `Prediction deleted. ${Number(
-              data.totalRefunded
-            ).toLocaleString()} NE Coin refunded.`
-          : "Prediction deleted successfully."
+        `Market deleted. ${Number(
+          data.totalRefunded ?? 0,
+        ).toLocaleString()} NE Coin refunded.`,
       );
-
-      await loadWallet();
+      await loadData();
     } catch (deleteError) {
       setError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Failed to delete market."
+          : "Failed to delete market.",
       );
     } finally {
       setDeletingMarketId(null);
@@ -291,274 +359,384 @@ export default function CommissionerPredictionsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#070707] px-5 py-8 text-white sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <AppLayout>
+      <main className="min-h-[calc(100vh-8rem)] bg-[#050606] px-5 py-8 text-white sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl">
           <div>
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.3em] text-purple-400">
-              Commissioner Control
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+              Commissioner Sportsbook Control
             </p>
-
-            <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
-              Prediction Markets
+            <h1 className="mt-3 text-5xl font-black tracking-[-0.06em]">
+              Prediction Market Engine
             </h1>
-
-            <p className="mt-3 max-w-2xl text-sm text-zinc-400 sm:text-base">
-              Create markets, choose winners, and automatically pay members in
-              NE Coin.
+            <p className="mt-4 max-w-3xl text-zinc-400">
+              Madden schedule imports create one winner market per game,
+              close betting at kickoff and grade every final automatically.
             </p>
           </div>
 
-          <div className="flex w-fit items-center gap-3 rounded-2xl border border-amber-400/20 bg-[#121212] px-4 py-3">
-            <div className="relative h-11 w-11 overflow-hidden rounded-full">
-              <Image
-                src="/ne-coin.png"
-                alt="NE Coin"
-                fill
-                className="object-contain"
-                sizes="44px"
-                priority
-              />
+          {message ? (
+            <div className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-200">
+              {message}
             </div>
+          ) : null}
 
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Your Balance
-              </p>
-
-              <p className="text-2xl font-black">
-                {walletBalance === null
-                  ? "----"
-                  : walletBalance.toLocaleString()}
-              </p>
+          {error ? (
+            <div className="mt-6 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm font-bold text-red-200">
+              {error}
             </div>
-          </div>
-        </div>
+          ) : null}
 
-        {message ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-sm font-bold text-emerald-300">
-            {message}
-          </div>
-        ) : null}
+          {loading || !automation ? (
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center text-zinc-500">
+              Loading prediction controls...
+            </div>
+          ) : (
+            <>
+              <section className="mt-8 rounded-3xl border border-purple-400/20 bg-purple-400/[0.045] p-6 sm:p-8">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-200">
+                      Automatic Market Engine
+                    </p>
+                    <h2 className="mt-2 text-3xl font-black">
+                      Season {automation.league.season} • Week{" "}
+                      {automation.league.currentWeek}
+                    </h2>
+                  </div>
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-bold text-red-300">
-            {error}
-          </div>
-        ) : null}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-600">
+                        Games
+                      </p>
+                      <p className="mt-2 text-3xl font-black">
+                        {automation.counts.currentWeekGames}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-600">
+                        Auto Markets
+                      </p>
+                      <p className="mt-2 text-3xl font-black">
+                        {automation.counts.currentWeekAutoMarkets}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-        <section className="rounded-3xl border border-white/10 bg-[#111111] p-5 sm:p-7">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-400">
-            New Market
-          </p>
-          <h2 className="mt-2 text-2xl font-black">Create a Prediction</h2>
+                <div className="mt-7 grid gap-4 lg:grid-cols-2">
+                  {[
+                    {
+                      label: "Automatic game markets",
+                      description:
+                        "Create a winner market for every imported matchup.",
+                      checked: automation.settings.enabled,
+                      change: (checked: boolean) =>
+                        updateAutomation("enabled", checked),
+                    },
+                    {
+                      label: "Automatic final-score grading",
+                      description:
+                        "Pay winning bets when Madden reports the final score.",
+                      checked: automation.settings.auto_grade,
+                      change: (checked: boolean) =>
+                        updateAutomation("auto_grade", checked),
+                    },
+                    {
+                      label: "Discord weekly market post",
+                      description:
+                        "Post a batch announcement when new markets are created.",
+                      checked: automation.settings.discord_post_enabled,
+                      change: (checked: boolean) =>
+                        updateAutomation(
+                          "discord_post_enabled",
+                          checked,
+                        ),
+                    },
+                  ].map((item) => (
+                    <label
+                      key={item.label}
+                      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-black/25 p-4"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={(event) =>
+                          item.change(event.target.checked)
+                        }
+                        className="mt-1 h-4 w-4"
+                      />
+                      <span>
+                        <span className="block font-black">
+                          {item.label}
+                        </span>
+                        <span className="mt-1 block text-sm leading-6 text-zinc-500">
+                          {item.description}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
 
-          <div className="mt-6 grid gap-5">
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-zinc-300">
-                Market title
-              </span>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Who wins Ravens vs. Chiefs?"
-                className="w-full rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-purple-500"
-              />
-            </label>
+                  <label className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <span className="block font-black">
+                      Close before kickoff
+                    </span>
+                    <span className="mt-1 block text-sm text-zinc-500">
+                      Minutes before the scheduled game time.
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={
+                        automation.settings.close_minutes_before
+                      }
+                      onChange={(event) =>
+                        updateAutomation(
+                          "close_minutes_before",
+                          Number(event.target.value),
+                        )
+                      }
+                      className="mt-3 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-white outline-none focus:border-purple-400"
+                    />
+                  </label>
+                </div>
 
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-zinc-300">
-                Description
-              </span>
-              <textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Add any details members should know."
-                rows={3}
-                className="w-full resize-none rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-purple-500"
-              />
-            </label>
-
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-zinc-300">
-                Betting closes
-              </span>
-              <input
-                type="datetime-local"
-                value={closesAt}
-                onChange={(event) => setClosesAt(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none focus:border-purple-500"
-              />
-            </label>
-
-            <div className="grid gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-zinc-300">
-                  Betting options
-                </span>
-                <button
-                  type="button"
-                  onClick={addOption}
-                  className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-black text-purple-300"
-                >
-                  + Add Option
-                </button>
-              </div>
-
-              {options.map((option, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    value={option}
-                    onChange={(event) =>
-                      updateOption(index, event.target.value)
-                    }
-                    placeholder={`Option ${index + 1}`}
-                    className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-purple-500"
-                  />
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => void saveAutomation()}
+                    disabled={savingAutomation}
+                    className="rounded-xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-purple-500 disabled:opacity-50"
+                  >
+                    {savingAutomation
+                      ? "Saving..."
+                      : "Save Automation"}
+                  </button>
 
                   <button
                     type="button"
-                    onClick={() => removeOption(index)}
-                    disabled={options.length <= 2}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 font-black text-zinc-400 disabled:opacity-30"
+                    onClick={() => void generateCurrentWeek()}
+                    disabled={generating}
+                    className="rounded-xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-white/[0.1] disabled:opacity-50"
                   >
-                    ×
+                    {generating
+                      ? "Generating..."
+                      : "Generate Current Week Now"}
                   </button>
                 </div>
-              ))}
-            </div>
+              </section>
 
-            <button
-              type="button"
-              onClick={createMarket}
-              disabled={creating}
-              className="rounded-2xl bg-purple-600 px-5 py-4 text-sm font-black uppercase tracking-wider hover:bg-purple-500 disabled:opacity-60"
-            >
-              {creating ? "Creating Market..." : "Create Market"}
-            </button>
-          </div>
-        </section>
+              <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">
+                  Manual Backup
+                </p>
+                <h2 className="mt-2 text-3xl font-black">
+                  Create a Custom Market
+                </h2>
 
-        <section className="mt-8">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-400">
-                Market Control
-              </p>
-              <h2 className="mt-2 text-2xl font-black">Existing Markets</h2>
-            </div>
+                <div className="mt-6 grid gap-4">
+                  <input
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder="Market title"
+                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                  />
 
-            <button
-              type="button"
-              onClick={() => void loadMarkets()}
-              disabled={loadingMarkets}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-zinc-300 disabled:opacity-50"
-            >
-              Refresh
-            </button>
-          </div>
+                  <textarea
+                    value={description}
+                    onChange={(event) =>
+                      setDescription(event.target.value)
+                    }
+                    placeholder="Description"
+                    rows={3}
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                  />
 
-          {loadingMarkets ? (
-            <div className="rounded-3xl border border-white/10 bg-[#111111] p-8 text-center text-zinc-400">
-              Loading markets...
-            </div>
-          ) : markets.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-[#111111] p-10 text-center">
-              <p className="text-lg font-black">No prediction markets yet.</p>
-              <p className="mt-2 text-sm text-zinc-500">
-                Create your first test market above.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-5">
-              {markets.map((market) => {
-                const isGraded = market.status === "graded";
-                const isGrading = gradingMarketId === market.id;
+                  <input
+                    type="datetime-local"
+                    value={closesAt}
+                    onChange={(event) => setClosesAt(event.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none focus:border-purple-400"
+                  />
 
-                return (
-                  <article
-                    key={market.id}
-                    className="rounded-3xl border border-white/10 bg-[#111111] p-5 sm:p-6"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-xl font-black">
-                            {market.title}
-                          </h3>
-                          <span className="rounded-full bg-purple-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-purple-300">
-                            {market.status}
-                          </span>
-                        </div>
-
-                        {market.description ? (
-                          <p className="mt-2 text-sm text-zinc-400">
-                            {market.description}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="w-full max-w-md space-y-3">
-                        {!isGraded ? (
-                          <div className="rounded-2xl border border-white/10 bg-[#181818] p-4">
-                            <select
-                              value={selectedWinners[market.id] ?? ""}
-                              onChange={(event) =>
-                                setSelectedWinners((current) => ({
-                                  ...current,
-                                  [market.id]: event.target.value,
-                                }))
-                              }
-                              className="w-full rounded-xl border border-white/10 bg-[#222222] px-4 py-3 text-white outline-none focus:border-purple-500"
-                            >
-                              <option value="">Choose winner</option>
-                              {(market.prediction_options ?? []).map((option) => (
-                                <option key={option.id} value={option.id}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-
-                            <button
-                              type="button"
-                              onClick={() => void gradeMarket(market.id)}
-                              disabled={
-                                isGrading || deletingMarketId === market.id
-                              }
-                              className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black uppercase tracking-wider hover:bg-emerald-500 disabled:opacity-60"
-                            >
-                              {isGrading
-                                ? "Grading & Paying..."
-                                : "Grade Winner & Pay"}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center text-sm font-black text-emerald-300">
-                            Settled and paid
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => void deleteMarket(market)}
-                          disabled={
-                            deletingMarketId === market.id || isGrading
-                          }
-                          className="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-black uppercase tracking-wider text-red-300 hover:bg-red-500/20 disabled:opacity-60"
-                        >
-                          {deletingMarketId === market.id
-                            ? "Deleting..."
-                            : "Delete Market"}
-                        </button>
-                      </div>
+                  {options.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        value={option}
+                        onChange={(event) =>
+                          updateOption(index, event.target.value)
+                        }
+                        placeholder={`Option ${index + 1}`}
+                        className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOptions((current) =>
+                            current.length <= 2
+                              ? current
+                              : current.filter(
+                                  (_, optionIndex) =>
+                                    optionIndex !== index,
+                                ),
+                          )
+                        }
+                        disabled={options.length <= 2}
+                        className="rounded-2xl border border-white/10 px-4 text-zinc-500 disabled:opacity-30"
+                      >
+                        ×
+                      </button>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
+                  ))}
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOptions((current) => [...current, ""])
+                      }
+                      className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-black"
+                    >
+                      + Add Option
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void createMarket()}
+                      disabled={creating}
+                      className="rounded-xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-purple-500 disabled:opacity-50"
+                    >
+                      {creating ? "Creating..." : "Create Custom Market"}
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="mt-8">
+                <div className="mb-5">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">
+                    Market Control
+                  </p>
+                  <h2 className="mt-2 text-3xl font-black">
+                    Existing Markets
+                  </h2>
+                </div>
+
+                {markets.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.025] p-10 text-center text-zinc-500">
+                    No markets yet.
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {markets.map((market) => {
+                      const graded = market.status === "graded";
+
+                      return (
+                        <article
+                          key={market.id}
+                          className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                        >
+                          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-3">
+                                <h3 className="text-xl font-black">
+                                  {market.title}
+                                </h3>
+                                <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.13em] text-zinc-400">
+                                  {market.status}
+                                </span>
+                                {market.auto_generated ? (
+                                  <span className="rounded-full border border-purple-300/20 bg-purple-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.13em] text-purple-200">
+                                    Auto
+                                  </span>
+                                ) : null}
+                              </div>
+                              {market.description ? (
+                                <p className="mt-2 text-sm text-zinc-500">
+                                  {market.description}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div className="w-full max-w-md space-y-3">
+                              {!graded ? (
+                                <>
+                                  <select
+                                    value={
+                                      selectedWinners[market.id] ?? ""
+                                    }
+                                    onChange={(event) =>
+                                      setSelectedWinners((current) => ({
+                                        ...current,
+                                        [market.id]:
+                                          event.target.value,
+                                      }))
+                                    }
+                                    className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-white outline-none focus:border-purple-400"
+                                  >
+                                    <option value="">
+                                      Choose manual winner
+                                    </option>
+                                    {(
+                                      market.prediction_options ?? []
+                                    ).map((option) => (
+                                      <option
+                                        key={option.id}
+                                        value={option.id}
+                                      >
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void gradeMarket(market.id)
+                                    }
+                                    disabled={
+                                      gradingMarketId === market.id
+                                    }
+                                    className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black uppercase tracking-[0.1em] hover:bg-emerald-500 disabled:opacity-50"
+                                  >
+                                    {gradingMarketId === market.id
+                                      ? "Grading..."
+                                      : "Grade & Pay"}
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-center text-sm font-black text-emerald-200">
+                                  Settled and paid
+                                </div>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void deleteMarket(market.id)
+                                }
+                                disabled={
+                                  deletingMarketId === market.id
+                                }
+                                className="w-full rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm font-black uppercase tracking-[0.1em] text-red-200 hover:bg-red-500/15 disabled:opacity-50"
+                              >
+                                {deletingMarketId === market.id
+                                  ? "Deleting..."
+                                  : "Delete Market"}
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </>
           )}
-        </section>
-      </div>
-    </main>
+        </div>
+      </main>
+    </AppLayout>
   );
 }

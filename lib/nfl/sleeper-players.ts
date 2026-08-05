@@ -1,6 +1,15 @@
+import { unstable_cache } from "next/cache";
 import type { CurrentMaddenPlayer } from "@/lib/madden/types";
 
 type SleeperPlayer = {
+  player_id: string;
+  full_name: string;
+  position: string | null;
+  team: string | null;
+  active: boolean;
+};
+
+type SleeperApiPlayer = {
   player_id?: string;
   full_name?: string;
   first_name?: string;
@@ -59,37 +68,58 @@ function normalizePosition(value: string | null | undefined) {
   return aliases[position] ?? position;
 }
 
-async function loadSleeperPlayers(): Promise<SleeperPlayer[]> {
-  try {
-    const response = await fetch(SLEEPER_PLAYERS_URL, {
-      next: { revalidate: 86_400 },
-    });
+const loadSleeperPlayers = unstable_cache(
+  async (): Promise<SleeperPlayer[]> => {
+    try {
+      const response = await fetch(SLEEPER_PLAYERS_URL, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      console.error(
-        `Sleeper player request failed with status ${response.status}.`,
-      );
+      if (!response.ok) {
+        console.error(
+          `Sleeper player request failed with status ${response.status}.`,
+        );
+        return [];
+      }
+
+      const payload = (await response.json()) as Record<
+        string,
+        SleeperApiPlayer
+      >;
+
+      return Object.entries(payload)
+        .map(([playerId, player]) => {
+          const fullName =
+            player.full_name ||
+            `${player.first_name ?? ""} ${player.last_name ?? ""}`.trim();
+
+          return {
+            player_id: player.player_id || playerId,
+            full_name: fullName,
+            position: player.position ?? null,
+            team: player.team ?? null,
+            active: Boolean(player.active),
+          };
+        })
+        .filter(
+          (player) =>
+            player.full_name.length > 0 &&
+            (player.active || Boolean(player.team)),
+        );
+    } catch (error) {
+      console.error("Unable to load Sleeper NFL players:", error);
       return [];
     }
-
-    const payload = (await response.json()) as Record<string, SleeperPlayer>;
-
-    return Object.entries(payload).map(([playerId, player]) => ({
-      ...player,
-      player_id: player.player_id || playerId,
-    }));
-  } catch (error) {
-    console.error("Unable to load Sleeper NFL players:", error);
-    return [];
-  }
-}
-
-function playerFullName(player: SleeperPlayer) {
-  return (
-    player.full_name ||
-    `${player.first_name ?? ""} ${player.last_name ?? ""}`.trim()
-  );
-}
+  },
+  ["new-era-sleeper-player-index-v2"],
+  {
+    revalidate: 86_400,
+    tags: ["sleeper-nfl-player-index"],
+  },
+);
 
 function scoreCandidate(
   candidate: SleeperPlayer,
@@ -121,7 +151,7 @@ export async function attachSleeperHeadshots(
   const playersByName = new Map<string, SleeperPlayer[]>();
 
   for (const sleeperPlayer of sleeperPlayers) {
-    const name = normalizePlayerName(playerFullName(sleeperPlayer));
+    const name = normalizePlayerName(sleeperPlayer.full_name);
     if (!name) continue;
 
     const group = playersByName.get(name) ?? [];

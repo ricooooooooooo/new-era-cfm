@@ -1,12 +1,34 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AppLayout from "@/app/components/layout/AppLayout";
 
 type PredictionOption = {
   id: string;
   market_id: string;
   label: string;
+  option_key: string | null;
+  team_id: string | null;
+  odds_multiplier: number | string | null;
+  metadata?: {
+    abbreviation?: string;
+  };
+};
+
+type GameData = {
+  id: string;
+  season: number;
+  week: number;
+  scheduled_at: string | null;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  home_team_abbreviation: string | null;
+  away_team_abbreviation: string | null;
+  is_primetime: boolean;
+  broadcast_label: string | null;
 };
 
 type PredictionMarket = {
@@ -17,7 +39,13 @@ type PredictionMarket = {
   closes_at: string | null;
   winning_option: string | null;
   created_at: string;
+  market_type: string;
+  category: string;
+  auto_generated: boolean;
+  season: number | null;
+  week: number | null;
   prediction_options: PredictionOption[];
+  league_games: GameData | null;
 };
 
 type WalletResponse = {
@@ -25,37 +53,34 @@ type WalletResponse = {
   error?: string;
 };
 
+function logo(abbreviation: string | undefined) {
+  return abbreviation
+    ? `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`
+    : null;
+}
+
+function formatClosingTime(value: string | null) {
+  if (!value) return "No closing time";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default function PublicPredictionsPage() {
   const [markets, setMarkets] = useState<PredictionMarket[]>([]);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [selectedOptions, setSelectedOptions] = useState<
-    Record<string, string>
-  >({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
+    {},
+  );
   const [betAmounts, setBetAmounts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [placingBetFor, setPlacingBetFor] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const openMarkets = useMemo(
-    () =>
-      markets.filter((market) => {
-        if (market.status !== "open") return false;
-        if (!market.closes_at) return true;
-        return new Date(market.closes_at).getTime() > Date.now();
-      }),
-    [markets]
-  );
-
-  const closedMarkets = useMemo(
-    () =>
-      markets.filter((market) => {
-        if (market.status !== "open") return true;
-        if (!market.closes_at) return false;
-        return new Date(market.closes_at).getTime() <= Date.now();
-      }),
-    [markets]
-  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -72,7 +97,7 @@ export default function PublicPredictionsPage() {
 
       if (!marketsResponse.ok) {
         throw new Error(
-          marketsData.error ?? "Failed to load prediction markets."
+          marketsData.error ?? "Failed to load prediction markets.",
         );
       }
 
@@ -87,7 +112,7 @@ export default function PublicPredictionsPage() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Failed to load prediction markets."
+          : "Failed to load prediction markets.",
       );
     } finally {
       setLoading(false);
@@ -127,14 +152,8 @@ export default function PublicPredictionsPage() {
     try {
       const response = await fetch("/api/place-bet", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          marketId,
-          optionId,
-          amount,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketId, optionId, amount }),
       });
 
       const data = await response.json();
@@ -143,241 +162,302 @@ export default function PublicPredictionsPage() {
         throw new Error(data.error ?? "Failed to place bet.");
       }
 
-      setMessage(`Bet placed successfully for ${amount.toLocaleString()} NE Coin.`);
+      setMessage(
+        `Bet placed successfully for ${amount.toLocaleString()} NE Coin.`,
+      );
       setBetAmounts((current) => ({ ...current, [marketId]: "" }));
-
       await loadData();
     } catch (betError) {
       setError(
-        betError instanceof Error ? betError.message : "Failed to place bet."
+        betError instanceof Error
+          ? betError.message
+          : "Failed to place bet.",
       );
     } finally {
       setPlacingBetFor(null);
     }
   }
 
-  function formatClosingTime(value: string | null) {
-    if (!value) return "No closing time";
+  const openMarkets = useMemo(
+    () =>
+      markets.filter((market) => {
+        if (market.status !== "open") return false;
+        if (!market.closes_at) return true;
+        return new Date(market.closes_at).getTime() > Date.now();
+      }),
+    [markets],
+  );
 
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(value));
-  }
+  const closedMarkets = useMemo(
+    () => markets.filter((market) => !openMarkets.includes(market)),
+    [markets, openMarkets],
+  );
+
+  const groupedOpenMarkets = useMemo(() => {
+    const groups = new Map<string, PredictionMarket[]>();
+
+    for (const market of openMarkets) {
+      const key = `Season ${market.season ?? 1} • Week ${market.week ?? "Custom"}`;
+      const group = groups.get(key) ?? [];
+      group.push(market);
+      groups.set(key, group);
+    }
+
+    return Array.from(groups.entries());
+  }, [openMarkets]);
 
   return (
-    <main className="min-h-screen bg-[#070707] px-5 py-8 text-white sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.3em] text-purple-400">
-              New Era Prediction Market
-            </p>
-
-            <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
-              Put Your NE Coin on It
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-sm text-zinc-400 sm:text-base">
-              Pick a side, enter your wager, and earn NE Coin when you are right.
-            </p>
-          </div>
-
-          <div className="flex w-fit items-center gap-3 rounded-2xl border border-amber-400/20 bg-[#121212] px-4 py-3">
-            <div className="relative h-11 w-11 overflow-hidden rounded-full">
-              <Image
-                src="/ne-coin.png"
-                alt="NE Coin"
-                fill
-                className="object-contain"
-                sizes="44px"
-                priority
-              />
-            </div>
-
+    <AppLayout>
+      <main className="min-h-[calc(100vh-8rem)] bg-[#050606] text-white">
+        <section className="relative overflow-hidden border-b border-white/10 bg-black">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(124,58,237,0.32),transparent_34rem),radial-gradient(circle_at_88%_18%,rgba(245,158,11,0.18),transparent_28rem)]" />
+          <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-6 py-12 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:py-16">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Balance
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+                New Era Sportsbook
               </p>
-
-              <p className="text-2xl font-black">
-                {walletBalance === null
-                  ? "----"
-                  : walletBalance.toLocaleString()}
+              <h1 className="mt-3 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
+                Put Your NE Coin on It
+              </h1>
+              <p className="mt-4 max-w-2xl text-zinc-400">
+                Weekly game markets will publish automatically from the Madden
+                schedule and settle from final scores.
               </p>
             </div>
-          </div>
-        </div>
 
-        {message ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-sm font-bold text-emerald-300">
-            {message}
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-300/20 bg-black/40 px-4 py-3 backdrop-blur">
+              <div className="relative h-12 w-12 overflow-hidden rounded-full">
+                <Image
+                  src="/ne-coin.png"
+                  alt="NE Coin"
+                  fill
+                  className="object-contain"
+                  sizes="48px"
+                  priority
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                  Balance
+                </p>
+                <p className="text-2xl font-black">
+                  {walletBalance === null
+                    ? "----"
+                    : walletBalance.toLocaleString()}
+                </p>
+              </div>
+            </div>
           </div>
-        ) : null}
+        </section>
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-bold text-red-300">
-            {error}
-          </div>
-        ) : null}
+        <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 sm:py-10">
+          {message ? (
+            <div className="mb-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-200">
+              {message}
+            </div>
+          ) : null}
 
-        <section>
-          <div className="mb-5">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-400">
-              Live Markets
-            </p>
-            <h2 className="mt-2 text-2xl font-black">Open for Betting</h2>
-          </div>
+          {error ? (
+            <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm font-bold text-red-200">
+              {error}
+            </div>
+          ) : null}
 
           {loading ? (
-            <div className="rounded-3xl border border-white/10 bg-[#111111] p-10 text-center text-zinc-400">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center text-zinc-500">
               Loading markets...
             </div>
-          ) : openMarkets.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-[#111111] p-10 text-center">
-              <p className="text-lg font-black">No open markets right now.</p>
-              <p className="mt-2 text-sm text-zinc-500">
-                Check back after a commissioner creates one.
+          ) : groupedOpenMarkets.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-purple-400/20 bg-purple-400/[0.045] p-10 text-center">
+              <p className="text-2xl font-black">No open markets right now</p>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-zinc-400">
+                The market engine is ready. The first Madden schedule sync will
+                automatically publish a winner market for every game.
               </p>
+              <Link
+                href="/schedule"
+                className="mt-6 inline-flex rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-black hover:bg-white/[0.09]"
+              >
+                View Schedule
+              </Link>
             </div>
           ) : (
-            <div className="grid gap-5 lg:grid-cols-2">
-              {openMarkets.map((market) => (
-                <article
-                  key={market.id}
-                  className="rounded-3xl border border-white/10 bg-[#111111] p-5 sm:p-6"
-                >
-                  <div className="mb-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-300">
-                        Open
-                      </span>
-
-                      <span className="text-xs font-bold text-zinc-500">
-                        Closes {formatClosingTime(market.closes_at)}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-4 text-2xl font-black">{market.title}</h3>
-
-                    {market.description ? (
-                      <p className="mt-2 text-sm text-zinc-400">
-                        {market.description}
+            <div className="space-y-10">
+              {groupedOpenMarkets.map(([label, group]) => (
+                <section key={label}>
+                  <div className="mb-5 flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-300">
+                        Live Markets
                       </p>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-3">
-                    {(market.prediction_options ?? []).map((option) => {
-                      const selected =
-                        selectedOptions[market.id] === option.id;
-
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() =>
-                            setSelectedOptions((current) => ({
-                              ...current,
-                              [market.id]: option.id,
-                            }))
-                          }
-                          className={`rounded-2xl border px-4 py-4 text-left text-sm font-black transition ${
-                            selected
-                              ? "border-purple-500 bg-purple-500/15 text-purple-200"
-                              : "border-white/10 bg-[#1a1a1a] text-white hover:border-purple-500/50"
-                          }`}
-                        >
-                          <span className="flex items-center justify-between gap-3">
-                            <span>{option.label}</span>
-                            <span
-                              className={`h-4 w-4 rounded-full border ${
-                                selected
-                                  ? "border-purple-400 bg-purple-500"
-                                  : "border-zinc-600"
-                              }`}
-                            />
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      inputMode="numeric"
-                      value={betAmounts[market.id] ?? ""}
-                      onChange={(event) =>
-                        setBetAmounts((current) => ({
-                          ...current,
-                          [market.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="Bet amount"
-                      className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-purple-500"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => void placeBet(market.id)}
-                      disabled={placingBetFor === market.id}
-                      className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-wider hover:bg-purple-500 disabled:opacity-60"
+                      <h2 className="mt-2 text-3xl font-black">{label}</h2>
+                    </div>
+                    <Link
+                      href="/schedule"
+                      className="text-sm font-black text-zinc-500 transition hover:text-white"
                     >
-                      {placingBetFor === market.id
-                        ? "Placing..."
-                        : "Place Bet"}
-                    </button>
+                      Full Schedule →
+                    </Link>
                   </div>
-                </article>
+
+                  <div className="grid gap-5 lg:grid-cols-2">
+                    {group.map((market) => (
+                      <article
+                        key={market.id}
+                        className="overflow-hidden rounded-3xl border border-white/10 bg-[#0d0f10]"
+                      >
+                        <div className="flex items-center justify-between border-b border-white/[0.07] bg-black/30 px-5 py-3">
+                          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200">
+                            Open
+                          </span>
+                          <span className="text-xs font-bold text-zinc-600">
+                            Closes {formatClosingTime(market.closes_at)}
+                          </span>
+                        </div>
+
+                        <div className="p-5 sm:p-6">
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                            {market.auto_generated
+                              ? "Automatic Game Market"
+                              : "Commissioner Market"}
+                          </p>
+                          <h3 className="mt-2 text-2xl font-black">
+                            {market.title}
+                          </h3>
+                          {market.description ? (
+                            <p className="mt-2 text-sm text-zinc-500">
+                              {market.description}
+                            </p>
+                          ) : null}
+
+                          <div className="mt-5 grid gap-3">
+                            {(market.prediction_options ?? []).map((option) => {
+                              const selected =
+                                selectedOptions[market.id] === option.id;
+                              const abbreviation =
+                                option.metadata?.abbreviation;
+                              const teamLogo = logo(abbreviation);
+
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedOptions((current) => ({
+                                      ...current,
+                                      [market.id]: option.id,
+                                    }))
+                                  }
+                                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                                    selected
+                                      ? "border-purple-400 bg-purple-500/15"
+                                      : "border-white/10 bg-white/[0.035] hover:border-white/20"
+                                  }`}
+                                >
+                                  {teamLogo ? (
+                                    <div className="relative h-12 w-12 shrink-0">
+                                      <Image
+                                        src={teamLogo}
+                                        alt={option.label}
+                                        fill
+                                        unoptimized
+                                        className="object-contain"
+                                      />
+                                    </div>
+                                  ) : null}
+
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate font-black">
+                                      {option.label}
+                                    </p>
+                                    <p className="mt-1 text-xs text-zinc-600">
+                                      {Number(
+                                        option.odds_multiplier ?? 2,
+                                      ).toFixed(2)}
+                                      x payout
+                                    </p>
+                                  </div>
+
+                                  <span
+                                    className={`h-4 w-4 rounded-full border ${
+                                      selected
+                                        ? "border-purple-300 bg-purple-500"
+                                        : "border-zinc-700"
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              inputMode="numeric"
+                              value={betAmounts[market.id] ?? ""}
+                              onChange={(event) =>
+                                setBetAmounts((current) => ({
+                                  ...current,
+                                  [market.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="NE Coin wager"
+                              className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => void placeBet(market.id)}
+                              disabled={placingBetFor === market.id}
+                              className="rounded-2xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-purple-500 disabled:opacity-50"
+                            >
+                              {placingBetFor === market.id
+                                ? "Placing..."
+                                : "Place Bet"}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}
-        </section>
 
-        {closedMarkets.length > 0 ? (
-          <section className="mt-10">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
-                Previous Markets
+          {closedMarkets.length > 0 ? (
+            <section className="mt-12">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-600">
+                Market History
               </p>
-              <h2 className="mt-2 text-2xl font-black">Closed & Graded</h2>
-            </div>
+              <h2 className="mt-2 text-3xl font-black">Closed & Settled</h2>
 
-            <div className="grid gap-4">
-              {closedMarkets.map((market) => (
-                <article
-                  key={market.id}
-                  className="rounded-2xl border border-white/10 bg-[#101010] p-5"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-5 grid gap-3">
+                {closedMarkets.slice(0, 20).map((market) => (
+                  <article
+                    key={market.id}
+                    className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <div>
-                      <h3 className="font-black">{market.title}</h3>
-                      <p className="mt-1 text-xs uppercase tracking-wider text-zinc-500">
+                      <p className="font-black">{market.title}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-zinc-600">
                         {market.status}
                       </p>
                     </div>
-
-                    {market.winning_option ? (
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-2 text-xs font-black uppercase text-emerald-300">
-                        Winner Selected
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-zinc-500/10 px-3 py-2 text-xs font-black uppercase text-zinc-400">
-                        Awaiting Result
-                      </span>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-      </div>
-    </main>
+                    <span className="text-xs font-black uppercase tracking-[0.12em] text-zinc-500">
+                      {market.winning_option
+                        ? "Result Paid"
+                        : "Awaiting Result"}
+                    </span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </main>
+    </AppLayout>
   );
 }
