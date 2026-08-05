@@ -1,56 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export default function DiscordIntroPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [started, setStarted] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
-  const [syncFinished, setSyncFinished] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function syncMember() {
-      try {
-        const response = await fetch("/api/member/sync", {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          console.error("Member sync failed:", result);
-        } else {
-          console.log("Member sync successful:", result);
-        }
-      } catch (error) {
-        console.error("Member sync request failed:", error);
-      } finally {
-        if (!cancelled) {
-          setSyncFinished(true);
-        }
-      }
-    }
-
-    syncMember();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function startIntro() {
     const video = videoRef.current;
 
-    if (!video) return;
+    if (!video) {
+      window.location.replace("/");
+      return;
+    }
 
     setFadeOut(true);
 
-    setTimeout(async () => {
+    window.setTimeout(async () => {
       setStarted(true);
 
       try {
@@ -61,6 +29,7 @@ export default function DiscordIntroPage() {
         await video.play();
       } catch (error) {
         console.error("Intro video failed to play:", error);
+        window.location.replace("/");
       }
     }, 700);
   }
@@ -87,11 +56,11 @@ export default function DiscordIntroPage() {
             </h1>
 
             <p className="mt-6 leading-7 text-zinc-400">
-              Thank you for connecting your Discord account.
+              Your Discord account is connected.
             </p>
 
             <p className="mt-2 leading-7 text-zinc-500">
-              Welcome to the league.
+              Welcome to New Era.
             </p>
 
             <button
@@ -101,12 +70,6 @@ export default function DiscordIntroPage() {
             >
               Enter New Era
             </button>
-
-            {!syncFinished && (
-              <p className="mt-4 text-xs text-zinc-600">
-                Finalizing your league profile…
-              </p>
-            )}
           </div>
         </div>
       )}

@@ -26,7 +26,7 @@ async function getCurrentWebsiteTeam(
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load current website team:", error);
+    console.error("Unable to load current member team:", error);
     throw new Error("Unable to load current website team.");
   }
 
@@ -36,6 +36,23 @@ async function getCurrentWebsiteTeam(
 export async function syncDiscordTeamAssignment(
   discordId: string,
 ): Promise<TeamSyncResult> {
+  /*
+   * Local development must never update team ownership.
+   *
+   * The production Discord configuration is the source of truth. This guard
+   * prevents a local environment, stale guild ID, or test bot from overwriting
+   * the shared members.team value while HQ pages are being developed.
+   */
+  if (process.env.NODE_ENV !== "production") {
+    const currentTeam = await getCurrentWebsiteTeam(discordId);
+
+    return {
+      team: currentTeam,
+      changed: false,
+      roleNames: [],
+    };
+  }
+
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_GUILD_ID;
 
@@ -64,15 +81,22 @@ export async function syncDiscordTeamAssignment(
   ]);
 
   if (memberResponse.status === 404) {
-    const currentTeam = await getCurrentWebsiteTeam(discordId);
+    const { error } = await supabaseAdmin
+      .from("members")
+      .update({
+        team: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("discord_id", discordId);
 
-    console.error(
-      "Discord member was not found in the configured guild. Website team was left unchanged.",
-    );
+    if (error) {
+      console.error("Unable to clear missing Discord member team:", error);
+      throw new Error("Unable to clear website team.");
+    }
 
     return {
-      team: currentTeam,
-      changed: false,
+      team: null,
+      changed: true,
       roleNames: [],
     };
   }
@@ -81,7 +105,7 @@ export async function syncDiscordTeamAssignment(
     const memberText = await memberResponse.text();
     const rolesText = await rolesResponse.text();
 
-    console.error("Discord team-role lookup failed:", {
+    console.error("Discord team-role lookup failed", {
       memberStatus: memberResponse.status,
       rolesStatus: rolesResponse.status,
       memberText,
@@ -132,24 +156,6 @@ export async function syncDiscordTeamAssignment(
 
   const currentTeam = currentMember.team ?? null;
 
-  console.log("Discord team sync:", {
-    discordId,
-    roleNames,
-    currentTeam,
-    detectedTeam: nextTeam,
-  });
-
-  // Keep the saved team if Discord currently has no recognizable
-  // NFL team role. This prevents accidental team wipes from temporary
-  // role delays or a wrong guild configuration.
-  if (!nextTeam) {
-    return {
-      team: currentTeam,
-      changed: false,
-      roleNames,
-    };
-  }
-
   if (currentTeam === nextTeam) {
     return {
       team: nextTeam,
@@ -158,36 +164,42 @@ export async function syncDiscordTeamAssignment(
     };
   }
 
-  const now = new Date().toISOString();
+  if (nextTeam) {
+    const { error: clearError } = await supabaseAdmin
+      .from("members")
+      .update({
+        team: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("team", nextTeam)
+      .neq("discord_id", discordId);
 
-  const { error: clearError } = await supabaseAdmin
-    .from("members")
-    .update({
-      team: null,
-      updated_at: now,
-    })
-    .eq("team", nextTeam)
-    .neq("discord_id", discordId);
+    if (clearError) {
+      console.error(
+        "Unable to clear previous team owner:",
+        clearError,
+      );
 
-  if (clearError) {
-    console.error(
-      "Unable to clear previous team owner:",
-      clearError,
-    );
-
-    throw new Error("Unable to transfer website team ownership.");
+      throw new Error(
+        "Unable to transfer website team ownership.",
+      );
+    }
   }
 
   const { error: updateError } = await supabaseAdmin
     .from("members")
     .update({
       team: nextTeam,
-      updated_at: now,
+      updated_at: new Date().toISOString(),
     })
     .eq("discord_id", discordId);
 
   if (updateError) {
-    console.error("Unable to update member team:", updateError);
+    console.error(
+      "Unable to update member team:",
+      updateError,
+    );
+
     throw new Error("Unable to update website team.");
   }
 

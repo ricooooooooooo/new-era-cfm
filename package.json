@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "madden:scrape": "python3 scripts/scrape-maddenratings.py",
+    "madden:import": "node scripts/import-madden-baseline.mjs",
+    "madden:baseline": "npm run madden:scrape && npm run madden:import",
+    "madden:verify": "node scripts/verify-madden-baseline.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",

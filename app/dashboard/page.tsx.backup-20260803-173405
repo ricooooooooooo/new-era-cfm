@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import AppLayout from "@/app/components/layout/AppLayout";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 import { findTeamBySlug } from "@/lib/nfl-teams";
 import { getHqOfficeConfig } from "@/lib/hq-config";
 
@@ -41,12 +40,6 @@ export default async function DashboardPage() {
 
   if (!user) {
     redirect("/discord-connect");
-  }
-
-  try {
-    await syncDiscordTeamAssignment(user.id);
-  } catch (error) {
-    console.error("Dashboard team sync failed:", error);
   }
 
   const { data: member, error } = await supabaseAdmin

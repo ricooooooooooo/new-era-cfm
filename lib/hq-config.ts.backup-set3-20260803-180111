@@ -1,0 +1,23 @@
+export type HqOfficeConfig = {
+  background: string;
+};
+
+export const HQ_OFFICES: Partial<Record<string, HqOfficeConfig>> = {
+  bears: { background: "/hq/bears.png" },
+  bills: { background: "/hq/bills.png" },
+  cowboys: { background: "/hq/cowboys.png" },
+  ravens: { background: "/hq/ravens.png" },
+
+  dolphins: { background: "/hq/dolphins.png" },
+  packers: { background: "/hq/packers.png" },
+  chiefs: { background: "/hq/chiefs.png" },
+  raiders: { background: "/hq/raiders.png" },
+  saints: { background: "/hq/saints.jpg" },
+  "49ers": { background: "/hq/49ers.jpg" },
+};
+
+export function getHqOfficeConfig(
+  teamSlug: string
+): HqOfficeConfig | null {
+  return HQ_OFFICES[teamSlug] ?? null;
+}

@@ -1,0 +1,46 @@
+export type HqOfficeConfig = {
+  background: string;
+};
+
+export const HQ_OFFICES: Partial<Record<string, HqOfficeConfig>> = {
+  bears: { background: "/hq/bears.png" },
+  bills: { background: "/hq/bills.png" },
+  cowboys: { background: "/hq/cowboys.png" },
+  ravens: { background: "/hq/ravens.png" },
+
+  dolphins: { background: "/hq/dolphins.png" },
+  packers: { background: "/hq/packers.png" },
+  chiefs: { background: "/hq/chiefs.png" },
+  raiders: { background: "/hq/raiders.png" },
+
+  vikings: { background: "/hq/vikings.png" },
+  colts: { background: "/hq/colts.png" },
+  falcons: { background: "/hq/falcons.png" },
+  panthers: { background: "/hq/panthers.png" },
+
+  eagles: { background: "/hq/eagles.png" },
+  seahawks: { background: "/hq/seahawks.png" },
+  broncos: { background: "/hq/broncos.png" },
+  texans: { background: "/hq/texans.png" },
+
+  bengals: { background: "/hq/bengals.png" },
+  steelers: { background: "/hq/steelers.png" },
+  saints: { background: "/hq/saints.png" },
+  patriots: { background: "/hq/patriots.png" },
+
+  "49ers": { background: "/hq/49ers.jpg" },
+  jets: { background: "/hq/jets.png" },
+  browns: { background: "/hq/browns.png" },
+  jaguars: { background: "/hq/jaguars.png" },
+  titans: { background: "/hq/titans.png" },
+  chargers: { background: "/hq/chargers.png" },
+  giants: { background: "/hq/giants.png" },
+  commanders: { background: "/hq/commanders.png" },
+  lions: { background: "/hq/lions.png" },
+};
+
+export function getHqOfficeConfig(
+  teamSlug: string,
+): HqOfficeConfig | null {
+  return HQ_OFFICES[teamSlug] ?? null;
+}

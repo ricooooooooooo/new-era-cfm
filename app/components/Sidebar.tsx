@@ -33,6 +33,7 @@ const leagueLinks = [
   { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
   { label: "Trade Center", href: "/trade-center" },
+  { label: "Media", href: "/media" },
   { label: "Apply for Staff", href: "/staff" },
 ];
 

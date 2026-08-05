@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-admin";
 import { getStaffRole } from "../../../lib/staff";
-import { getOrCreateWallet } from "@/lib/db/wallet";
 
 type WebsiteRole =
   | "owner"
@@ -29,75 +28,72 @@ function isWebsiteRole(value: unknown): value is WebsiteRole {
   );
 }
 
+function disconnectedResponse() {
+  return NextResponse.json({
+    connected: false,
+    user: null,
+    isStaff: false,
+    staffRole: null,
+    role: "member",
+    roles: ["member"],
+  });
+}
+
 export async function GET(request: NextRequest) {
   const encodedUser = request.cookies.get("new_era_discord_user")?.value;
 
   if (!encodedUser) {
-    return NextResponse.json({
-      connected: false,
-      user: null,
-      isStaff: false,
-      staffRole: null,
-      role: "member",
-      roles: ["member"],
-    });
+    return disconnectedResponse();
   }
+
+  let user: SavedDiscordUser;
 
   try {
     const decodedUser = Buffer.from(encodedUser, "base64url").toString("utf8");
-    const user = JSON.parse(decodedUser) as SavedDiscordUser;
+    user = JSON.parse(decodedUser) as SavedDiscordUser;
 
-    // Automatically create a wallet the first time a user logs in.
-    await getOrCreateWallet(user.id);
-
-    const environmentRole = getStaffRole(user.id);
-
-    const { data: member, error } = await supabaseAdmin
-      .from("members")
-      .select("role")
-      .eq("discord_id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Failed to load website role:", error);
+    if (!user?.id || !user?.username || !user?.displayName) {
+      throw new Error("Invalid Discord session payload");
     }
-
-    const databaseRole = isWebsiteRole(member?.role) ? member.role : null;
-
-    // Keep environment-configured owners/commissioners protected.
-    // Otherwise use the role assigned in the members table.
-    const role: WebsiteRole =
-      environmentRole === "owner"
-        ? "owner"
-        : environmentRole === "commissioner"
-          ? "commissioner"
-          : databaseRole ?? "member";
-
-    const staffRole =
-      role === "owner" || role === "commissioner" ? role : null;
-
-    return NextResponse.json({
-      connected: true,
-      user,
-      isStaff: role !== "member",
-      staffRole,
-      role,
-      roles: [role],
-    });
   } catch (error) {
-    console.error("Failed to read Discord session:", error);
+    console.error("Failed to decode Discord session:", error);
 
-    const response = NextResponse.json({
-      connected: false,
-      user: null,
-      isStaff: false,
-      staffRole: null,
-      role: "member",
-      roles: ["member"],
-    });
-
+    const response = disconnectedResponse();
     response.cookies.delete("new_era_discord_user");
 
     return response;
   }
+
+  const environmentRole = getStaffRole(user.id);
+
+  const { data: member, error } = await supabaseAdmin
+    .from("members")
+    .select("role")
+    .eq("discord_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load website role:", error);
+  }
+
+  const databaseRole = isWebsiteRole(member?.role) ? member.role : null;
+
+  const role: WebsiteRole =
+    environmentRole === "owner"
+      ? "owner"
+      : environmentRole === "commissioner"
+        ? "commissioner"
+        : databaseRole ?? "member";
+
+  const staffRole =
+    role === "owner" || role === "commissioner" ? role : null;
+
+  return NextResponse.json({
+    connected: true,
+    user,
+    isStaff: role !== "member",
+    staffRole,
+    role,
+    roles: [role],
+  });
 }
