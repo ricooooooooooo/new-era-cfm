@@ -237,9 +237,17 @@ export async function POST(request: NextRequest) {
 
     if (saveResult.error) throw saveResult.error;
 
+    const imageParams = new URLSearchParams({
+      amount: String(amount),
+      season: String(season),
+      teams: String(teamsFilled),
+      total: String(totalTeams),
+      v: String(graphicVersion),
+    });
+
     const imageUrl =
-      `${publicBaseUrl(request)}/api/prize-pot/graphic` +
-      `?v=${graphicVersion}`;
+      `${publicBaseUrl(request)}/api/prize-pot/graphic?` +
+      imageParams.toString();
 
     const publication = await publishPrizePotEmbed({
       amount,
