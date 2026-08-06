@@ -24,9 +24,13 @@ export async function GET() {
     success: true,
     service: "NEW ERA canonical Madden schedule importer",
     status: "ready",
+    liveProviderReady: true,
     acceptedShape: {
       leagueSlug: "new-era-cfm",
       source: "ea_franchise",
+      provider: "direct_ea",
+      gameVersion: "Madden 27",
+      syncType: "schedule",
       season: 1,
       currentWeek: 1,
       games: [
@@ -54,8 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error:
-          "Set MADDEN_SYNC_SECRET or SNALLABOT_IMPORT_SECRET first.",
+        error: "Set MADDEN_SYNC_SECRET or SNALLABOT_IMPORT_SECRET first.",
       },
       { status: 500 },
     );

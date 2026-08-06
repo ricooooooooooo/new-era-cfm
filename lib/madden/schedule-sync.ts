@@ -22,6 +22,23 @@ type TeamRow = {
   abbreviation: string;
 };
 
+type ExistingGameRow = LeagueGameRow;
+
+const SOURCE_PRIORITIES: Record<string, number> = {
+  ea_franchise: 300,
+  companion_app: 300,
+  snallabot: 280,
+  mymadden: 280,
+  dynasty_dashboard: 270,
+  daddyleagues: 270,
+  manual_quick_sync: 100,
+  manual: 90,
+};
+
+function sourcePriority(source: string) {
+  return SOURCE_PRIORITIES[source.toLowerCase()] ?? 150;
+}
+
 function normalizeTeamAbbreviation(value: string) {
   const cleaned = value.trim().toUpperCase();
 
@@ -54,15 +71,11 @@ function normalizeTeamAbbreviation(value: string) {
 function normalizeStatus(value: string | null | undefined): CanonicalGameStatus {
   const status = value?.trim().toLowerCase() ?? "scheduled";
 
-  if (
-    ["final", "completed", "complete", "played"].includes(status)
-  ) {
+  if (["final", "completed", "complete", "played"].includes(status)) {
     return "final";
   }
 
-  if (
-    ["in_progress", "in-progress", "live", "playing"].includes(status)
-  ) {
+  if (["in_progress", "in-progress", "live", "playing"].includes(status)) {
     return "in_progress";
   }
 
@@ -80,6 +93,28 @@ function integerOrNull(value: unknown) {
 
   const number = Number(value);
   return Number.isInteger(number) ? number : null;
+}
+
+function normalizeGameType(value: string | null | undefined) {
+  return value?.trim().toLowerCase() || "regular";
+}
+
+function canonicalGameKey(input: {
+  season: number;
+  gameType: string;
+  week: number;
+  awayTeam: string;
+  homeTeam: string;
+}) {
+  return [
+    input.season,
+    input.gameType,
+    input.week,
+    input.awayTeam,
+    input.homeTeam,
+  ]
+    .join(":")
+    .toLowerCase();
 }
 
 async function getLeague(slug: string) {
@@ -116,6 +151,10 @@ export async function importCanonicalSchedule(
 
   const leagueSlug = input.leagueSlug?.trim() || "new-era-cfm";
   const source = input.source?.trim() || "ea_franchise";
+  const provider = input.provider?.trim() || source;
+  const gameVersion = input.gameVersion?.trim() || "Madden 27";
+  const syncType = input.syncType?.trim() || "schedule";
+  const priority = sourcePriority(source);
   const league = await getLeague(leagueSlug);
   const teams = await getTeams();
 
@@ -124,152 +163,274 @@ export async function importCanonicalSchedule(
   );
 
   const defaultSeason =
-    integerOrNull(input.season) ??
-    integerOrNull(league.season) ??
-    1;
+    integerOrNull(input.season) ?? integerOrNull(league.season) ?? 1;
 
-  const importedGames: LeagueGameRow[] = [];
-
-  for (const rawGame of input.games) {
-    const sourceGameId = String(rawGame.sourceGameId ?? "").trim();
-
-    if (!sourceGameId) {
-      throw new Error("Every game requires sourceGameId.");
-    }
-
-    const week = integerOrNull(rawGame.week);
-    if (!week || week < 1) {
-      throw new Error(`Game '${sourceGameId}' has an invalid week.`);
-    }
-
-    const homeAbbreviation = normalizeTeamAbbreviation(rawGame.homeTeam);
-    const awayAbbreviation = normalizeTeamAbbreviation(rawGame.awayTeam);
-    const homeTeam = teamsByAbbreviation.get(homeAbbreviation);
-    const awayTeam = teamsByAbbreviation.get(awayAbbreviation);
-
-    if (!homeTeam || !awayTeam) {
-      throw new Error(
-        `Unable to resolve teams for '${sourceGameId}': ` +
-          `${rawGame.awayTeam} @ ${rawGame.homeTeam}`,
-      );
-    }
-
-    const status = normalizeStatus(rawGame.status);
-    const homeScore = integerOrNull(rawGame.homeScore);
-    const awayScore = integerOrNull(rawGame.awayScore);
-
-    const winnerTeamId =
-      status === "final" &&
-      homeScore !== null &&
-      awayScore !== null &&
-      homeScore !== awayScore
-        ? homeScore > awayScore
-          ? homeTeam.id
-          : awayTeam.id
-        : null;
-
-    const row = {
+  const runResult = await supabaseAdmin
+    .from("madden_sync_runs")
+    .insert({
       league_id: league.id,
       source,
-      source_game_id: sourceGameId,
-      season: integerOrNull(rawGame.season) ?? defaultSeason,
-      week,
-      game_type: rawGame.gameType?.trim() || "regular",
-      home_team_id: homeTeam.id,
-      away_team_id: awayTeam.id,
-      home_team_abbreviation: homeTeam.abbreviation,
-      away_team_abbreviation: awayTeam.abbreviation,
-      scheduled_at: rawGame.scheduledAt || null,
-      status,
-      home_score: homeScore,
-      away_score: awayScore,
-      winner_team_id: winnerTeamId,
-      is_primetime: Boolean(rawGame.isPrimetime),
-      broadcast_label: rawGame.broadcastLabel?.trim() || null,
-      raw_payload: rawGame.rawPayload ?? {},
-      synced_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+      provider,
+      game_version: gameVersion,
+      sync_type: syncType,
+      status: "running",
+      details: {
+        requestedGames: input.games.length,
+        requestedCurrentWeek: input.currentWeek ?? null,
+      },
+    })
+    .select("id")
+    .single();
 
-    const existing = await supabaseAdmin
-      .from("league_games")
-      .select("id")
-      .eq("league_id", league.id)
-      .eq("source", source)
-      .eq("source_game_id", sourceGameId)
-      .maybeSingle();
+  if (runResult.error) throw runResult.error;
 
-    if (existing.error) throw existing.error;
+  const syncRunId = String(runResult.data.id);
 
-    let saved: LeagueGameRow;
-
-    if (existing.data) {
-      const updated = await supabaseAdmin
-        .from("league_games")
-        .update(row)
-        .eq("id", existing.data.id)
-        .select("*")
-        .single();
-
-      if (updated.error) throw updated.error;
-      saved = updated.data as LeagueGameRow;
-    } else {
-      const inserted = await supabaseAdmin
-        .from("league_games")
-        .insert(row)
-        .select("*")
-        .single();
-
-      if (inserted.error) throw inserted.error;
-      saved = inserted.data as LeagueGameRow;
-    }
-
-    importedGames.push(saved);
-  }
-
-  const currentWeek =
-    integerOrNull(input.currentWeek) ??
-    Math.max(...importedGames.map((game) => game.week));
-
-  const leagueUpdate = await supabaseAdmin
+  await supabaseAdmin
     .from("leagues")
     .update({
-      season: defaultSeason,
-      current_week: currentWeek,
+      madden_provider: provider,
+      madden_sync_status: "syncing",
+      madden_last_sync_error: null,
     })
     .eq("id", league.id);
 
-  if (leagueUpdate.error) throw leagueUpdate.error;
+  const importedGames: LeagueGameRow[] = [];
+  let skippedGames = 0;
 
-  const marketResult = await syncPredictionMarketsForGames(importedGames);
+  try {
+    for (const rawGame of input.games) {
+      const sourceGameId = String(rawGame.sourceGameId ?? "").trim();
 
-  const settingsResult = await supabaseAdmin
-    .from("prediction_automation_settings")
-    .select("discord_post_enabled")
-    .eq("league_id", league.id)
-    .maybeSingle();
+      if (!sourceGameId) {
+        throw new Error("Every game requires sourceGameId.");
+      }
 
-  if (settingsResult.error) {
-    console.error(
-      "Unable to read prediction Discord setting:",
-      settingsResult.error,
-    );
-  }
+      const week = integerOrNull(rawGame.week);
+      if (!week || week < 1) {
+        throw new Error(`Game '${sourceGameId}' has an invalid week.`);
+      }
 
-  if (settingsResult.data?.discord_post_enabled) {
-    await postPredictionMarketBatch({
+      const season = integerOrNull(rawGame.season) ?? defaultSeason;
+      const gameType = normalizeGameType(rawGame.gameType);
+      const homeAbbreviation = normalizeTeamAbbreviation(rawGame.homeTeam);
+      const awayAbbreviation = normalizeTeamAbbreviation(rawGame.awayTeam);
+      const homeTeam = teamsByAbbreviation.get(homeAbbreviation);
+      const awayTeam = teamsByAbbreviation.get(awayAbbreviation);
+
+      if (!homeTeam || !awayTeam) {
+        throw new Error(
+          `Unable to resolve teams for '${sourceGameId}': ` +
+            `${rawGame.awayTeam} @ ${rawGame.homeTeam}`,
+        );
+      }
+
+      if (homeTeam.id === awayTeam.id) {
+        throw new Error(`Game '${sourceGameId}' cannot use the same team twice.`);
+      }
+
+      const status = normalizeStatus(rawGame.status);
+      const homeScore = integerOrNull(rawGame.homeScore);
+      const awayScore = integerOrNull(rawGame.awayScore);
+
+      if (
+        status === "final" &&
+        (homeScore === null || awayScore === null)
+      ) {
+        throw new Error(
+          `Final game '${sourceGameId}' requires both scores.`,
+        );
+      }
+
+      const winnerTeamId =
+        status === "final" &&
+        homeScore !== null &&
+        awayScore !== null &&
+        homeScore !== awayScore
+          ? homeScore > awayScore
+            ? homeTeam.id
+            : awayTeam.id
+          : null;
+
+      const stableGameKey = canonicalGameKey({
+        season,
+        gameType,
+        week,
+        awayTeam: awayTeam.abbreviation,
+        homeTeam: homeTeam.abbreviation,
+      });
+
+      const row = {
+        league_id: league.id,
+        source,
+        source_game_id: sourceGameId,
+        canonical_game_key: stableGameKey,
+        source_priority: priority,
+        sync_run_id: syncRunId,
+        season,
+        week,
+        game_type: gameType,
+        home_team_id: homeTeam.id,
+        away_team_id: awayTeam.id,
+        home_team_abbreviation: homeTeam.abbreviation,
+        away_team_abbreviation: awayTeam.abbreviation,
+        scheduled_at: rawGame.scheduledAt || null,
+        status,
+        home_score: homeScore,
+        away_score: awayScore,
+        winner_team_id: winnerTeamId,
+        is_primetime: Boolean(rawGame.isPrimetime),
+        broadcast_label: rawGame.broadcastLabel?.trim() || null,
+        raw_payload: rawGame.rawPayload ?? {},
+        synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const existingResult = await supabaseAdmin
+        .from("league_games")
+        .select("*")
+        .eq("league_id", league.id)
+        .eq("canonical_game_key", stableGameKey)
+        .maybeSingle();
+
+      if (existingResult.error) throw existingResult.error;
+
+      const existing = existingResult.data as ExistingGameRow | null;
+      let saved: LeagueGameRow;
+
+      if (existing) {
+        if (Number(existing.source_priority ?? 0) > priority) {
+          saved = existing;
+          skippedGames += 1;
+        } else {
+          const updated = await supabaseAdmin
+            .from("league_games")
+            .update(row)
+            .eq("id", existing.id)
+            .select("*")
+            .single();
+
+          if (updated.error) throw updated.error;
+          saved = updated.data as LeagueGameRow;
+        }
+      } else {
+        const inserted = await supabaseAdmin
+          .from("league_games")
+          .insert(row)
+          .select("*")
+          .single();
+
+        if (inserted.error) throw inserted.error;
+        saved = inserted.data as LeagueGameRow;
+      }
+
+      importedGames.push(saved);
+    }
+
+    const currentWeek =
+      integerOrNull(input.currentWeek) ??
+      Math.max(...importedGames.map((game) => game.week));
+
+    const leagueUpdate = await supabaseAdmin
+      .from("leagues")
+      .update({
+        season: defaultSeason,
+        current_week: currentWeek,
+        madden_provider: provider,
+        madden_sync_status:
+          source === "manual_quick_sync" ? "manual_sync_active" : "live_sync_active",
+        madden_last_sync_at: new Date().toISOString(),
+        madden_last_sync_error: null,
+      })
+      .eq("id", league.id);
+
+    if (leagueUpdate.error) throw leagueUpdate.error;
+
+    const marketResult = await syncPredictionMarketsForGames(importedGames);
+
+    const settingsResult = await supabaseAdmin
+      .from("prediction_automation_settings")
+      .select("discord_post_enabled")
+      .eq("league_id", league.id)
+      .maybeSingle();
+
+    if (settingsResult.error) {
+      console.error(
+        "Unable to read prediction Discord setting:",
+        settingsResult.error,
+      );
+    }
+
+    if (settingsResult.data?.discord_post_enabled) {
+      await postPredictionMarketBatch({
+        season: defaultSeason,
+        week: currentWeek,
+        createdMarkets: marketResult.createdMarkets,
+        totalGames: importedGames.length,
+      });
+    }
+
+    const completedAt = new Date().toISOString();
+    const syncStatus = skippedGames > 0 ? "partial" : "success";
+
+    await supabaseAdmin
+      .from("madden_sync_runs")
+      .update({
+        status: syncStatus,
+        imported_games: importedGames.length - skippedGames,
+        skipped_games: skippedGames,
+        completed_at: completedAt,
+        details: {
+          requestedGames: input.games.length,
+          currentWeek,
+          season: defaultSeason,
+          sourcePriority: priority,
+          createdMarkets: marketResult.createdMarkets,
+          settledMarkets: marketResult.settledMarkets,
+          manualReview: marketResult.manualReview,
+        },
+      })
+      .eq("id", syncRunId);
+
+    return {
+      syncRunId,
+      leagueId: league.id,
+      provider,
+      source,
       season: defaultSeason,
-      week: currentWeek,
-      createdMarkets: marketResult.createdMarkets,
-      totalGames: importedGames.length,
-    });
-  }
+      currentWeek,
+      importedGames: importedGames.length - skippedGames,
+      skippedGames,
+      ...marketResult,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const completedAt = new Date().toISOString();
 
-  return {
-    leagueId: league.id,
-    season: defaultSeason,
-    currentWeek,
-    importedGames: importedGames.length,
-    ...marketResult,
-  };
+    await Promise.all([
+      supabaseAdmin
+        .from("madden_sync_runs")
+        .update({
+          status: "failed",
+          imported_games: importedGames.length,
+          skipped_games: skippedGames,
+          error_message: message,
+          completed_at: completedAt,
+          details: {
+            requestedGames: input.games.length,
+            sourcePriority: priority,
+          },
+        })
+        .eq("id", syncRunId),
+      supabaseAdmin
+        .from("leagues")
+        .update({
+          madden_sync_status: "sync_error",
+          madden_last_sync_error: message,
+        })
+        .eq("id", league.id),
+    ]);
+
+    throw error;
+  }
 }

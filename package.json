@@ -13,7 +13,8 @@
     "madden:verify": "node scripts/verify-madden-baseline.mjs",
     "owners:check": "node --env-file=.env.local scripts/check-owner-connections.mjs",
     "pot:verify": "node --env-file=.env.local scripts/verify-prize-pot.mjs",
-    "health:verify": "node --env-file=.env.local scripts/verify-live-league-health.mjs"
+    "health:verify": "node --env-file=.env.local scripts/verify-live-league-health.mjs",
+    "madden:sync-verify": "node --env-file=.env.local scripts/verify-madden-sync-control.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
