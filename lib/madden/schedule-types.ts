@@ -23,6 +23,9 @@ export type CanonicalScheduleGameInput = {
 export type CanonicalScheduleImportInput = {
   leagueSlug?: string | null;
   source?: string | null;
+  provider?: string | null;
+  gameVersion?: string | null;
+  syncType?: string | null;
   season?: number | null;
   currentWeek?: number | null;
   games: CanonicalScheduleGameInput[];
@@ -33,6 +36,9 @@ export type LeagueGameRow = {
   league_id: string;
   source: string;
   source_game_id: string;
+  canonical_game_key: string | null;
+  source_priority: number;
+  sync_run_id: string | null;
   season: number;
   week: number;
   game_type: string;
