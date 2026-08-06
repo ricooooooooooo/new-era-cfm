@@ -48,8 +48,10 @@ const roleSections: Record<
     title: "Owner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "League Health", href: "/commissioner/league-health" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Owner Connections", href: "/commissioner/owner-connections" },
+      { label: "Sync All Owners", href: "/commissioner/owner-role-sync" },
       { label: "Prize Pot", href: "/commissioner/prize-pot" },
       { label: "Manage Roles", href: "/commissioner/roles" },
       { label: "Review Staff Applications", href: "/commissioner/staff" },
@@ -63,6 +65,7 @@ const roleSections: Record<
     title: "Commissioner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "League Health", href: "/commissioner/league-health" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Owner Connections", href: "/commissioner/owner-connections" },
       { label: "Prize Pot", href: "/commissioner/prize-pot" },
