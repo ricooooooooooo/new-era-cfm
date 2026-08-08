@@ -42,3 +42,4 @@ next-env.d.ts
 .env.local
 .madden-sync-secret.txt
 .new-era-backups/
+.active-check-cron-secret.txt
