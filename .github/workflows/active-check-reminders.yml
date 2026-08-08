@@ -1,0 +1,21 @@
+name: Active Check Reminders
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run NEW ERA active-check reminders
+        env:
+          SITE_URL: ${{ secrets.NEW_ERA_SITE_URL }}
+          CRON_SECRET: ${{ secrets.NEW_ERA_CRON_SECRET }}
+        run: |
+          test -n "$SITE_URL" || (echo "Missing NEW_ERA_SITE_URL GitHub secret" && exit 1)
+          test -n "$CRON_SECRET" || (echo "Missing NEW_ERA_CRON_SECRET GitHub secret" && exit 1)
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${SITE_URL%/}/api/cron/active-check-reminders"

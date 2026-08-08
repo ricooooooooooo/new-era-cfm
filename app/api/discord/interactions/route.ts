@@ -7,7 +7,6 @@ export const runtime = "nodejs";
 
 const DISCORD_PING = 1;
 const DISCORD_MESSAGE_COMPONENT = 3;
-
 const RESPONSE_PONG = 1;
 const RESPONSE_CHANNEL_MESSAGE = 4;
 const RESPONSE_UPDATE_MESSAGE = 7;
@@ -25,9 +24,7 @@ function verifyDiscordRequest(
 ) {
   const publicKey = process.env.DISCORD_PUBLIC_KEY;
 
-  if (!publicKey || !signature || !timestamp) {
-    return false;
-  }
+  if (!publicKey || !signature || !timestamp) return false;
 
   try {
     return nacl.sign.detached.verify(
@@ -42,26 +39,39 @@ function verifyDiscordRequest(
 }
 
 function parseCheckedInNames(value: string | undefined) {
-  if (!value) {
-    return [];
-  }
+  if (!value) return [];
 
   return value
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => {
-      if (!line) {
-        return false;
-      }
-
-      if (EMPTY_CHECK_IN_MESSAGES.has(line.toLowerCase())) {
-        return false;
-      }
-
+      if (!line) return false;
+      if (EMPTY_CHECK_IN_MESSAGES.has(line.toLowerCase())) return false;
       return line.startsWith("✅");
     })
     .map((line) => line.replace(/^✅\s*/, "").trim())
     .filter(Boolean);
+}
+
+async function activeCheckIsClosed(activeCheckId: string) {
+  const result = await supabaseAdmin
+    .from("league_health_active_checks")
+    .select("status, closes_at")
+    .eq("active_check_id", activeCheckId)
+    .maybeSingle();
+
+  if (result.error) {
+    console.error("Unable to verify active-check deadline:", result.error);
+    return false;
+  }
+
+  if (!result.data) return false;
+  if (result.data.status === "closed") return true;
+
+  return Boolean(
+    result.data.closes_at &&
+      new Date(result.data.closes_at).getTime() <= Date.now(),
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -69,16 +79,8 @@ export async function POST(request: NextRequest) {
   const timestamp = request.headers.get("x-signature-timestamp");
   const rawBody = await request.text();
 
-  const validRequest = verifyDiscordRequest(
-    rawBody,
-    signature,
-    timestamp,
-  );
-
-  if (!validRequest) {
-    return new NextResponse("Invalid request signature", {
-      status: 401,
-    });
+  if (!verifyDiscordRequest(rawBody, signature, timestamp)) {
+    return new NextResponse("Invalid request signature", { status: 401 });
   }
 
   let interaction;
@@ -86,31 +88,34 @@ export async function POST(request: NextRequest) {
   try {
     interaction = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json(
-      {
-        error: "Invalid JSON body.",
-      },
-      {
-        status: 400,
-      },
-    );
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
   if (interaction.type === DISCORD_PING) {
-    return NextResponse.json({
-      type: RESPONSE_PONG,
-    });
+    return NextResponse.json({ type: RESPONSE_PONG });
   }
 
   if (
     interaction.type === DISCORD_MESSAGE_COMPONENT &&
     interaction.data?.custom_id === "active_check_join"
   ) {
-    const discordUser =
-      interaction.member?.user ?? interaction.user;
+    const activeCheckId =
+      interaction.message?.id ??
+      interaction.message?.interaction_metadata?.id ??
+      "default";
 
+    if (await activeCheckIsClosed(activeCheckId)) {
+      return NextResponse.json({
+        type: RESPONSE_CHANNEL_MESSAGE,
+        data: {
+          content: "⛔ This NEW ERA Active Check is closed.",
+          flags: 64,
+        },
+      });
+    }
+
+    const discordUser = interaction.member?.user ?? interaction.user;
     const userId = discordUser?.id;
-
     const displayName =
       interaction.member?.nick ||
       interaction.member?.user?.global_name ||
@@ -143,38 +148,22 @@ export async function POST(request: NextRequest) {
     }
 
     const teamSlug = teamSync.team;
-
     const prettyTeam =
       teamSync.roleNames.find((roleName) =>
         roleName.toLowerCase().includes(teamSlug),
       ) ??
       teamSlug
         .split("-")
-        .map(
-          (word) =>
-            word.charAt(0).toUpperCase() + word.slice(1),
-        )
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 
     const currentEmbed = interaction.message?.embeds?.[0];
-
     const checkedInField = currentEmbed?.fields?.find(
-      (field: { name?: string }) =>
-        field.name?.includes("Checked In"),
+      (field: { name?: string }) => field.name?.includes("Checked In"),
     );
-
-    const checkedInTeams = parseCheckedInNames(
-      checkedInField?.value,
-    );
-
-    const activeCheckId =
-      interaction.message?.id ??
-      interaction.message?.interaction_metadata?.id ??
-      "default";
-
+    const checkedInTeams = parseCheckedInNames(checkedInField?.value);
     const alreadyCheckedIn = checkedInTeams.some(
-      (team) =>
-        team.toLowerCase() === prettyTeam.toLowerCase(),
+      (team) => team.toLowerCase() === prettyTeam.toLowerCase(),
     );
 
     if (alreadyCheckedIn) {
@@ -187,80 +176,51 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const { error } = await supabaseAdmin
-      .from("active_check_clicks")
-      .upsert(
-        {
-          discord_id: userId,
-          display_name: displayName,
-          team_slug: teamSlug,
-          team_name: prettyTeam,
-          active_check_id: activeCheckId,
-          checked_in_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "active_check_id,team_slug",
-        },
-      );
+    const { error } = await supabaseAdmin.from("active_check_clicks").upsert(
+      {
+        discord_id: userId,
+        display_name: displayName,
+        team_slug: teamSlug,
+        team_name: prettyTeam,
+        active_check_id: activeCheckId,
+        checked_in_at: new Date().toISOString(),
+      },
+      { onConflict: "active_check_id,team_slug" },
+    );
 
     if (error) {
-      console.error(
-        "Unable to save active check response:",
-        error,
-      );
-
+      console.error("Unable to save active check response:", error);
       return NextResponse.json({
         type: RESPONSE_CHANNEL_MESSAGE,
         data: {
-          content:
-            "Your response could not be saved. Please try again.",
+          content: "Your response could not be saved. Please try again.",
           flags: 64,
         },
       });
     }
 
-    const updatedCheckedInTeams = [
-      ...checkedInTeams,
-      prettyTeam,
-    ];
-
+    const updatedCheckedInTeams = [...checkedInTeams, prettyTeam];
     const checkedInValue = updatedCheckedInTeams
       .map((team) => `✅ ${team}`)
       .join("\n");
-
-    const existingFields = Array.isArray(
-      currentEmbed?.fields,
-    )
+    const existingFields = Array.isArray(currentEmbed?.fields)
       ? currentEmbed.fields.filter(
-          (field: { name?: string }) =>
-            !field.name?.includes("Checked In"),
+          (field: { name?: string }) => !field.name?.includes("Checked In"),
         )
       : [];
 
     return NextResponse.json({
       type: RESPONSE_UPDATE_MESSAGE,
       data: {
-        content:
-          interaction.message?.content || "@everyone",
-
-        allowed_mentions: {
-          parse: [],
-        },
-
+        content: interaction.message?.content || "@everyone",
+        allowed_mentions: { parse: [] },
         embeds: [
           {
-            title:
-              currentEmbed?.title ||
-              "🏈 NEW ERA CFM Activity Check",
-
+            title: currentEmbed?.title || "🏈 NEW ERA CFM Activity Check",
             description:
               currentEmbed?.description ||
               "Click **I'm Active** below to confirm your activity.",
-
-            color:
-              currentEmbed?.color ??
-              0x7c3aed,
-
+            color: currentEmbed?.color ?? 0x7c3aed,
             fields: [
               ...existingFields,
               {
@@ -268,25 +228,17 @@ export async function POST(request: NextRequest) {
                 value: checkedInValue,
               },
             ],
-
             footer:
               currentEmbed?.footer || {
-                text:
-                  "NEW ERA CFM • Commissioner Activity Center",
+                text: "NEW ERA CFM • Commissioner Activity Center",
               },
-
-            timestamp:
-              currentEmbed?.timestamp ||
-              new Date().toISOString(),
-
+            timestamp: currentEmbed?.timestamp || new Date().toISOString(),
             thumbnail: currentEmbed?.thumbnail,
             image: currentEmbed?.image,
             author: currentEmbed?.author,
           },
         ],
-
-        components:
-          interaction.message?.components || [],
+        components: interaction.message?.components || [],
       },
     });
   }

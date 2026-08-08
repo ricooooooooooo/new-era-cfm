@@ -5,6 +5,13 @@ export const runtime = "nodejs";
 
 type ActiveCheckType = "league" | "weekly" | "waitlist";
 
+function clampDuration(value: unknown) {
+  const parsed = Number(value ?? 24);
+
+  if (!Number.isFinite(parsed)) return 24;
+  return Math.min(168, Math.max(0.5, parsed));
+}
+
 export async function POST(request: NextRequest) {
   const botToken = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_ACTIVE_CHECK_CHANNEL_ID;
@@ -15,9 +22,7 @@ export async function POST(request: NextRequest) {
         error:
           "DISCORD_BOT_TOKEN or DISCORD_ACTIVE_CHECK_CHANNEL_ID is missing.",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
   }
 
@@ -27,25 +32,20 @@ export async function POST(request: NextRequest) {
     body.type === "weekly" || body.type === "waitlist"
       ? body.type
       : "league";
-
-  const week =
-    typeof body.week === "string"
-      ? body.week.trim()
-      : "";
-
+  const week = typeof body.week === "string" ? body.week.trim() : "";
   const customMessage =
-    typeof body.customMessage === "string"
-      ? body.customMessage.trim()
-      : "";
+    typeof body.customMessage === "string" ? body.customMessage.trim() : "";
+  const durationHours = clampDuration(body.durationHours);
+  const showTimer = body.showTimer !== false;
+  const reminder6h = body.reminder6h !== false;
+  const reminder2h = body.reminder2h !== false;
+  const reminder30m = body.reminder30m !== false;
+  const finalDm = body.finalDm === true;
 
   if (type === "weekly" && !week) {
     return NextResponse.json(
-      {
-        error: "A week number is required for a weekly owner check.",
-      },
-      {
-        status: 400,
-      },
+      { error: "A week number is required for a weekly owner check." },
+      { status: 400 },
     );
   }
 
@@ -57,13 +57,11 @@ export async function POST(request: NextRequest) {
       title = `🏈 Week ${week} Activity Check`;
       description = `Please confirm that you're active for Week ${week}.`;
       break;
-
     case "waitlist":
       title = "📋 Waitlist Activity Check";
       description =
         "If you're still interested in joining NEW ERA, click the button below.";
       break;
-
     default:
       title = "🏈 League Activity Check";
       description =
@@ -74,7 +72,27 @@ export async function POST(request: NextRequest) {
     description += `\n\n📢 ${customMessage}`;
   }
 
+  const startedAt = new Date();
+  const closesAt = new Date(
+    startedAt.getTime() + durationHours * 60 * 60 * 1_000,
+  );
+  const discordClosesAt = Math.floor(closesAt.getTime() / 1_000);
+
   try {
+    const fields: Array<{ name: string; value: string }> = [
+      {
+        name: "🏈 Teams Checked In — 0",
+        value: "No teams have checked in yet.",
+      },
+    ];
+
+    if (showTimer) {
+      fields.push({
+        name: "⏱️ Active Check Closes",
+        value: `<t:${discordClosesAt}:F> • <t:${discordClosesAt}:R>`,
+      });
+    }
+
     const discordResponse = await fetch(
       `https://discord.com/api/v10/channels/${channelId}/messages`,
       {
@@ -85,24 +103,17 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           content: "@everyone",
-          allowed_mentions: {
-            parse: ["everyone"],
-          },
+          allowed_mentions: { parse: ["everyone"] },
           embeds: [
             {
               title,
               description,
               color: 0x7c3aed,
-              fields: [
-                {
-                  name: "🏈 Teams Checked In — 0",
-                  value: "No teams have checked in yet.",
-                },
-              ],
+              fields,
               footer: {
                 text: "NEW ERA CFM • Commissioner Activity Center",
               },
-              timestamp: new Date().toISOString(),
+              timestamp: startedAt.toISOString(),
             },
           ],
           components: [
@@ -114,9 +125,7 @@ export async function POST(request: NextRequest) {
                   style: 3,
                   custom_id: "active_check_join",
                   label: "I'm Active",
-                  emoji: {
-                    name: "✅",
-                  },
+                  emoji: { name: "✅" },
                 },
               ],
             },
@@ -129,68 +138,84 @@ export async function POST(request: NextRequest) {
 
     if (!discordResponse.ok) {
       console.error("Discord rejected the active check:", responseData);
-
       return NextResponse.json(
         {
           error: "Discord rejected the message.",
           details: responseData,
         },
-        {
-          status: discordResponse.status,
-        },
+        { status: discordResponse.status },
       );
     }
 
     const newActiveCheckId =
-      typeof responseData.id === "string"
-        ? responseData.id
-        : null;
+      typeof responseData.id === "string" ? responseData.id : null;
 
     if (!newActiveCheckId) {
-      console.error(
-        "Discord created the active check without returning a message ID:",
-        responseData,
-      );
-
       return NextResponse.json(
         {
           error:
             "Discord created the message, but no active-check ID was returned.",
         },
-        {
-          status: 500,
-        },
+        { status: 500 },
       );
     }
 
-    /*
-     * A newly launched check replaces the previous one.
-     *
-     * Deleting responses tied to older Discord message IDs ensures the
-     * website immediately returns to 0 of 32 instead of showing check-ins
-     * from an old or deleted Discord message.
-     */
-    const { error: clearOldChecksError } = await supabaseAdmin
+    const nowIso = new Date().toISOString();
+
+    const closePreviousResult = await supabaseAdmin
+      .from("league_health_active_checks")
+      .update({ status: "closed", closed_at: nowIso })
+      .eq("status", "open")
+      .neq("active_check_id", newActiveCheckId);
+
+    if (closePreviousResult.error) {
+      console.error("Unable to close previous active checks:", closePreviousResult.error);
+    }
+
+    const checkResult = await supabaseAdmin
+      .from("league_health_active_checks")
+      .upsert(
+        {
+          active_check_id: newActiveCheckId,
+          channel_id: responseData.channel_id ?? channelId,
+          check_type: type,
+          title,
+          started_at: startedAt.toISOString(),
+          discovered_at: nowIso,
+          closes_at: closesAt.toISOString(),
+          status: "open",
+          closed_at: null,
+          show_timer: showTimer,
+          reminder_6h: reminder6h,
+          reminder_2h: reminder2h,
+          reminder_30m: reminder30m,
+          final_dm: finalDm,
+        },
+        { onConflict: "active_check_id" },
+      );
+
+    if (checkResult.error) {
+      console.error("Active check posted but timer metadata failed:", checkResult.error);
+      return NextResponse.json(
+        {
+          error:
+            "The Discord check was posted, but its timer settings could not be saved.",
+          messageId: newActiveCheckId,
+          channelId: responseData.channel_id,
+        },
+        { status: 500 },
+      );
+    }
+
+    const clearOldChecksResult = await supabaseAdmin
       .from("active_check_clicks")
       .delete()
       .neq("active_check_id", newActiveCheckId);
 
-    if (clearOldChecksError) {
+    if (clearOldChecksResult.error) {
       console.error(
         "Active check posted, but previous responses could not be cleared:",
-        clearOldChecksError,
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "The Discord check was posted, but the previous website check-ins could not be cleared.",
-          messageId: newActiveCheckId,
-          channelId: responseData.channel_id,
-        },
-        {
-          status: 500,
-        },
+        clearOldChecksResult.error,
       );
     }
 
@@ -198,17 +223,14 @@ export async function POST(request: NextRequest) {
       success: true,
       messageId: newActiveCheckId,
       channelId: responseData.channel_id,
+      closesAt: closesAt.toISOString(),
     });
   } catch (error) {
     console.error("Failed to create the activity check:", error);
 
     return NextResponse.json(
-      {
-        error: "Failed to create the activity check.",
-      },
-      {
-        status: 500,
-      },
+      { error: "Failed to create the activity check." },
+      { status: 500 },
     );
   }
 }
