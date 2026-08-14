@@ -111,6 +111,114 @@ async function discordRequest<T>(
   return JSON.parse(text) as T;
 }
 
+
+async function postDiscordGraphic({
+  channelId,
+  content,
+  embeds,
+  imageUrl,
+  allowedMentions,
+}: {
+  channelId: string;
+  content: string;
+  embeds: Record<string, unknown>[];
+  imageUrl: string;
+  allowedMentions: Record<string, unknown>;
+}) {
+  const token =
+    process.env.DISCORD_BOT_TOKEN?.trim();
+
+  if (!token) {
+    throw new Error(
+      "DISCORD_BOT_TOKEN is not configured.",
+    );
+  }
+
+  const imageResponse = await fetch(
+    imageUrl,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (!imageResponse.ok) {
+    throw new Error(
+      `GOTW graphic fetch failed: HTTP ${imageResponse.status}`,
+    );
+  }
+
+  const imageBytes =
+    await imageResponse.arrayBuffer();
+
+  const form = new FormData();
+
+  form.append(
+    "payload_json",
+    JSON.stringify({
+      content,
+      allowed_mentions:
+        allowedMentions,
+      embeds: embeds.map(
+        (embed) => ({
+          ...embed,
+          image: {
+            url:
+              "attachment://new-era-gotw.png",
+          },
+        }),
+      ),
+      attachments: [
+        {
+          id: 0,
+          filename:
+            "new-era-gotw.png",
+          description:
+            "New Era Game of the Week",
+        },
+      ],
+    }),
+  );
+
+  form.append(
+    "files[0]",
+    new Blob(
+      [imageBytes],
+      {
+        type:
+          imageResponse.headers.get(
+            "content-type",
+          ) || "image/png",
+      },
+    ),
+    "new-era-gotw.png",
+  );
+
+  const response = await fetch(
+    `https://discord.com/api/v10/channels/${channelId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bot ${token}`,
+      },
+      body: form,
+    },
+  );
+
+  const responseText =
+    await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `Discord GOTW upload failed ${response.status}: ${responseText.slice(0, 700)}`,
+    );
+  }
+
+  return JSON.parse(
+    responseText,
+  ) as DiscordMessage;
+}
+
 async function resolveChannels() {
   const guildId =
     process.env.DISCORD_GUILD_ID?.trim();
@@ -1477,37 +1585,73 @@ async function postGotw({
       selected.homeRecord,
     );
 
-  const message =
-    await discordRequest<DiscordMessage>(
-      `/channels/${channelId}/messages`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          content: "@everyone",
-          allowed_mentions: {
-            parse: ["everyone"],
-            users: ownerIds,
-          },
-          embeds: [
-            {
-              title:
-                "🏈 NEW ERA GAME OF THE WEEK",
-              description:
-                `${narrative}\n\n` +
-                "**WHO YA GOT?**",
-              color: 0xf59e0b,
-              image: {
-                url: imageUrl,
-              },
-              footer: {
-                text:
-                  `New Era CFM • Season ${season} • Week ${currentWeek} • Vote below`,
-              },
-            },
-          ],
-        }),
-      },
+  const awayRecordText =
+    recordText(
+      selected.awayRecord,
     );
+
+  const homeRecordText =
+    recordText(
+      selected.homeRecord,
+    );
+
+  const awayPerfect =
+    selected.awayRecord.wins > 0 &&
+    selected.awayRecord.losses === 0 &&
+    selected.awayRecord.ties === 0;
+
+  const homePerfect =
+    selected.homeRecord.wins > 0 &&
+    selected.homeRecord.losses === 0 &&
+    selected.homeRecord.ties === 0;
+
+  let hypeText =
+    `The **${awayRecordText} ${selected.away.name}** take on the **${homeRecordText} ${selected.home.name}** in New Era's Game of the Week.`;
+
+  if (
+    awayPerfect &&
+    homePerfect
+  ) {
+    hypeText =
+      `Two undefeated teams collide as the **${awayRecordText} ${selected.away.name}** battle the **${homeRecordText} ${selected.home.name}**.`;
+  } else if (awayPerfect) {
+    hypeText =
+      `The undefeated **${awayRecordText} ${selected.away.name}** put their perfect record on the line against the **${homeRecordText} ${selected.home.name}**.`;
+  } else if (homePerfect) {
+    hypeText =
+      `The undefeated **${homeRecordText} ${selected.home.name}** put their perfect record on the line against the **${awayRecordText} ${selected.away.name}**.`;
+  } else if (
+    selected.away.division &&
+    selected.away.division ===
+      selected.home.division
+  ) {
+    hypeText =
+      `${selected.away.division} rivals clash as the **${awayRecordText} ${selected.away.name}** battle the **${homeRecordText} ${selected.home.name}**.`;
+  }
+
+  const message =
+    await postDiscordGraphic({
+      channelId,
+      content: "@everyone",
+      imageUrl,
+      allowedMentions: {
+        parse: ["everyone"],
+        users: ownerIds,
+      },
+      embeds: [
+        {
+          title:
+            "🏈 NEW ERA GAME OF THE WEEK",
+          description:
+            `${hypeText}\n\n**WHO YA GOT?**`,
+          color: 0xf59e0b,
+          footer: {
+            text:
+              `New Era CFM • Season ${season} • Week ${currentWeek} • Vote below`,
+          },
+        },
+      ],
+    });
 
   await Promise.allSettled([
     react(

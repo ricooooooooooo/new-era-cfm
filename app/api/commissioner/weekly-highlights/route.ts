@@ -29,7 +29,7 @@ export async function GET() {
     success: true,
     status: "ready",
     revision:
-      "weekly-highlights-v2-broadcast",
+      "weekly-highlights-v3-graphic-attachment",
   });
 }
 
@@ -80,7 +80,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       revision:
-        "weekly-highlights-v2-broadcast",
+        "weekly-highlights-v3-graphic-attachment",
       ...result,
     });
   } catch (error) {
