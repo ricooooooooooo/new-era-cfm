@@ -150,28 +150,30 @@ async function postDiscordGraphic({
   const imageBytes =
     await imageResponse.arrayBuffer();
 
+  if (!imageBytes.byteLength) {
+    throw new Error(
+      "GOTW graphic returned an empty image.",
+    );
+  }
+
   const form = new FormData();
 
   form.append(
     "payload_json",
     JSON.stringify({
       content,
-      allowed_mentions:
-        allowedMentions,
-      embeds: embeds.map(
-        (embed) => ({
-          ...embed,
-          image: {
-            url:
-              "attachment://new-era-gotw.png",
-          },
-        }),
-      ),
+      allowed_mentions: allowedMentions,
+
+      // IMPORTANT:
+      // The image is intentionally NOT embedded.
+      // Discord will display the uploaded PNG directly
+      // underneath this embed, just like a normal image post.
+      embeds,
+
       attachments: [
         {
           id: 0,
-          filename:
-            "new-era-gotw.png",
+          filename: "new-era-gotw.png",
           description:
             "New Era Game of the Week",
         },
@@ -198,8 +200,7 @@ async function postDiscordGraphic({
     {
       method: "POST",
       headers: {
-        Authorization:
-          `Bot ${token}`,
+        Authorization: `Bot ${token}`,
       },
       body: form,
     },
