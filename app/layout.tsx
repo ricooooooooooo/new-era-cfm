@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import WelcomeCoinClaim from "@/app/components/WelcomeCoinClaim";
 
 export const metadata: Metadata = {
   title: "New Era CFM",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-[#080909] text-white antialiased">
         {children}
+        <WelcomeCoinClaim />
       </body>
     </html>
   );

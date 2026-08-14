@@ -29,7 +29,7 @@ export async function getOrCreateWallet(discordId: string) {
     .from("wallets")
     .insert({
       discord_id: discordId,
-   balance: 500,
+      balance: 0,
       lifetime_won: 0,
       lifetime_wagered: 0,
     })
