@@ -154,13 +154,11 @@ async function resolveChannels() {
 
   let gotwId =
     process.env.DISCORD_GOTW_CHANNEL_ID?.trim() ||
-    gotwMatch?.id ||
-    null;
+    "1531408027201306667";
 
   let potwId =
     process.env.DISCORD_POTW_CHANNEL_ID?.trim() ||
-    potwMatch?.id ||
-    null;
+    "1531408027201306668";
 
   // If you use one combined GOTW/POTW channel,
   // both automations can use that same channel.
