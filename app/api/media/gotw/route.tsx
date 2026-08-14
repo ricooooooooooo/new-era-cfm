@@ -262,24 +262,14 @@ export async function GET(
     ${escapeXml(awayName.toUpperCase())}
   </text>
 
-  <rect
-    x="180"
-    y="554"
-    width="160"
-    height="48"
-    rx="24"
-    fill="#050507"
-    stroke="${awaySecondary}"
-    stroke-width="2"
-  />
 
   <text
     x="260"
-    y="587"
+    y="585"
     text-anchor="middle"
     fill="white"
     font-family="Arial, Helvetica, sans-serif"
-    font-size="23"
+    font-size="30"
     font-weight="900"
   >
     ${escapeXml(awayRecord)}
@@ -322,24 +312,14 @@ export async function GET(
     ${escapeXml(homeName.toUpperCase())}
   </text>
 
-  <rect
-    x="860"
-    y="554"
-    width="160"
-    height="48"
-    rx="24"
-    fill="#050507"
-    stroke="${homeSecondary}"
-    stroke-width="2"
-  />
 
   <text
     x="940"
-    y="587"
+    y="585"
     text-anchor="middle"
     fill="white"
     font-family="Arial, Helvetica, sans-serif"
-    font-size="23"
+    font-size="30"
     font-weight="900"
   >
     ${escapeXml(homeRecord)}
