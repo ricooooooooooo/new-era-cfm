@@ -70,6 +70,8 @@ export function findTeamFromDiscordRoleNames(roleNames: string[]) {
         team.name,
         `${team.city} ${team.name}`,
         team.slug,
+        team.abbreviation,
+        ...team.aliases,
       ].map(normalizeDiscordRoleName);
 
       return validTeamRoleNames.some((teamRoleName) =>

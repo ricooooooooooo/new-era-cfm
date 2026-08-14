@@ -24,7 +24,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     status: "ready",
-    revision: "discord-owner-sync-v1",
+    revision: "discord-owner-sync-v2",
   });
 }
 

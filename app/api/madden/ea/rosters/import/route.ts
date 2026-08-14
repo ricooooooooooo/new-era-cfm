@@ -44,9 +44,11 @@ function num(value: unknown, fallback = 0) {
 
 function normalizeName(value: string) {
   return value
-    .toLowerCase()
     .normalize("NFKD")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function canonicalAbbreviation(value: unknown) {
@@ -149,7 +151,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     status: "ready",
-    revision: "m27-live-rosters-v1",
+    revision: "m27-live-rosters-v2",
   });
 }
 
@@ -179,8 +181,7 @@ export async function POST(request: NextRequest) {
 
     const teamsResult = await supabaseAdmin
       .from("teams")
-      .select("id, abbreviation")
-      .eq("league_id", leagueId);
+      .select("id, abbreviation");
 
     if (teamsResult.error) throw teamsResult.error;
 
@@ -468,7 +469,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      revision: "m27-live-rosters-v1",
+      revision: "m27-live-rosters-v2",
       teamsImported: arr(body.rosters).length,
       playersImported: snapshots.length,
       matchedPlayers,
