@@ -53,6 +53,23 @@ type WalletResponse = {
   error?: string;
 };
 
+type TeamForm = {
+  abbreviation: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  pointDifferential: number;
+  pointsPerGame: number;
+  pointsAllowedPerGame: number;
+  overall: number | null;
+};
+
+type LeagueSummaryResponse = {
+  teams?: TeamForm[];
+};
+
 function logo(abbreviation: string | undefined) {
   return abbreviation
     ? `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`
@@ -73,6 +90,7 @@ function formatClosingTime(value: string | null) {
 export default function PublicPredictionsPage() {
   const [markets, setMarkets] = useState<PredictionMarket[]>([]);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+const [teamForms, setTeamForms] = useState<Record<string, TeamForm>>({});
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
     {},
   );
@@ -87,13 +105,17 @@ export default function PublicPredictionsPage() {
     setError("");
 
     try {
-      const [marketsResponse, walletResponse] = await Promise.all([
+      const [marketsResponse, walletResponse, summaryResponse] = await Promise.all([
         fetch("/api/prediction-markets", { cache: "no-store" }),
         fetch("/api/wallet", { cache: "no-store" }),
+fetch("/api/league/summary", { cache: "no-store" }),
       ]);
 
       const marketsData = await marketsResponse.json();
       const walletData = (await walletResponse.json()) as WalletResponse;
+const summaryData = summaryResponse.ok
+  ? ((await summaryResponse.json()) as LeagueSummaryResponse)
+  : { teams: [] };
 
       if (!marketsResponse.ok) {
         throw new Error(
@@ -102,6 +124,15 @@ export default function PublicPredictionsPage() {
       }
 
       setMarkets(Array.isArray(marketsData) ? marketsData : []);
+
+setTeamForms(
+  Object.fromEntries(
+    (summaryData.teams ?? []).map((team) => [
+      team.abbreviation,
+      team,
+    ]),
+  ),
+);
 
       if (walletResponse.ok && typeof walletData.balance === "number") {
         setWalletBalance(walletData.balance);
@@ -251,6 +282,14 @@ export default function PublicPredictionsPage() {
         </section>
 
         <div className="mx-auto max-w-7xl px-6 py-8 sm:px-8 sm:py-10">
+        <div className="mb-6 flex justify-end">
+          <Link
+            href="/market"
+            className="rounded-2xl border border-purple-400/30 bg-purple-500/10 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-purple-200 hover:bg-purple-500/20"
+          >
+            New Era Market →
+          </Link>
+        </div>
           {message ? (
             <div className="mb-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm font-bold text-emerald-200">
               {message}
@@ -337,6 +376,9 @@ export default function PublicPredictionsPage() {
                               const abbreviation =
                                 option.metadata?.abbreviation;
                               const teamLogo = logo(abbreviation);
+const form = abbreviation
+  ? teamForms[abbreviation]
+  : undefined;
 
                               return (
                                 <button
@@ -376,6 +418,21 @@ export default function PublicPredictionsPage() {
                                       ).toFixed(2)}
                                       x payout
                                     </p>
+                    {form ? (
+                      <p className="mt-2 text-xs font-bold text-purple-200">
+                        {form.wins}-{form.losses}
+                        {form.ties ? `-${form.ties}` : ""}
+                        {" • "}
+                        OVR {form.overall ?? "—"}
+                        {" • "}
+                        PPG {form.pointsPerGame}
+                        {" • "}
+                        PA/G {form.pointsAllowedPerGame}
+                        {" • "}
+                        DIFF {form.pointDifferential >= 0 ? "+" : ""}
+                        {form.pointDifferential}
+                      </p>
+                    ) : null}
                                   </div>
 
                                   <span

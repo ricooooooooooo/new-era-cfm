@@ -20,6 +20,22 @@ type LeagueSummary = {
     openTeams: number;
     gamesPlayed: number;
   };
+  teams: Array<{
+    slug: string;
+    abbreviation: string;
+    claimed: boolean;
+    owner: string | null;
+    wins: number;
+    losses: number;
+    ties: number;
+    gamesPlayed: number;
+    pointsFor: number;
+    pointsAgainst: number;
+    pointDifferential: number;
+    pointsPerGame: number;
+    pointsAllowedPerGame: number;
+    overall: number | null;
+  }>;
   syncStatus: string;
 };
 
@@ -73,12 +89,20 @@ export default function TeamsPage() {
   const openTeams = summary?.counts.openTeams ?? totalTeams;
   const currentWeek = summary?.league.currentWeek;
 
+const liveTeams = new Map(
+  (summary?.teams ?? []).map((team) => [team.slug, team]),
+);
+
+const getLiveTeam = (slug: string) => liveTeams.get(slug);
+
   /*
    * Individual team-owner assignments are not connected yet.
    * Until that API exists, every franchise card displays an honest
    * "Not Assigned" state instead of using fake data from teams.ts.
    */
-  const visibleTeams = teams;
+  const visibleTeams = showOpenOnly
+  ? teams.filter((team) => !getLiveTeam(team.slug)?.claimed)
+  : teams;
 
   return (
     <AppLayout>
@@ -169,7 +193,7 @@ export default function TeamsPage() {
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-black text-white">
-                Team assignments are awaiting league setup
+                League ownership is live
               </p>
 
               <p className="mt-1 text-sm text-zinc-500">
@@ -181,7 +205,7 @@ export default function TeamsPage() {
             </div>
 
             <span className="w-fit rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-black uppercase tracking-[0.15em] text-amber-300">
-              Madden data not synced
+              Live Madden data
             </span>
           </div>
         </section>
@@ -210,7 +234,7 @@ export default function TeamsPage() {
                   </div>
 
                   <span className="rounded-lg bg-zinc-900/90 px-3 py-2 text-xs font-black text-zinc-400">
-                    NOT ASSIGNED
+                    {getLiveTeam(team.slug)?.claimed ? "CLAIMED" : "OPEN"}
                   </span>
                 </div>
 
@@ -228,7 +252,15 @@ export default function TeamsPage() {
                       Record
                     </p>
 
-                    <p className="mt-2 text-2xl font-black text-zinc-400">—</p>
+                    <p className="mt-2 text-2xl font-black text-white">
+                  {(() => {
+                    const live = getLiveTeam(team.slug);
+                    if (!live) return "—";
+                    return live.ties
+                      ? `${live.wins}-${live.losses}-${live.ties}`
+                      : `${live.wins}-${live.losses}`;
+                  })()}
+                </p>
                   </div>
 
                   <div>
