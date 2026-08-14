@@ -66,6 +66,98 @@ function canonicalAbbreviation(value: unknown) {
   return aliases[abbr] ?? abbr;
 }
 
+function extractMaddenRatings(player: Row) {
+  const attributes: Record<string, number> = {};
+
+  // Preserve every numeric EA Madden rating automatically.
+  // Examples: speedRating, accelRating, catchRating,
+  // runBlockRating, manCoverRating, etc.
+  for (const [key, value] of Object.entries(player)) {
+    if (
+      typeof value === "number" &&
+      (
+        key.endsWith("Rating") ||
+        key.endsWith("Ovr")
+      )
+    ) {
+      attributes[key] = value;
+    }
+  }
+
+  // Friendly aliases used by the New Era UI.
+  const aliases: Record<string, unknown> = {
+    speed: player.speedRating,
+    acceleration: player.accelRating,
+    agility: player.agilityRating,
+    strength: player.strengthRating,
+    awareness: player.awareRating,
+
+    changeOfDirection:
+      player.changeOfDirectionRating ??
+      player.changeDirRating,
+
+    jumping: player.jumpRating,
+    stamina: player.staminaRating,
+    injury: player.injuryRating,
+    toughness: player.toughnessRating,
+
+    carrying: player.carryRating,
+    catching: player.catchRating,
+    spectacularCatch: player.specCatchRating,
+    catchInTraffic: player.catchInTrafficRating,
+
+    shortRoute: player.routeRunShortRating,
+    mediumRoute: player.routeRunMedRating,
+    deepRoute: player.routeRunDeepRating,
+    release: player.releaseRating,
+
+    trucking: player.truckRating,
+    breakTackle: player.breakTackleRating,
+    stiffArm: player.stiffArmRating,
+    spinMove: player.spinMoveRating,
+    jukeMove: player.jukeMoveRating,
+
+    throwPower: player.throwPowerRating,
+    throwShort: player.throwAccShortRating,
+    throwMid: player.throwAccMidRating,
+    throwDeep: player.throwAccDeepRating,
+    throwOnRun: player.throwOnRunRating,
+    playAction: player.playActionRating,
+
+    passBlock: player.passBlockRating,
+    passBlockPower: player.passBlockPowerRating,
+    passBlockFinesse: player.passBlockFinesseRating,
+    runBlock: player.runBlockRating,
+    runBlockPower: player.runBlockPowerRating,
+    runBlockFinesse: player.runBlockFinesseRating,
+    impactBlock: player.impactBlockRating,
+    leadBlock: player.leadBlockRating,
+
+    tackle: player.tackleRating,
+    hitPower: player.hitPowerRating,
+    pursuit: player.pursuitRating,
+    playRecognition: player.playRecRating,
+    blockShedding: player.blockShedRating,
+    powerMoves: player.powerMovesRating,
+    finesseMoves: player.finesseMovesRating,
+
+    manCoverage: player.manCoverRating,
+    zoneCoverage: player.zoneCoverRating,
+    press: player.pressRating,
+
+    kickPower: player.kickPowerRating,
+    kickAccuracy: player.kickAccuracyRating,
+  };
+
+  for (const [key, value] of Object.entries(aliases)) {
+    if (typeof value === "number") {
+      attributes[key] = value;
+    }
+  }
+
+  return attributes;
+}
+
 function development(value: unknown) {
   const trait = num(value);
 
@@ -386,22 +478,7 @@ export async function POST(request: NextRequest) {
         position: position || null,
         archetype: null,
         dev_trait: development(player.devTrait),
-        attributes: {
-          speed: player.speedRating ?? null,
-          acceleration: player.accelRating ?? null,
-          strength: player.strengthRating ?? null,
-          awareness: player.awareRating ?? null,
-          agility: player.agilityRating ?? null,
-          throwPower: player.throwPowerRating ?? null,
-          throwShort: player.throwAccShortRating ?? null,
-          throwMid: player.throwAccMidRating ?? null,
-          throwDeep: player.throwAccDeepRating ?? null,
-          catching: player.catchRating ?? null,
-          carrying: player.carryRating ?? null,
-          tackle: player.tackleRating ?? null,
-          manCoverage: player.manCoverRating ?? null,
-          zoneCoverage: player.zoneCoverRating ?? null,
-        },
+        attributes: extractMaddenRatings(player),
         source_payload: player,
         captured_at: now,
         imported_at: now,

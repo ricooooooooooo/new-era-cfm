@@ -104,7 +104,31 @@ export default async function PlayerPage({
     "totalRating",
   );
 
-  const rosterHref = team
+  const hiddenAttributeKeys = new Set([
+  "generalRating",
+  "totalRating",
+  "playerBestOvr",
+  "playerSchemeOvr",
+]);
+
+const ratingEntries = Object.entries(player.attributes)
+  .filter(
+    ([key, value]) =>
+      typeof value === "number" &&
+      !hiddenAttributeKeys.has(key),
+  )
+  .map(([key, value]) => ({
+    key,
+    label: key
+      .replace(/Rating$/, "")
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (letter) => letter.toUpperCase())
+      .trim(),
+    value: value as number,
+  }))
+  .sort((a, b) => b.value - a.value);
+
+const rosterHref = team
     ? `/teams/${team.slug}/roster`
     : "/teams";
 
@@ -229,7 +253,40 @@ export default async function PlayerPage({
             ))}
           </section>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
+            Madden Ratings
+          </p>
+
+          <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">
+            Player Attributes
+          </h2>
+
+          {ratingEntries.length > 0 ? (
+            <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {ratingEntries.map((rating) => (
+                <div
+                  key={rating.key}
+                  className="rounded-2xl border border-white/[0.08] bg-black/25 p-4"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-zinc-600">
+                    {rating.label}
+                  </p>
+
+                  <p className="mt-2 text-2xl font-black text-white">
+                    {rating.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-zinc-500">
+              Full ratings will populate after the live franchise roster sync.
+            </p>
+          )}
+        </section>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
                 Franchise Data
