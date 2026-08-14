@@ -113,30 +113,11 @@ export async function POST(request: NextRequest) {
 
     const wallet = await getOrCreateWallet(discordId);
 
-    // Detect old untouched wallets created by the former
-    // 500-coin starter balance.
-    const activityResult = await supabaseAdmin
-      .from("wallet_transactions")
-      .select("id")
-      .eq("discord_id", discordId)
-      .limit(1);
-
-    if (activityResult.error) {
-      throw activityResult.error;
-    }
-
+    // PRE-LAUNCH ECONOMY RESET:
+    // The first welcome claim always sets the owner to exactly
+    // the starter amount, regardless of old test bets/refunds.
     const oldBalance = Number(wallet.balance ?? 0);
-
-    const untouchedLegacyWallet =
-      oldBalance === LEGACY_STARTING_BALANCE &&
-      (activityResult.data ?? []).length === 0;
-
-    const baseBalance = untouchedLegacyWallet
-      ? 0
-      : oldBalance;
-
-    const newBalance =
-      baseBalance + WELCOME_REWARD;
+    const newBalance = WELCOME_REWARD;
 
     const walletUpdate = await supabaseAdmin
       .from("wallets")
@@ -160,8 +141,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           kind: "welcome_claim",
           reward: WELCOME_REWARD,
-          legacyWalletNormalized:
-            untouchedLegacyWallet,
+          preLaunchBalanceReset: true,
+          previousBalance: oldBalance,
         },
       });
 
