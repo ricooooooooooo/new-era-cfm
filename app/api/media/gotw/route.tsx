@@ -1,385 +1,452 @@
-import { NextRequest } from "next/server";
-import { ImageResponse } from "next/og";
+import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 import { NFL_TEAMS } from "@/lib/nfl-teams";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+async function teamLogoData(abbreviation: string) {
+  try {
+    const response = await fetch(
+      `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`,
+      {
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) return null;
+
+    const raw = Buffer.from(
+      await response.arrayBuffer(),
+    );
+
+    if (!raw.length) return null;
+
+    // Normalize whatever NFL returns into a PNG first.
+    const png = await sharp(raw)
+      .resize(240, 240, {
+        fit: "contain",
+        withoutEnlargement: true,
+      })
+      .png()
+      .toBuffer();
+
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch (error) {
+    console.error(
+      `Unable to load ${abbreviation} logo:`,
+      error,
+    );
+
+    return null;
+  }
+}
 
 export async function GET(
   request: NextRequest,
 ) {
-  const p =
-    request.nextUrl.searchParams;
+  try {
+    const params =
+      request.nextUrl.searchParams;
 
-  const week = p.get("week") ?? "?";
-  const season = p.get("season") ?? "1";
+    const season =
+      params.get("season") ?? "1";
 
-  const awayAbbr =
-    p.get("away") ?? "AWAY";
+    const week =
+      params.get("week") ?? "?";
 
-  const homeAbbr =
-    p.get("home") ?? "HOME";
+    const awayAbbr =
+      (params.get("away") ?? "AWAY").toUpperCase();
 
-  const awayRecord =
-    p.get("awayRecord") ?? "";
+    const homeAbbr =
+      (params.get("home") ?? "HOME").toUpperCase();
 
-  const homeRecord =
-    p.get("homeRecord") ?? "";
+    const awayRecord =
+      params.get("awayRecord") ?? "";
 
-  const awayOwner =
-    p.get("awayOwner") ?? "Owner";
+    const homeRecord =
+      params.get("homeRecord") ?? "";
 
-  const homeOwner =
-    p.get("homeOwner") ?? "Owner";
+    const awayOwner =
+      params.get("awayOwner") ?? "Owner";
 
-  const reason =
-    p.get("reason") ??
-    "NEW ERA GAME OF THE WEEK";
+    const homeOwner =
+      params.get("homeOwner") ?? "Owner";
 
-  const away =
-    NFL_TEAMS.find(
-      (team) =>
-        team.abbreviation === awayAbbr,
-    ) ?? null;
+    const reason =
+      params.get("reason") ??
+      "NEW ERA GAME OF THE WEEK";
 
-  const home =
-    NFL_TEAMS.find(
-      (team) =>
-        team.abbreviation === homeAbbr,
-    ) ?? null;
+    const away =
+      NFL_TEAMS.find(
+        (team) =>
+          team.abbreviation === awayAbbr,
+      ) ?? null;
 
-  const awayLogo =
-    `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${awayAbbr}`;
+    const home =
+      NFL_TEAMS.find(
+        (team) =>
+          team.abbreviation === homeAbbr,
+      ) ?? null;
 
-  const homeLogo =
-    `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${homeAbbr}`;
+    const [
+      awayLogo,
+      homeLogo,
+    ] = await Promise.all([
+      teamLogoData(awayAbbr),
+      teamLogoData(homeAbbr),
+    ]);
 
-  const awayColor =
-    away?.primary ?? "#27272a";
+    const awayColor =
+      away?.primary ?? "#30343b";
 
-  const homeColor =
-    home?.primary ?? "#27272a";
+    const awaySecondary =
+      away?.secondary ?? "#a1a1aa";
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: 1200,
-          height: 675,
-          display: "flex",
-          position: "relative",
-          overflow: "hidden",
-          color: "white",
-          background:
-            "linear-gradient(180deg,#050507 0%,#111116 100%)",
-          fontFamily: "Arial",
-        }}
-      >
-        {/* TEAM COLOR ATMOSPHERE */}
-        <div
-          style={{
-            position: "absolute",
-            left: -120,
-            top: 50,
-            width: 650,
-            height: 650,
-            borderRadius: 650,
-            background: awayColor,
-            opacity: 0.32,
-            filter: "blur(100px)",
-          }}
-        />
+    const homeColor =
+      home?.primary ?? "#30343b";
 
-        <div
-          style={{
-            position: "absolute",
-            right: -120,
-            top: 50,
-            width: 650,
-            height: 650,
-            borderRadius: 650,
-            background: homeColor,
-            opacity: 0.32,
-            filter: "blur(100px)",
-          }}
-        />
+    const homeSecondary =
+      home?.secondary ?? "#a1a1aa";
 
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            background:
-              "linear-gradient(115deg,transparent 48%,rgba(255,255,255,.08) 49%,rgba(255,255,255,.08) 51%,transparent 52%)",
-          }}
-        />
+    const awayName =
+      away?.name ?? awayAbbr;
 
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            padding: "42px 56px 36px",
-            position: "relative",
-          }}
-        >
-          {/* HEADER */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  letterSpacing: 6,
-                  color: "#c084fc",
-                }}
-              >
-                NEW ERA ONLINE LEAGUE
-              </div>
+    const homeName =
+      home?.name ?? homeAbbr;
 
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 42,
-                  fontWeight: 900,
-                  letterSpacing: -1,
-                }}
-              >
-                GAME OF THE WEEK
-              </div>
-            </div>
+    const awayCity =
+      away?.city ?? "";
 
-            <div
-              style={{
-                fontSize: 19,
-                fontWeight: 700,
-                color: "#d4d4d8",
-              }}
-            >
-              SEASON {season} • WEEK {week}
-            </div>
-          </div>
+    const homeCity =
+      home?.city ?? "";
 
-          {/* MATCHUP */}
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent:
-                "space-between",
-              marginTop: 10,
-            }}
-          >
-            {/* AWAY */}
-            <div
-              style={{
-                width: 430,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <img
-                src={awayLogo}
-                width="210"
-                height="210"
-                alt=""
-                style={{
-                  objectFit: "contain",
-                }}
-              />
+    const awayLogoSvg = awayLogo
+      ? `<image href="${awayLogo}" x="135" y="210" width="250" height="250" preserveAspectRatio="xMidYMid meet"/>`
+      : `<text x="260" y="345" text-anchor="middle" fill="white" font-size="74" font-weight="900">${escapeXml(awayAbbr)}</text>`;
 
-              <div
-                style={{
-                  marginTop: 10,
-                  fontSize: 21,
-                  fontWeight: 700,
-                  letterSpacing: 4,
-                  color: "#d4d4d8",
-                }}
-              >
-                {away?.city?.toUpperCase() ??
-                  ""}
-              </div>
+    const homeLogoSvg = homeLogo
+      ? `<image href="${homeLogo}" x="815" y="210" width="250" height="250" preserveAspectRatio="xMidYMid meet"/>`
+      : `<text x="940" y="345" text-anchor="middle" fill="white" font-size="74" font-weight="900">${escapeXml(homeAbbr)}</text>`;
 
-              <div
-                style={{
-                  fontSize: 42,
-                  fontWeight: 900,
-                }}
-              >
-                {away?.name?.toUpperCase() ??
-                  awayAbbr}
-              </div>
+    const svg = `
+<svg
+  width="1200"
+  height="675"
+  viewBox="0 0 1200 675"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#050507"/>
+      <stop offset="50%" stop-color="#101014"/>
+      <stop offset="100%" stop-color="#050507"/>
+    </linearGradient>
 
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 25,
-                  fontWeight: 900,
-                }}
-              >
-                {awayRecord}
-              </div>
+    <radialGradient id="awayGlow">
+      <stop offset="0%" stop-color="${awayColor}" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="${awayColor}" stop-opacity="0"/>
+    </radialGradient>
 
-              <div
-                style={{
-                  marginTop: 8,
-                  padding:
-                    "8px 24px",
-                  border:
-                    "1px solid rgba(255,255,255,.18)",
-                  borderRadius: 999,
-                  background:
-                    "rgba(0,0,0,.35)",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#e4e4e7",
-                }}
-              >
-                👤 {awayOwner}
-              </div>
-            </div>
+    <radialGradient id="homeGlow">
+      <stop offset="0%" stop-color="${homeColor}" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="${homeColor}" stop-opacity="0"/>
+    </radialGradient>
 
-            {/* VS */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 800,
-                  letterSpacing: 4,
-                  color: "#71717a",
-                }}
-              >
-                NEW ERA
-              </div>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
 
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 76,
-                  fontWeight: 900,
-                  fontStyle: "italic",
-                }}
-              >
-                VS
-              </div>
-            </div>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000" flood-opacity=".65"/>
+    </filter>
+  </defs>
 
-            {/* HOME */}
-            <div
-              style={{
-                width: 430,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <img
-                src={homeLogo}
-                width="210"
-                height="210"
-                alt=""
-                style={{
-                  objectFit: "contain",
-                }}
-              />
+  <rect width="1200" height="675" fill="url(#bg)"/>
 
-              <div
-                style={{
-                  marginTop: 10,
-                  fontSize: 21,
-                  fontWeight: 700,
-                  letterSpacing: 4,
-                  color: "#d4d4d8",
-                }}
-              >
-                {home?.city?.toUpperCase() ??
-                  ""}
-              </div>
+  <circle
+    cx="180"
+    cy="350"
+    r="390"
+    fill="url(#awayGlow)"
+    filter="url(#blur)"
+  />
 
-              <div
-                style={{
-                  fontSize: 42,
-                  fontWeight: 900,
-                }}
-              >
-                {home?.name?.toUpperCase() ??
-                  homeAbbr}
-              </div>
+  <circle
+    cx="1020"
+    cy="350"
+    r="390"
+    fill="url(#homeGlow)"
+    filter="url(#blur)"
+  />
 
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 25,
-                  fontWeight: 900,
-                }}
-              >
-                {homeRecord}
-              </div>
+  <path
+    d="M585 135 L615 135 L545 560 L515 560 Z"
+    fill="white"
+    opacity=".06"
+  />
 
-              <div
-                style={{
-                  marginTop: 8,
-                  padding:
-                    "8px 24px",
-                  border:
-                    "1px solid rgba(255,255,255,.18)",
-                  borderRadius: 999,
-                  background:
-                    "rgba(0,0,0,.35)",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#e4e4e7",
-                }}
-              >
-                👤 {homeOwner}
-              </div>
-            </div>
-          </div>
+  <text
+    x="70"
+    y="66"
+    fill="#d8b4fe"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="20"
+    font-weight="900"
+    letter-spacing="6"
+  >
+    NEW ERA ONLINE LEAGUE
+  </text>
 
-          {/* BOTTOM */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              borderTop:
-                "1px solid rgba(255,255,255,.1)",
-              paddingTop: 18,
-              fontSize: 18,
-              fontWeight: 800,
-              color: "#fbbf24",
-              letterSpacing: 2,
-            }}
-          >
-            {reason.toUpperCase()}
-          </div>
-        </div>
-      </div>
-    ),
-    {
-      width: 1200,
-      height: 675,
-    },
-  );
+  <text
+    x="1130"
+    y="66"
+    text-anchor="end"
+    fill="#c4c4cc"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="20"
+    font-weight="700"
+  >
+    SEASON ${escapeXml(season)} • WEEK ${escapeXml(week)}
+  </text>
+
+  <text
+    x="600"
+    y="137"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="58"
+    font-weight="900"
+    letter-spacing="-2"
+    filter="url(#shadow)"
+  >
+    GAME OF THE WEEK
+  </text>
+
+  ${awayLogoSvg}
+  ${homeLogoSvg}
+
+  <text
+    x="260"
+    y="492"
+    text-anchor="middle"
+    fill="#d4d4d8"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="19"
+    font-weight="800"
+    letter-spacing="4"
+  >
+    ${escapeXml(awayCity.toUpperCase())}
+  </text>
+
+  <text
+    x="260"
+    y="535"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="42"
+    font-weight="900"
+  >
+    ${escapeXml(awayName.toUpperCase())}
+  </text>
+
+  <rect
+    x="180"
+    y="554"
+    width="160"
+    height="48"
+    rx="24"
+    fill="#050507"
+    stroke="${awaySecondary}"
+    stroke-width="2"
+  />
+
+  <text
+    x="260"
+    y="587"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="23"
+    font-weight="900"
+  >
+    ${escapeXml(awayRecord)}
+  </text>
+
+  <text
+    x="260"
+    y="632"
+    text-anchor="middle"
+    fill="#e4e4e7"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="18"
+    font-weight="700"
+  >
+    ${escapeXml(awayOwner)}
+  </text>
+
+  <text
+    x="940"
+    y="492"
+    text-anchor="middle"
+    fill="#d4d4d8"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="19"
+    font-weight="800"
+    letter-spacing="4"
+  >
+    ${escapeXml(homeCity.toUpperCase())}
+  </text>
+
+  <text
+    x="940"
+    y="535"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="42"
+    font-weight="900"
+  >
+    ${escapeXml(homeName.toUpperCase())}
+  </text>
+
+  <rect
+    x="860"
+    y="554"
+    width="160"
+    height="48"
+    rx="24"
+    fill="#050507"
+    stroke="${homeSecondary}"
+    stroke-width="2"
+  />
+
+  <text
+    x="940"
+    y="587"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="23"
+    font-weight="900"
+  >
+    ${escapeXml(homeRecord)}
+  </text>
+
+  <text
+    x="940"
+    y="632"
+    text-anchor="middle"
+    fill="#e4e4e7"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="18"
+    font-weight="700"
+  >
+    ${escapeXml(homeOwner)}
+  </text>
+
+  <text
+    x="600"
+    y="325"
+    text-anchor="middle"
+    fill="#9ca3af"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="18"
+    font-weight="900"
+    letter-spacing="4"
+  >
+    NEW ERA
+  </text>
+
+  <text
+    x="600"
+    y="400"
+    text-anchor="middle"
+    fill="white"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="78"
+    font-weight="900"
+    font-style="italic"
+  >
+    VS
+  </text>
+
+  <text
+    x="600"
+    y="459"
+    text-anchor="middle"
+    fill="#fbbf24"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="15"
+    font-weight="900"
+    letter-spacing="2"
+  >
+    ${escapeXml(reason.toUpperCase())}
+  </text>
+</svg>
+`;
+
+    const png =
+      await sharp(
+        Buffer.from(svg),
+      )
+        .png({
+          compressionLevel: 9,
+        })
+        .toBuffer();
+
+    if (!png.length) {
+      throw new Error(
+        "Sharp generated an empty GOTW PNG.",
+      );
+    }
+
+    return new NextResponse(
+      new Uint8Array(png),
+      {
+        status: 200,
+        headers: {
+          "content-type": "image/png",
+          "content-length":
+            String(png.length),
+          "cache-control":
+            "public, max-age=60, s-maxage=3600",
+          "x-new-era-gotw-bytes":
+            String(png.length),
+          "x-new-era-gotw-engine":
+            "sharp-v1",
+        },
+      },
+    );
+  } catch (error) {
+    console.error(
+      "GOTW graphic generation failed:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
+      {
+        status: 500,
+      },
+    );
+  }
 }
