@@ -361,7 +361,10 @@ export async function importCanonicalSchedule(
       );
     }
 
-    if (settingsResult.data?.discord_post_enabled) {
+    if (
+      settingsResult.data?.discord_post_enabled &&
+      !input.suppressPredictionDiscord
+    ) {
       await postPredictionMarketBatch({
         season: defaultSeason,
         week: currentWeek,

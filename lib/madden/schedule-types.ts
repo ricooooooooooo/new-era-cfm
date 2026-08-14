@@ -28,6 +28,7 @@ export type CanonicalScheduleImportInput = {
   syncType?: string | null;
   season?: number | null;
   currentWeek?: number | null;
+  suppressPredictionDiscord?: boolean | null;
   games: CanonicalScheduleGameInput[];
 };
 
