@@ -27,6 +27,7 @@ type TeamContext = {
   division: string;
   conference: "AFC" | "NFC";
   ownerDiscordId: string | null;
+  ownerName: string;
   eaTeamId: number | null;
 };
 
@@ -248,7 +249,7 @@ async function loadContexts(
   const membersResult = ownerIds.length
     ? await supabaseAdmin
         .from("members")
-        .select("id, discord_id")
+        .select("id, discord_id, display_name, discord_username")
         .in("id", ownerIds)
     : { data: [], error: null };
 
@@ -260,6 +261,15 @@ async function loadContexts(
     (membersResult.data ?? []).map((member) => [
       String(member.id),
       str(member.discord_id),
+    ]),
+  );
+
+  const ownerNameByMember = new Map(
+    (membersResult.data ?? []).map((member) => [
+      String(member.id),
+      str(member.display_name) ||
+        str(member.discord_username) ||
+        "Claimed",
     ]),
   );
 
@@ -329,6 +339,12 @@ async function loadContexts(
               String(team.owner_member_id),
             ) || null
           : null,
+      ownerName:
+        team.owner_member_id
+          ? ownerNameByMember.get(
+              String(team.owner_member_id),
+            ) || "Claimed"
+          : "Unclaimed",
       eaTeamId:
         num(attributes.eaTeamId) || null,
     };
@@ -594,12 +610,18 @@ async function resolvePlayerHeadshot(
         targetTeam &&
         player.team?.toUpperCase() === targetTeam
       ) {
-        return `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`;
+        return potwHeadshotUrl(
+          playerId,
+          targetTeam,
+        );
       }
     }
 
     if (fallback) {
-      return `https://sleepercdn.com/content/nfl/players/${fallback[0]}.jpg`;
+      return potwHeadshotUrl(
+        fallback[0],
+        targetTeam,
+      );
     }
 
     return null;
@@ -615,6 +637,27 @@ async function resolvePlayerHeadshot(
 
 function weeklyTeamLogo(abbreviation: string) {
   return `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`;
+}
+
+function weeklySiteUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "https://new-era-cfm.vercel.app"
+  ).replace(/\/+$/, "");
+}
+
+function potwHeadshotUrl(
+  playerId: string,
+  teamAbbreviation: string | null,
+) {
+  const params = new URLSearchParams({
+    id: playerId,
+    team: teamAbbreviation ?? "",
+    v: "3",
+  });
+
+  return `${weeklySiteUrl()}/api/media/potw-headshot?${params.toString()}`;
 }
 
 async function postPotw({
@@ -1041,6 +1084,50 @@ function pdg(line: RecordLine) {
   return ppg(line) - papg(line);
 }
 
+function gotwNarrative(
+  away: TeamContext,
+  home: TeamContext,
+  awayRecord: RecordLine,
+  homeRecord: RecordLine,
+) {
+  const awayText = recordText(awayRecord);
+  const homeText = recordText(homeRecord);
+
+  const awayUndefeated =
+    awayRecord.wins > 0 &&
+    awayRecord.losses === 0 &&
+    awayRecord.ties === 0;
+
+  const homeUndefeated =
+    homeRecord.wins > 0 &&
+    homeRecord.losses === 0 &&
+    homeRecord.ties === 0;
+
+  if (
+    awayUndefeated &&
+    homeUndefeated
+  ) {
+    return `Two undefeated teams collide as the ${awayText} ${away.name} take on the ${homeText} ${home.name}.`;
+  }
+
+  if (awayUndefeated) {
+    return `The undefeated ${awayText} ${away.name} put their perfect record on the line against the ${homeText} ${home.name}.`;
+  }
+
+  if (homeUndefeated) {
+    return `The undefeated ${homeText} ${home.name} put their perfect record on the line against the ${awayText} ${away.name}.`;
+  }
+
+  if (
+    away.division &&
+    away.division === home.division
+  ) {
+    return `${away.division} rivals clash as the ${awayText} ${away.name} battle the ${homeText} ${home.name}.`;
+  }
+
+  return `The ${awayText} ${away.name} take on the ${homeText} ${home.name} in New Era's Game of the Week.`;
+}
+
 async function findTeamEmoji(
   guildId: string,
   team: TeamContext,
@@ -1350,6 +1437,8 @@ async function postGotw({
       selected.homeRecord,
     ),
     reason: selected.reason,
+    awayOwner: selected.away.ownerName,
+    homeOwner: selected.home.ownerName,
   });
 
   const imageUrl =
@@ -1380,103 +1469,39 @@ async function postGotw({
   const homeReaction =
     homeEmoji || "2️⃣";
 
+  const narrative =
+    gotwNarrative(
+      selected.away,
+      selected.home,
+      selected.awayRecord,
+      selected.homeRecord,
+    );
+
   const message =
     await discordRequest<DiscordMessage>(
       `/channels/${channelId}/messages`,
       {
         method: "POST",
         body: JSON.stringify({
-          content:
-            ownerIds.length
-              ? `${ownerIds
-                  .map((id) => `<@${id}>`)
-                  .join(
-                    " ",
-                  )}\n🔥 **WEEK ${currentWeek} GAME OF THE WEEK — VOTE BELOW**`
-              : `🔥 **WEEK ${currentWeek} GAME OF THE WEEK — VOTE BELOW**`,
+          content: "@everyone",
           allowed_mentions: {
-            parse: [],
+            parse: ["everyone"],
             users: ownerIds,
           },
           embeds: [
             {
               title:
-                `🔥 WEEK ${currentWeek} GAME OF THE WEEK`,
+                "🏈 NEW ERA GAME OF THE WEEK",
               description:
-                `**${selected.away.city} ${selected.away.name}** @ **${selected.home.city} ${selected.home.name}**\n\n` +
-                `Selected using league record, scoring margin, recent form, matchup quality and rivalry value.`,
+                `${narrative}\n\n` +
+                "**WHO YA GOT?**",
               color: 0xf59e0b,
-              fields: [
-                {
-                  name:
-                    `${selected.away.abbreviation} — ${recordText(
-                      selected.awayRecord,
-                    )}`,
-                  value:
-                    `PPG ${ppg(
-                      selected.awayRecord,
-                    ).toFixed(
-                      1,
-                    )} • PA/G ${papg(
-                      selected.awayRecord,
-                    ).toFixed(
-                      1,
-                    )} • DIFF ${
-                      pdg(
-                        selected.awayRecord,
-                      ) >= 0
-                        ? "+"
-                        : ""
-                    }${pdg(
-                      selected.awayRecord,
-                    ).toFixed(1)}`,
-                  inline: true,
-                },
-                {
-                  name:
-                    `${selected.home.abbreviation} — ${recordText(
-                      selected.homeRecord,
-                    )}`,
-                  value:
-                    `PPG ${ppg(
-                      selected.homeRecord,
-                    ).toFixed(
-                      1,
-                    )} • PA/G ${papg(
-                      selected.homeRecord,
-                    ).toFixed(
-                      1,
-                    )} • DIFF ${
-                      pdg(
-                        selected.homeRecord,
-                      ) >= 0
-                        ? "+"
-                        : ""
-                    }${pdg(
-                      selected.homeRecord,
-                    ).toFixed(1)}`,
-                  inline: true,
-                },
-                {
-                  name: "Why this game?",
-                  value: selected.reason,
-                  inline: false,
-                },
-                {
-                  name: "Community Vote",
-                  value:
-                    awayEmoji && homeEmoji
-                      ? `React with the **${selected.away.abbreviation} logo** or **${selected.home.abbreviation} logo** below.`
-                      : `1️⃣ ${selected.away.abbreviation}\n2️⃣ ${selected.home.abbreviation}`,
-                  inline: false,
-                },
-              ],
               image: {
                 url: imageUrl,
               },
               footer: {
                 text:
-                  `New Era CFM • Season ${season}`,
+                  `New Era CFM • Season ${season} • Week ${currentWeek} • Vote below`,
               },
             },
           ],
