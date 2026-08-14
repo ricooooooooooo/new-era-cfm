@@ -103,7 +103,14 @@ export default async function StandingsPage() {
                           <div className="flex items-center gap-3">
                             <span className="w-4 text-xs font-black text-zinc-700">{index + 1}</span>
                             <div className="relative h-10 w-10 shrink-0">
-                              <Image src={teamLogo(team.abbreviation)} alt={`${team.city ?? ""} ${team.name}`} fill sizes="40px" className="object-contain" />
+                              <Image
+                                src={teamLogo(team.abbreviation)}
+                                alt={`${team.city ?? ""} ${team.name}`}
+                                fill
+                                unoptimized
+                                sizes="40px"
+                                className="object-contain"
+                              />
                             </div>
                             <div>
                               <p className="font-black text-white">{team.city} {team.name}</p>

@@ -43,6 +43,7 @@ function normalizeTeamAbbreviation(value: string) {
   const cleaned = value.trim().toUpperCase();
 
   const aliases: Record<string, string> = {
+    AZ: "ARI",
     JAC: "JAX",
     WSH: "WAS",
     OAK: "LV",

@@ -33,6 +33,22 @@ function stringValue(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function canonicalTeamAbbreviation(value: unknown) {
+  const cleaned = stringValue(value).toUpperCase();
+
+  const aliases: Record<string, string> = {
+    AZ: "ARI",
+    JAC: "JAX",
+    WSH: "WAS",
+    OAK: "LV",
+    SD: "LAC",
+    STL: "LAR",
+    LA: "LAR",
+  };
+
+  return aliases[cleaned] ?? cleaned;
+}
+
 function providedSecret(request: NextRequest) {
   const authorization = request.headers.get("authorization");
 
@@ -94,6 +110,7 @@ export async function GET() {
     service: "NEW ERA Madden 27 direct EA importer",
     provider: "direct_ea",
     status: "ready",
+    revision: "m27-ea-import-v2",
   });
 }
 
@@ -219,7 +236,7 @@ export async function POST(request: NextRequest) {
 
     for (const team of eaTeams) {
       const id = numberValue(team.teamId);
-      const abbreviation = stringValue(team.abbrName).toUpperCase();
+      const abbreviation = canonicalTeamAbbreviation(team.abbrName);
 
       if (!id || !abbreviation) continue;
 
@@ -313,7 +330,7 @@ export async function POST(request: NextRequest) {
     }
 
     const teamSnapshots = eaTeams.flatMap((team) => {
-      const abbreviation = stringValue(team.abbrName).toUpperCase();
+      const abbreviation = canonicalTeamAbbreviation(team.abbrName);
       const internalTeam = internalByAbbreviation.get(abbreviation);
 
       if (!internalTeam) return [];
