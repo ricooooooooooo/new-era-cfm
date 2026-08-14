@@ -519,6 +519,104 @@ async function hydratePlayerNames(
   }
 }
 
+
+type SleeperPlayerProfile = {
+  player_id?: string;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  team?: string;
+};
+
+let sleeperPlayerCache:
+  | Record<string, SleeperPlayerProfile>
+  | null = null;
+
+async function loadSleeperPlayers() {
+  if (sleeperPlayerCache) {
+    return sleeperPlayerCache;
+  }
+
+  const response = await fetch(
+    "https://api.sleeper.app/v1/players/nfl",
+    {
+      cache: "force-cache",
+      next: {
+        revalidate: 86400,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Sleeper player lookup failed: ${response.status}`,
+    );
+  }
+
+  sleeperPlayerCache =
+    (await response.json()) as Record<
+      string,
+      SleeperPlayerProfile
+    >;
+
+  return sleeperPlayerCache;
+}
+
+async function resolvePlayerHeadshot(
+  playerName: string,
+  teamAbbreviation: string | null,
+) {
+  try {
+    const players = await loadSleeperPlayers();
+
+    const targetName = normalized(playerName);
+    const targetTeam =
+      teamAbbreviation?.toUpperCase() ?? null;
+
+    let fallback:
+      | [string, SleeperPlayerProfile]
+      | null = null;
+
+    for (const [playerId, player] of Object.entries(players)) {
+      const fullName =
+        player.full_name ||
+        `${player.first_name ?? ""} ${player.last_name ?? ""}`.trim();
+
+      if (normalized(fullName) !== targetName) {
+        continue;
+      }
+
+      if (!fallback) {
+        fallback = [playerId, player];
+      }
+
+      if (
+        targetTeam &&
+        player.team?.toUpperCase() === targetTeam
+      ) {
+        return `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`;
+      }
+    }
+
+    if (fallback) {
+      return `https://sleepercdn.com/content/nfl/players/${fallback[0]}.jpg`;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(
+      "POTW headshot lookup failed:",
+      error,
+    );
+
+    return null;
+  }
+}
+
+function weeklyTeamLogo(abbreviation: string) {
+  return `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`;
+}
+
 async function postPotw({
   leagueId,
   season,
@@ -778,6 +876,59 @@ async function postPotw({
     (id) => `<@${id}>`,
   );
 
+
+  const awardEmbeds = await Promise.all(
+    awards.map(async (award) => {
+      const team =
+        contexts.byEaId.get(
+          award.player.teamId,
+        );
+
+      const defensive =
+        award.label.includes("Defensive");
+
+      const headshot =
+        await resolvePlayerHeadshot(
+          award.player.name,
+          team?.abbreviation ?? null,
+        );
+
+      const thumbnail =
+        headshot ||
+        (team
+          ? weeklyTeamLogo(team.abbreviation)
+          : null);
+
+      const statLine = defensive
+        ? defensiveLine(award.player)
+        : offensiveLine(award.player);
+
+      return {
+        title:
+          `🏆 ${award.label}`,
+        description:
+          `**${award.player.name}** — **${team?.abbreviation ?? "?"}**\n` +
+          `${statLine}\n\n` +
+          `🎁 **Reward:** +2 NP Upgrade`,
+        color:
+          defensive
+            ? 0x2563eb
+            : 0x7c3aed,
+        ...(thumbnail
+          ? {
+              thumbnail: {
+                url: thumbnail,
+              },
+            }
+          : {}),
+        footer: {
+          text:
+            `New Era CFM • Season ${season} • Week ${week}`,
+        },
+      };
+    }),
+  );
+
   const message =
     await discordRequest<DiscordMessage>(
       `/channels/${channelId}/messages`,
@@ -798,40 +949,10 @@ async function postPotw({
               title:
                 `🏆 NEW ERA WEEK ${week} PLAYERS OF THE WEEK`,
               description:
-                "Four players. Four +2 NP rewards. Owners tagged above can claim their upgrade.",
-              color: 0x7c3aed,
-              fields: awards.map(
-                (award) => {
-                  const team =
-                    contexts.byEaId.get(
-                      award.player.teamId,
-                    );
-
-                  const defensive =
-                    award.label.includes(
-                      "Defensive",
-                    );
-
-                  return {
-                    name: award.label,
-                    value:
-                      `**${award.player.name}** — ${team?.abbreviation ?? "?"}\n` +
-                      (defensive
-                        ? defensiveLine(
-                            award.player,
-                          )
-                        : offensiveLine(
-                            award.player,
-                          )),
-                    inline: false,
-                  };
-                },
-              ),
-              footer: {
-                text:
-                  `New Era CFM • Season ${season} • Week ${week}`,
-              },
+                "Four conference award winners. Each winning owner earns a +2 NP upgrade.",
+              color: 0xf59e0b,
             },
+            ...awardEmbeds,
           ],
         }),
       },
