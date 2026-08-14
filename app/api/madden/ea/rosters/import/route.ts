@@ -243,7 +243,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     status: "ready",
-    revision: "m27-live-rosters-v2",
+    revision: "m27-live-rosters-v3-full-ratings",
   });
 }
 
@@ -546,7 +546,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      revision: "m27-live-rosters-v2",
+      revision: "m27-live-rosters-v3-full-ratings",
       teamsImported: arr(body.rosters).length,
       playersImported: snapshots.length,
       matchedPlayers,
