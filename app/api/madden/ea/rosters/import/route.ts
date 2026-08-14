@@ -243,7 +243,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     status: "ready",
-    revision: "m27-live-rosters-v3-full-ratings",
+    revision: "m27-live-rosters-v4-launch",
   });
 }
 
@@ -516,10 +516,23 @@ export async function POST(request: NextRequest) {
 
     if (deleteResult.error) throw deleteResult.error;
 
+    const uniqueSnapshots = Array.from(
+      new Map(
+        snapshots.map((snapshot) => [
+          String(snapshot.player_id),
+          snapshot,
+        ]),
+      ).values(),
+    );
+
+    console.log(
+      `EA roster snapshots: ${snapshots.length} raw / ${uniqueSnapshots.length} unique`,
+    );
+
     await batchInsert(
       "madden_player_snapshots",
-      snapshots,
-      350,
+      uniqueSnapshots,
+      250,
     );
 
     const runResult = await supabaseAdmin
@@ -529,7 +542,7 @@ export async function POST(request: NextRequest) {
         game_version: "Madden 27",
         league_id: leagueId,
         status: "completed",
-        player_count: snapshots.length,
+        player_count: uniqueSnapshots.length,
         team_count: arr(body.rosters).length,
         details: {
           currentWeek: body.currentWeek ?? null,
@@ -546,9 +559,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      revision: "m27-live-rosters-v3-full-ratings",
+      revision: "m27-live-rosters-v4-launch",
       teamsImported: arr(body.rosters).length,
-      playersImported: snapshots.length,
+      playersImported: uniqueSnapshots.length,
       matchedPlayers,
       createdPlayers,
       freeAgentsImported: arr(body.freeAgents).length,
@@ -556,13 +569,37 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("EA roster import failed:", error);
 
+    const details =
+      error && typeof error === "object"
+        ? {
+            message:
+              "message" in error
+                ? String(error.message ?? "")
+                : null,
+            code:
+              "code" in error
+                ? String(error.code ?? "")
+                : null,
+            details:
+              "details" in error
+                ? String(error.details ?? "")
+                : null,
+            hint:
+              "hint" in error
+                ? String(error.hint ?? "")
+                : null,
+          }
+        : null;
+
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error
             ? error.message
-            : "EA roster import failed.",
+            : details?.message ||
+              "EA roster import failed.",
+        debug: details,
       },
       { status: 500 },
     );
