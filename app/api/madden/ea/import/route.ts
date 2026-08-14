@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { importCanonicalSchedule } from "@/lib/madden/schedule-sync";
+import { runWeeklyHighlights } from "@/lib/discord/weekly-highlights";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -110,7 +111,7 @@ export async function GET() {
     service: "NEW ERA Madden 27 direct EA importer",
     provider: "direct_ea",
     status: "ready",
-    revision: "m27-ea-import-v2",
+    revision: "m27-ea-import-v3-weekly-media",
   });
 }
 
@@ -481,6 +482,29 @@ export async function POST(request: NextRequest) {
       throw leagueUpdate.error;
     }
 
+    let weeklyHighlights: unknown = null;
+
+    try {
+      weeklyHighlights =
+        await runWeeklyHighlights({
+          leagueId: leagueRow.id,
+          season,
+          currentWeek,
+        });
+    } catch (highlightError) {
+      weeklyHighlights = {
+        error:
+          highlightError instanceof Error
+            ? highlightError.message
+            : String(highlightError),
+      };
+
+      console.error(
+        "Weekly GOTW/POTW automation failed:",
+        highlightError,
+      );
+    }
+
     return NextResponse.json({
       success: true,
       provider: "direct_ea",
@@ -497,6 +521,7 @@ export async function POST(request: NextRequest) {
       teamSnapshots: teamSnapshots.length,
       archivedExports,
       archiveWarning,
+      weeklyHighlights,
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {

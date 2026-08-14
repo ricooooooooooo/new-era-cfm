@@ -1,6 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
+
 import AppLayout from "@/app/components/layout/AppLayout";
 import type { Team } from "@/app/data/teams";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type TeamTab =
   | "overview"
@@ -22,26 +25,10 @@ const tabs: Array<{
   label: string;
   path: string;
 }> = [
-  {
-    id: "overview",
-    label: "Overview",
-    path: "",
-  },
-  {
-    id: "roster",
-    label: "Roster",
-    path: "/roster",
-  },
-  {
-    id: "schedule",
-    label: "Schedule",
-    path: "/schedule",
-  },
-  {
-    id: "stats",
-    label: "Stats",
-    path: "/stats",
-  },
+  { id: "overview", label: "Overview", path: "" },
+  { id: "roster", label: "Roster", path: "/roster" },
+  { id: "schedule", label: "Schedule", path: "/schedule" },
+  { id: "stats", label: "Stats", path: "/stats" },
   {
     id: "depth-chart",
     label: "Depth Chart",
@@ -59,11 +46,118 @@ const tabs: Array<{
   },
 ];
 
-export default function TeamPageShell({
+async function liveHeader(team: Team) {
+  const leagueResult = await supabaseAdmin
+    .from("leagues")
+    .select("id, season, current_week")
+    .eq("slug", "new-era-cfm")
+    .maybeSingle();
+
+  if (
+    leagueResult.error ||
+    !leagueResult.data
+  ) {
+    return {
+      record: "—",
+      owner: "Not connected",
+      currentWeek: null,
+    };
+  }
+
+  const league = leagueResult.data;
+
+  const teamResult = await supabaseAdmin
+    .from("teams")
+    .select("id, owner_member_id")
+    .eq("league_id", league.id)
+    .eq("abbreviation", team.short)
+    .maybeSingle();
+
+  if (
+    teamResult.error ||
+    !teamResult.data
+  ) {
+    return {
+      record: "—",
+      owner: "Not connected",
+      currentWeek: league.current_week,
+    };
+  }
+
+  const gamesResult = await supabaseAdmin
+    .from("league_games")
+    .select(
+      "home_team_id, away_team_id, home_score, away_score",
+    )
+    .eq("league_id", league.id)
+    .eq("season", Number(league.season ?? 1))
+    .eq("status", "final")
+    .or(
+      `home_team_id.eq.${teamResult.data.id},away_team_id.eq.${teamResult.data.id}`,
+    );
+
+  let wins = 0;
+  let losses = 0;
+  let ties = 0;
+
+  for (const game of gamesResult.data ?? []) {
+    const home =
+      String(game.home_team_id) ===
+      String(teamResult.data.id);
+
+    const teamScore = Number(
+      home ? game.home_score : game.away_score,
+    );
+
+    const opponentScore = Number(
+      home ? game.away_score : game.home_score,
+    );
+
+    if (teamScore > opponentScore) wins += 1;
+    else if (teamScore < opponentScore)
+      losses += 1;
+    else ties += 1;
+  }
+
+  let owner = "Not connected";
+
+  if (teamResult.data.owner_member_id) {
+    const ownerResult = await supabaseAdmin
+      .from("members")
+      .select("display_name, discord_username")
+      .eq(
+        "id",
+        teamResult.data.owner_member_id,
+      )
+      .maybeSingle();
+
+    owner =
+      ownerResult.data?.display_name ||
+      ownerResult.data?.discord_username ||
+      "Claimed";
+  }
+
+  return {
+    record: ties
+      ? `${wins}-${losses}-${ties}`
+      : `${wins}-${losses}`,
+    owner,
+    currentWeek: Number(
+      league.current_week ?? 1,
+    ),
+  };
+}
+
+export default async function TeamPageShell({
   team,
   activeTab,
   children,
 }: TeamPageShellProps) {
+  const live = await liveHeader(team);
+
+  const logo =
+    `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${team.short}`;
+
   return (
     <AppLayout>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -84,14 +178,14 @@ export default function TeamPageShell({
           >
             <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <div
-                  className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border-2 text-3xl font-black text-white shadow-2xl"
-                  style={{
-                    borderColor: team.secondaryColor,
-                    backgroundColor: team.primaryColor,
-                  }}
-                >
-                  {team.short}
+                <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-3xl border border-white/20 bg-black/30">
+                  <Image
+                    src={logo}
+                    alt={`${team.city} ${team.name}`}
+                    fill
+                    unoptimized
+                    className="object-contain p-4"
+                  />
                 </div>
 
                 <div>
@@ -103,7 +197,9 @@ export default function TeamPageShell({
                     {team.city} {team.name}
                   </h1>
 
-                  <p className="mt-3 text-white/70">{team.stadium}</p>
+                  <p className="mt-3 text-white/70">
+                    {team.stadium}
+                  </p>
                 </div>
               </div>
 
@@ -112,17 +208,26 @@ export default function TeamPageShell({
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-white/50">
                     Record
                   </p>
+                  <p className="mt-2 text-3xl font-black">
+                    {live.record}
+                  </p>
+                </div>
 
-                  <p className="mt-2 text-3xl font-black text-white/70">—</p>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-white/50">
+                    Current Week
+                  </p>
+                  <p className="mt-2 text-2xl font-black">
+                    Week {live.currentWeek ?? "—"}
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-white/50">
                     Owner
                   </p>
-
-                  <p className="mt-2 text-xl font-black text-white/70">
-                    Not assigned
+                  <p className="mt-2 max-w-44 truncate text-xl font-black">
+                    {live.owner}
                   </p>
                 </div>
               </div>
@@ -137,7 +242,9 @@ export default function TeamPageShell({
                 <Link
                   key={tab.id}
                   href={`/teams/${team.slug}${tab.path}`}
-                  aria-current={active ? "page" : undefined}
+                  aria-current={
+                    active ? "page" : undefined
+                  }
                   className={`shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition ${
                     active
                       ? "bg-red-600 text-white"
@@ -176,7 +283,9 @@ export function TeamDataPlaceholder({
         {eyebrow}
       </p>
 
-      <h2 className="mt-2 text-3xl font-black text-white">{title}</h2>
+      <h2 className="mt-2 text-3xl font-black text-white">
+        {title}
+      </h2>
 
       <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
         {description}
@@ -189,26 +298,13 @@ export function TeamDataPlaceholder({
               key={item}
               className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30 p-4"
             >
-              <p className="text-sm font-bold text-zinc-400">{item}</p>
-
-              <p className="mt-1 text-xs text-zinc-600">
-                Waiting for league sync
+              <p className="text-sm font-bold text-zinc-400">
+                {item}
               </p>
             </div>
           ))}
         </div>
       )}
-
-      <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/[0.05] p-5">
-        <p className="text-sm font-bold text-amber-200">
-          Ready for Madden 27
-        </p>
-
-        <p className="mt-1 text-sm leading-6 text-zinc-500">
-          This page is active now. Its live franchise information will populate
-          after the first Snallabot import.
-        </p>
-      </div>
     </section>
   );
 }
