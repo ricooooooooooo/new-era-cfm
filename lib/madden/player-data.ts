@@ -180,10 +180,9 @@ function mergePlayerSnapshots(
     id: player.id,
     name: player.canonical_name,
     normalizedName: player.normalized_name,
-    teamId:
-      live?.team_id ??
-      baseline?.team_id ??
-      player.baseline_team_id,
+    teamId: live
+      ? live.team_id
+      : baseline?.team_id ?? player.baseline_team_id,
     teamAbbreviation: null,
     teamName: null,
     position:

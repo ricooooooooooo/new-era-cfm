@@ -5,6 +5,11 @@ import { useEffect, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
 import { teams } from "../data/teams";
 
+function teamCardLogo(abbreviation: string) {
+  return `https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${abbreviation}`;
+}
+
+
 type LeagueSummary = {
   success: boolean;
   league: {
@@ -230,7 +235,11 @@ const getLiveTeam = (slug: string) => liveTeams.get(slug);
                       backgroundColor: team.primaryColor,
                     }}
                   >
-                    {team.short}
+                    <img
+                    src={teamCardLogo(team.short)}
+                    alt={`${team.city} ${team.name}`}
+                    className="h-12 w-12 object-contain"
+                  />
                   </div>
 
                   <span className="rounded-lg bg-zinc-900/90 px-3 py-2 text-xs font-black text-zinc-400">
