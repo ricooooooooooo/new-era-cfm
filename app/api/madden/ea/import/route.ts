@@ -71,11 +71,23 @@ function gameTypeFromStage(stageIndex: number) {
 }
 
 function gameStatus(rawStatus: number) {
-  // M27 schedule exports observed:
+  // M27 statuses already observed:
   // 1 = not played
-  // 2/3 = completed game variants
+  // 2/3 = completed variants
+  //
+  // Any OTHER positive status is treated as live/in-progress
+  // so prediction markets immediately lock instead of
+  // accidentally remaining open.
+  if (rawStatus === 1) {
+    return "scheduled";
+  }
+
   if (rawStatus === 2 || rawStatus === 3) {
     return "final";
+  }
+
+  if (rawStatus > 0) {
+    return "in_progress";
   }
 
   return "scheduled";

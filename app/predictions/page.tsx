@@ -152,6 +152,20 @@ setTeamForms(
 
   useEffect(() => {
     void loadData();
+
+    const timer =
+      window.setInterval(
+        () => {
+          void loadData();
+        },
+        15000,
+      );
+
+    return () => {
+      window.clearInterval(
+        timer,
+      );
+    };
   }, [loadData]);
 
   async function placeBet(marketId: string) {
