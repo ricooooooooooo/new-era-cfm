@@ -1087,13 +1087,15 @@ async function postPotw({
       {
         method: "POST",
         body: JSON.stringify({
-          content: ownerMentions.length
-            ? `${ownerMentions.join(
-                " ",
-              )}\n🏆 Your player won **Player of the Week** — claim your **+2 NP (non-physical) reward**.`
-            : "🏆 NEW ERA Players of the Week",
+          content:
+            "@everyone\n" +
+            (ownerMentions.length
+              ? `${ownerMentions.join(
+                  " ",
+                )}\n🏆 Your player won **Player of the Week** — claim your **+2 NP (non-physical) reward**.`
+              : "🏆 NEW ERA Players of the Week"),
           allowed_mentions: {
-            parse: [],
+            parse: ["everyone"],
             users: ownerIds,
           },
           embeds: [
