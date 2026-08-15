@@ -61,27 +61,43 @@ export function findTeamBySlug(slug: string | null | undefined) {
   return NFL_TEAMS.find((team) => team.slug === slug) ?? null;
 }
 
-export function findTeamFromDiscordRoleNames(roleNames: string[]) {
-  const normalizedRoles = roleNames.map(normalizeDiscordRoleName);
+export function findTeamsFromDiscordRoleNames(
+  roleNames: string[],
+) {
+  const normalizedRoles =
+    roleNames.map(normalizeDiscordRoleName);
 
-  return (
-    NFL_TEAMS.find((team) => {
-      const validTeamRoleNames = [
-        team.name,
-        `${team.city} ${team.name}`,
-        team.slug,
-        team.abbreviation,
-        ...team.aliases,
-      ].map(normalizeDiscordRoleName);
+  return NFL_TEAMS.filter((team) => {
+    const validTeamRoleNames = [
+      team.name,
+      `${team.city} ${team.name}`,
+      team.slug,
+      team.abbreviation,
+      ...team.aliases,
+    ].map(normalizeDiscordRoleName);
 
-      return validTeamRoleNames.some((teamRoleName) =>
+    return validTeamRoleNames.some(
+      (teamRoleName) =>
         normalizedRoles.some(
           (roleName) =>
             roleName === teamRoleName ||
             roleName === `${teamRoleName} owner` ||
             roleName === `${teamRoleName} team`,
         ),
-      );
-    }) ?? null
-  );
+    );
+  });
+}
+
+export function findTeamFromDiscordRoleNames(
+  roleNames: string[],
+) {
+  const matches =
+    findTeamsFromDiscordRoleNames(roleNames);
+
+  // STRICT:
+  // Never guess when somebody has old/multiple
+  // NFL team roles.
+  return matches.length === 1
+    ? matches[0]
+    : null;
 }

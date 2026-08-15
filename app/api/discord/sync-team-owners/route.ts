@@ -24,7 +24,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     status: "ready",
-    revision: "discord-owner-sync-v3",
+    revision: "discord-owner-sync-v4-strict-rebuild",
   });
 }
 
@@ -43,6 +43,24 @@ export async function POST(request: NextRequest) {
       .not("discord_id", "is", null);
 
     if (membersResult.error) throw membersResult.error;
+
+    // Remove stale website team assignments before
+    // rebuilding from CURRENT Discord roles.
+    //
+    // A member with zero or multiple recognized NFL
+    // roles will remain unresolved rather than inheriting
+    // an old team and being pinged incorrectly.
+    const resetMembers = await supabaseAdmin
+      .from("members")
+      .update({
+        team: null,
+        updated_at: new Date().toISOString(),
+      })
+      .not("discord_id", "is", null);
+
+    if (resetMembers.error) {
+      throw resetMembers.error;
+    }
 
     let detected = 0;
     let changed = 0;
@@ -86,6 +104,7 @@ export async function POST(request: NextRequest) {
       teamRolesDetected: detected,
       memberAssignmentsChanged: changed,
       ownerAssignments: owners.assignments.length,
+      assignments: owners.assignments,
       missingTeams: owners.missing,
       duplicates: owners.duplicates,
       failures,
