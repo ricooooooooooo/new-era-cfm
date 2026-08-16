@@ -1,15 +1,5 @@
-import AppLayout from "./components/layout/AppLayout";
-import Dashboard from "./components/Dashboard";
-import QuickActions from "./components/QuickActions";
-import Intro from "./components/Intro/Intro";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <Intro>
-      <AppLayout>
-        <Dashboard />
-        <QuickActions />
-      </AppLayout>
-    </Intro>
-  );
+export default function RootPage() {
+  redirect("/home");
 }
