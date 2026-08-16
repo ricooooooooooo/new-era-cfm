@@ -2,23 +2,23 @@ import fs from "node:fs";
 import path from "node:path";
 
 function readEnv(
-  filename,
+  file,
 ) {
-  const result = {};
-
   if (
     !fs.existsSync(
-      filename,
+      file,
     )
   ) {
-    return result;
+    return {};
   }
+
+  const env = {};
 
   for (
     const raw
     of fs
       .readFileSync(
-        filename,
+        file,
         "utf8",
       )
       .split(/\r?\n/)
@@ -33,11 +33,11 @@ function readEnv(
       continue;
     }
 
-    const equals =
+    const index =
       line.indexOf("=");
 
     if (
-      equals < 1
+      index < 1
     ) {
       continue;
     }
@@ -46,14 +46,14 @@ function readEnv(
       line
         .slice(
           0,
-          equals,
+          index,
         )
         .trim();
 
     let value =
       line
         .slice(
-          equals + 1,
+          index + 1,
         )
         .trim();
 
@@ -74,11 +74,11 @@ function readEnv(
         );
     }
 
-    result[key] =
+    env[key] =
       value;
   }
 
-  return result;
+  return env;
 }
 
 const env = {
@@ -94,7 +94,7 @@ const env = {
 const applicationId =
   env.DISCORD_CLIENT_ID;
 
-const botToken =
+const token =
   env.DISCORD_BOT_TOKEN;
 
 const guildId =
@@ -103,103 +103,93 @@ const guildId =
 
 if (!applicationId) {
   throw new Error(
-    "DISCORD_CLIENT_ID missing from .env.local",
+    "DISCORD_CLIENT_ID missing.",
   );
 }
 
-if (!botToken) {
+if (!token) {
   throw new Error(
-    "DISCORD_BOT_TOKEN missing from .env.local",
+    "DISCORD_BOT_TOKEN missing.",
   );
 }
 
-if (!guildId) {
-  throw new Error(
-    "DISCORD_GUILD_ID missing.",
-  );
-}
-
-const slash = [
+const commands = [
   {
-    name:
-      "newera",
-
+    type: 1,
+    name: "newera",
     description:
-      "Open the New Era Intelligence command hub",
+      "View every New Era Discord command and feature",
   },
 
   {
-    name:
-      "scout",
-
+    type: 1,
+    name: "scout",
     description:
       "Scout your current Madden opponent",
   },
 
   {
-    name:
-      "dna",
-
+    type: 1,
+    name: "dna",
     description:
-      "View your live New Era Owner OVR and archetype",
+      "View your Owner OVR, archetype and ratings",
   },
 
   {
-    name:
-      "wrapped",
-
+    type: 1,
+    name: "wrapped",
     description:
       "View your personal New Era season snapshot",
   },
 
   {
-    name:
-      "rivalry",
-
+    type: 1,
+    name: "rivalry",
     description:
       "View rivalry history with your current opponent",
   },
 
   {
-    name:
-      "achievements",
-
-    description:
-      "View your discovered New Era achievements",
-  },
-
-  {
-    name:
-      "belt",
-
-    description:
-      "Show the current New Era Championship holder",
-  },
-
-  {
-    name:
-      "fraud",
-
-    description:
-      "Post the current New Era Fraud Watch",
-  },
-
-  {
-    name:
-      "recaps",
-
-    description:
-      "Post the latest New Era game recaps",
-  },
-].map(
-  (command) => ({
     type: 1,
-    ...command,
-  }),
-);
+    name: "achievements",
+    description:
+      "View your discovered secret New Era achievements",
+  },
 
-const commands = [
-  ...slash,
+  {
+    type: 1,
+    name: "belt",
+    description:
+      "Show the current New Era Championship Belt holder",
+  },
+
+  {
+    type: 1,
+    name: "fraud",
+    description:
+      "Post the current New Era Fraud Watch rankings",
+  },
+
+  {
+    type: 1,
+    name: "recaps",
+    description:
+      "Post the latest automatic New Era game recaps",
+  },
+
+  {
+    type: 1,
+    name: "tutorial",
+    description:
+      "Post the New Era feature tutorial and notify everyone",
+
+    /*
+     * ADMINISTRATOR permission.
+     * Owners cannot spam @everyone with this.
+     */
+    default_member_permissions:
+      "8",
+  },
 
   {
     type: 2,
@@ -216,66 +206,62 @@ console.log(
   "==========================================",
 );
 console.log(
-  "REGISTERING NEW ERA DISCORD COMMANDS",
+  "BULK REGISTERING NEW ERA COMMANDS",
 );
 console.log(
   "==========================================",
 );
 
+const response =
+  await fetch(
+    endpoint,
+    {
+      method:
+        "PUT",
+
+      headers: {
+        Authorization:
+          `Bot ${token}`,
+
+        "content-type":
+          "application/json",
+      },
+
+      body:
+        JSON.stringify(
+          commands,
+        ),
+    },
+  );
+
+const body =
+  await response.text();
+
+if (!response.ok) {
+  console.error(
+    `❌ Discord HTTP ${response.status}`,
+  );
+
+  console.error(body);
+
+  process.exit(1);
+}
+
+const registered =
+  JSON.parse(body);
+
 for (
   const command
-  of commands
+  of registered
 ) {
-  const response =
-    await fetch(
-      endpoint,
-      {
-        method:
-          "POST",
-
-        headers: {
-          Authorization:
-            `Bot ${botToken}`,
-
-          "Content-Type":
-            "application/json",
-        },
-
-        body:
-          JSON.stringify(
-            command,
-          ),
-      },
-    );
-
-  const body =
-    await response.text();
-
-  if (!response.ok) {
-    console.error(
-      `❌ ${command.name}: HTTP ${response.status}`,
-    );
-
-    console.error(
-      body,
-    );
-
-    process.exit(
-      1,
-    );
-  }
-
-  const registered =
-    JSON.parse(
-      body,
-    );
-
   console.log(
-    `✅ ${command.type === 2 ? "USER APP" : "/"}${command.name} — ${registered.id}`,
+    command.type === 2
+      ? `✅ Apps → ${command.name}`
+      : `✅ /${command.name}`,
   );
 }
 
 console.log("");
 console.log(
-  "🔥 ALL NEW ERA COMMANDS REGISTERED",
+  `🔥 ${registered.length} COMMANDS LIVE`,
 );

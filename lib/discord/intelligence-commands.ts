@@ -24,6 +24,7 @@ type Interaction = {
 
   member?: {
     nick?: string | null;
+    permissions?: string;
     user?: DiscordUser;
   };
 
@@ -995,6 +996,153 @@ async function scoutOwnerCommand(
   });
 }
 
+function isAdministrator(
+  interaction: Interaction,
+) {
+  /*
+   * Discord sends permissions as a decimal string.
+   * Administrator is bit 8.
+   *
+   * We only need the value modulo 16 to know
+   * whether that low permission bit is enabled,
+   * so no BigInt is required.
+   */
+  const raw =
+    String(
+      interaction.member?.permissions ??
+        "0",
+    ).replace(
+      /[^0-9]/g,
+      "",
+    );
+
+  if (!raw) {
+    return false;
+  }
+
+  let mod16 = 0;
+
+  for (const char of raw) {
+    mod16 =
+      (
+        mod16 * 10 +
+        Number(char)
+      ) %
+      16;
+  }
+
+  return (
+    mod16 &
+    8
+  ) === 8;
+}
+
+function tutorialCommand(
+  interaction: Interaction,
+) {
+  if (
+    !isAdministrator(
+      interaction,
+    )
+  ) {
+    return simpleError(
+      "Only New Era commissioners can post the server-wide tutorial.",
+    );
+  }
+
+  return {
+    type: 4,
+
+    data: {
+      content:
+        "@everyone",
+
+      allowed_mentions: {
+        parse: [
+          "everyone",
+        ],
+      },
+
+      embeds: [
+        {
+          title:
+            "🧠 NEW ERA INTELLIGENCE — OWNER GUIDE",
+
+          description: [
+            "**New Era has way more built into it than standings and schedules.**",
+            "",
+            "You can use most of the league tools directly from Discord.",
+            "",
+            "━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "### 🕵️ `/scout`",
+            "**Scout this week's opponent.**",
+            "See record, Owner OVR, archetype, PPG, defense, recent games and threat level.",
+            "",
+            "### 🧠 `/dna`",
+            "**View your Owner DNA.**",
+            "Live Owner OVR, offense, defense, clutch, dominance and archetype.",
+            "",
+            "### 📲 `/wrapped`",
+            "**Your season snapshot.**",
+            "Record, streak, PPG, point differential and Owner OVR.",
+            "",
+            "### ⚔️ `/rivalry`",
+            "**Current matchup rivalry history.**",
+            "Series record, meetings, rivalry heat and average margin.",
+            "",
+            "### 🏆 `/achievements`",
+            "**View hidden New Era achievements you've unlocked.**",
+            "",
+            "━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "### 👑 `/belt`",
+            "**PUBLIC:** Shows the current New Era Championship Belt holder.",
+            "",
+            "### 🚨 `/fraud`",
+            "**PUBLIC:** Posts the current Fraud Watch rankings.",
+            "",
+            "### 📺 `/recaps`",
+            "**PUBLIC:** Posts recent New Era game recaps.",
+            "",
+            "### 🧠 `/newera`",
+            "**Quick command menu anytime you forget something.**",
+            "",
+            "━━━━━━━━━━━━━━━━━━━━",
+            "",
+            "### 🔥 BONUS",
+            "**Right-click / tap another owner → Apps → Scout Owner**",
+            "",
+            "Most personal commands are private, so only you see the result.",
+            "",
+            "**USE THE TOOLS. THEY UPDATE FROM THE ACTUAL MADDEN LEAGUE.**",
+          ].join(
+            "\n",
+          ),
+
+          color:
+            0x7c3aed,
+
+          footer: {
+            text:
+              "NEW ERA • INTELLIGENCE NETWORK",
+          },
+
+          timestamp:
+            new Date()
+              .toISOString(),
+        },
+      ],
+
+      components:
+        linkButton(
+          "/era",
+          "Open Intelligence HQ",
+        ),
+    },
+  };
+}
+
 function hubCommand() {
   return reply({
     title:
@@ -1021,6 +1169,9 @@ function hubCommand() {
 
     button:
       "Open Intelligence HQ",
+
+    publicReply:
+      true,
   });
 }
 
@@ -1067,6 +1218,7 @@ export async function handleNewEraCommand(
   const supported =
     new Set([
       "newera",
+      "tutorial",
       "scout",
       "dna",
       "wrapped",
@@ -1083,6 +1235,15 @@ export async function handleNewEraCommand(
     )
   ) {
     return null;
+  }
+
+  if (
+    command ===
+    "tutorial"
+  ) {
+    return tutorialCommand(
+      interaction,
+    );
   }
 
   if (
