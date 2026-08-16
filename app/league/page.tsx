@@ -50,9 +50,9 @@ const coverage = [
     href: "/media",
   },
   {
-    icon: "📰",
-    title: "League Media",
-    href: "/media",
+    icon: "💰",
+    title: "New Era Market",
+    href: "/market",
   },
 ];
 

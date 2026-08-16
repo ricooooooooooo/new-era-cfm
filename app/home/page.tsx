@@ -15,6 +15,9 @@ import {
 import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
+import {
+  loadSiteWeeklyHighlights,
+} from "@/lib/site-weekly-highlights";
 
 export const dynamic =
   "force-dynamic";
@@ -213,6 +216,9 @@ export default async function OwnerHomePage() {
         1,
     );
 
+  const highlights =
+    await loadSiteWeeklyHighlights();
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-[#050606] text-white">
@@ -329,7 +335,7 @@ export default async function OwnerHomePage() {
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black">
-                  What&apos;s happening
+                  Happening now
                 </h2>
               </div>
 
@@ -343,56 +349,137 @@ export default async function OwnerHomePage() {
 
             <div className="grid gap-3 md:grid-cols-3">
               <Link
-                href="/media"
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
+                href="/gotw"
+                className="group overflow-hidden rounded-2xl border border-amber-400/20 bg-[linear-gradient(145deg,rgba(245,158,11,.10),rgba(255,255,255,.025))] p-5 transition hover:border-amber-300/40"
               >
-                <span className="text-xl">
-                  🔥
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">
+                    🔥
+                  </span>
 
-                <p className="mt-3 font-black">
-                  Week {week} GOTW
-                </p>
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-300">
+                    GOTW
+                  </span>
+                </div>
 
-                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  See this week&apos;s featured matchup and league voting.
+                {highlights.gotw ? (
+                  <>
+                    <p className="mt-4 text-lg font-black leading-tight">
+                      {highlights.gotw.away.name}
+                      {" @ "}
+                      {highlights.gotw.home.name}
+                    </p>
+
+                    <p className="mt-2 text-xs font-bold text-zinc-500">
+                      {highlights.gotw.away.record}
+                      {" vs "}
+                      {highlights.gotw.home.record}
+                    </p>
+
+                    <p className="mt-3 text-xs leading-5 text-amber-200/70">
+                      {highlights.gotw.reason}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-4 text-lg font-black">
+                      Week {week} GOTW
+                    </p>
+
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Autopilot is preparing the matchup.
+                    </p>
+                  </>
+                )}
+
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition group-hover:text-white">
+                  Open matchup →
                 </p>
               </Link>
 
               <Link
-                href="/media"
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
+                href="/potw"
+                className="group rounded-2xl border border-purple-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.12),rgba(255,255,255,.025))] p-5 transition hover:border-purple-300/40"
               >
-                <span className="text-xl">
-                  🏆
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">
+                    🏆
+                  </span>
 
-                <p className="mt-3 font-black">
-                  Week {Math.max(
-                    1,
-                    week - 1,
-                  )} POTW
-                </p>
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-purple-300">
+                    POTW
+                  </span>
+                </div>
 
-                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  Check the latest AFC and NFC award winners.
+                {highlights.potw ? (
+                  <>
+                    <p className="mt-4 text-lg font-black">
+                      Week {highlights.potw.week} Winners
+                    </p>
+
+                    <div className="mt-3 space-y-1.5">
+                      {highlights.potw.awards
+                        .slice(0, 2)
+                        .map(
+                          (award) => (
+                            <p
+                              key={award.label}
+                              className="truncate text-xs font-bold text-zinc-400"
+                            >
+                              {award.playerName}
+                              {award.team
+                                ? ` • ${award.team}`
+                                : ""}
+                            </p>
+                          ),
+                        )}
+                    </div>
+
+                    <p className="mt-3 text-xs font-bold text-amber-300">
+                      +2 NP each
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-4 text-lg font-black">
+                      Players of the Week
+                    </p>
+
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Awards are being calculated.
+                    </p>
+                  </>
+                )}
+
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition group-hover:text-white">
+                  View all four →
                 </p>
               </Link>
 
               <Link
                 href="/standings"
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
+                className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
               >
-                <span className="text-xl">
-                  📈
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">
+                    📈
+                  </span>
 
-                <p className="mt-3 font-black">
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-600">
+                    League
+                  </span>
+                </div>
+
+                <p className="mt-4 text-lg font-black">
                   Playoff Race
                 </p>
 
-                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  Check standings, records and who&apos;s moving.
+                <p className="mt-2 text-xs leading-5 text-zinc-500">
+                  Records, conference standings and the current race.
+                </p>
+
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition group-hover:text-white">
+                  Standings →
                 </p>
               </Link>
             </div>
