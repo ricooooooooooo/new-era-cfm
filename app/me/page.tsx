@@ -175,6 +175,11 @@ export default async function MePage() {
             <div className="mt-3 space-y-2">
               {[
                 [
+                  "Owner DNA",
+                  "/era#dna",
+                  "Your live New Era OVR, archetype, ratings and hidden achievements",
+                ],
+                [
                   "My Profile",
                   `/members/${user.id}`,
                   "Prediction history, identity and league profile",

@@ -45,9 +45,9 @@ const coverage = [
     href: "/media",
   },
   {
-    icon: "📈",
-    title: "Power Rankings",
-    href: "/media",
+    icon: "🧠",
+    title: "New Era Intelligence",
+    href: "/era",
   },
   {
     icon: "💰",

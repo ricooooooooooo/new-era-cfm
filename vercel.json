@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/league-health",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/feature-reminder",
+      "schedule": "0 1 */2 * *"
     }
   ]
 }

@@ -347,7 +347,7 @@ export default async function OwnerHomePage() {
               </Link>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <Link
                 href="/gotw"
                 className="group overflow-hidden rounded-2xl border border-amber-400/20 bg-[linear-gradient(145deg,rgba(245,158,11,.10),rgba(255,255,255,.025))] p-5 transition hover:border-amber-300/40"
@@ -453,6 +453,33 @@ export default async function OwnerHomePage() {
 
                 <p className="mt-5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition group-hover:text-white">
                   View all four →
+                </p>
+              </Link>
+
+              <Link
+                href="/era"
+                className="group rounded-2xl border border-purple-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.10),rgba(255,255,255,.025))] p-5 transition hover:border-purple-300/40"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">
+                    🧠
+                  </span>
+
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-purple-300">
+                    Intel
+                  </span>
+                </div>
+
+                <p className="mt-4 text-lg font-black">
+                  New Era Intelligence
+                </p>
+
+                <p className="mt-2 text-xs leading-5 text-zinc-500">
+                  Scout opponents, check Owner DNA, rivalries, Fraud Watch, the Belt and more.
+                </p>
+
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition group-hover:text-white">
+                  Open Intel →
                 </p>
               </Link>
 

@@ -273,14 +273,10 @@ export default async function MyGamePage() {
                 </Link>
 
                 <Link
-                  href={
-                    opponent
-                      ? `/teams/${opponent.slug}`
-                      : "/teams"
-                  }
-                  className="flex min-h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-center text-sm font-black transition hover:bg-white/[0.09]"
+                  href="/era#scout"
+                  className="flex min-h-14 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 text-center text-sm font-black transition hover:bg-red-400/[0.10]"
                 >
-                  Scout Opponent
+                  🕵️ Scout Report
                 </Link>
               </div>
 
