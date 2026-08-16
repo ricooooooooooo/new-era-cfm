@@ -298,6 +298,24 @@ async function discordRequest<T>(
     : null;
 }
 
+function featureSlashCommand(
+  title: string,
+) {
+  const value =
+    title.toUpperCase();
+
+  if (value.includes("SCOUT")) return "/scout";
+  if (value.includes("DNA")) return "/dna";
+  if (value.includes("BELT")) return "/belt";
+  if (value.includes("FRAUD")) return "/fraud";
+  if (value.includes("RIVALRY")) return "/rivalry";
+  if (value.includes("ACHIEVEMENT")) return "/achievements";
+  if (value.includes("RECAP")) return "/recaps";
+  if (value.includes("WRAPPED")) return "/wrapped";
+
+  return "/newera";
+}
+
 async function resolveChannel() {
   const override =
     process.env.DISCORD_FEATURE_CHANNEL_ID?.trim();
@@ -417,7 +435,9 @@ export async function postFeatureReminder() {
                 `${feature.icon} ${feature.title}`,
 
               description:
-                `${feature.text}\n\n**New Era isn't just standings. Use the tools.**`,
+                `${feature.text}\n\n💬 **Discord:** \`${featureSlashCommand(
+                  feature.title,
+                )}\`\n\n**New Era isn't just standings. Use the tools.**`,
 
               color:
                 0x7c3aed,

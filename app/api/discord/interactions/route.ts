@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { handleNewEraCommand } from "@/lib/discord/intelligence-commands";
 import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 import { NextRequest, NextResponse } from "next/server";
 import nacl from "tweetnacl";
@@ -6,6 +7,7 @@ import nacl from "tweetnacl";
 export const runtime = "nodejs";
 
 const DISCORD_PING = 1;
+const DISCORD_APPLICATION_COMMAND = 2;
 const DISCORD_MESSAGE_COMPONENT = 3;
 const RESPONSE_PONG = 1;
 const RESPONSE_CHANNEL_MESSAGE = 4;
@@ -93,6 +95,22 @@ export async function POST(request: NextRequest) {
 
   if (interaction.type === DISCORD_PING) {
     return NextResponse.json({ type: RESPONSE_PONG });
+  }
+
+  if (
+    interaction.type ===
+    DISCORD_APPLICATION_COMMAND
+  ) {
+    const commandResponse =
+      await handleNewEraCommand(
+        interaction,
+      );
+
+    if (commandResponse) {
+      return NextResponse.json(
+        commandResponse,
+      );
+    }
   }
 
   if (
