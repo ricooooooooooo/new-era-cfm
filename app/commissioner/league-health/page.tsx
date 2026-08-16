@@ -35,6 +35,14 @@ type TeamHealth = {
     opponentAbbreviation: string | null;
     overdue: boolean;
   } | null;
+  games: {
+    eligible: number;
+    realPlayed: number;
+    fairSims: number;
+    unknownFinals: number;
+    unplayed: number;
+    recentReal: number;
+  };
   discord: {
     available: boolean;
     messages7d: number;
@@ -46,10 +54,15 @@ type TeamHealth = {
     total: number;
     hits: number;
     misses: number;
+    consecutiveMisses: number;
     latest: "hit" | "missed" | "no_data";
   };
   score: number;
-  status: "healthy" | "watch" | "critical";
+  status:
+    | "active_user"
+    | "monitor"
+    | "hot_seat"
+    | "replacement_risk";
   attention: string[];
 };
 
@@ -63,7 +76,11 @@ type LeagueHealthReport = {
   };
   overall: {
     score: number;
-    status: "healthy" | "watch" | "critical";
+    status:
+      | "active_user"
+      | "monitor"
+      | "hot_seat"
+      | "replacement_risk";
     teamsTracked: number;
     attentionCount: number;
   };
@@ -77,6 +94,8 @@ type LeagueHealthReport = {
       completed: number;
       total: number;
       pending: number;
+      realPlayed: number;
+      fairSims: number;
     };
     discord: {
       available: boolean;
@@ -154,15 +173,26 @@ function relativeTime(value: string | null) {
 }
 
 function statusClasses(status: TeamHealth["status"]) {
-  if (status === "healthy") {
+  if (status === "active_user") {
     return "border-emerald-400/25 bg-emerald-400/10 text-emerald-200";
   }
 
-  if (status === "watch") {
-    return "border-amber-400/25 bg-amber-400/10 text-amber-200";
+  if (status === "monitor") {
+    return "border-yellow-400/25 bg-yellow-400/10 text-yellow-200";
   }
 
-  return "border-red-400/25 bg-red-400/10 text-red-200";
+  if (status === "hot_seat") {
+    return "border-orange-400/30 bg-orange-400/10 text-orange-200";
+  }
+
+  return "border-red-500/35 bg-red-500/15 text-red-100";
+}
+
+function statusLabel(status: TeamHealth["status"]) {
+  if (status === "active_user") return "ACTIVE USER";
+  if (status === "monitor") return "MONITOR";
+  if (status === "hot_seat") return "HOT SEAT";
+  return "REPLACEMENT RISK";
 }
 
 function sourceClasses(ready: boolean) {
@@ -172,27 +202,11 @@ function sourceClasses(ready: boolean) {
 }
 
 function gameLabel(team: TeamHealth) {
-  if (!team.game) return "No schedule";
-
-  if (team.game.status === "final") {
-    const score =
-      team.game.homeScore !== null &&
-      team.game.awayScore !== null
-        ? ` • ${team.game.awayScore}-${team.game.homeScore}`
-        : "";
-
-    return `Played${score}`;
+  if (team.games.eligible === 0) {
+    return "No eligible games";
   }
 
-  if (team.game.status === "in_progress") {
-    return "In progress";
-  }
-
-  if (team.game.status === "cancelled") {
-    return "Cancelled";
-  }
-
-  return team.game.overdue ? "Overdue" : "Pending";
+  return `${team.games.realPlayed}/${team.games.eligible} played`;
 }
 
 export default function LeagueHealthPage() {
@@ -373,8 +387,8 @@ export default function LeagueHealthPage() {
                 </h1>
 
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
-                  Live owner accountability from games, Discord
-                  activity, active checks and team connections.
+                  Owner replacement radar powered by actual games played,
+                  active checks and Discord activity.
                 </p>
               </div>
 
@@ -436,7 +450,7 @@ export default function LeagueHealthPage() {
                         report.overall.status,
                       )}`}
                     >
-                      {report.overall.status}
+                      {statusLabel(report.overall.status)}
                     </span>
 
                     <p className="mt-5 text-sm leading-6 text-zinc-400">
@@ -450,13 +464,13 @@ export default function LeagueHealthPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {[
                     {
-                      label: "Games Played",
+                      label: "Actual Games",
                       value: report.metrics.games.available
-                        ? `${report.metrics.games.completed}/${report.metrics.games.total}`
+                        ? `${report.metrics.games.realPlayed}/${report.metrics.games.total}`
                         : "No data",
                       detail: report.metrics.games.available
-                        ? `${report.metrics.games.pending} current-week games pending`
-                        : "Schedule sync has not loaded games",
+                        ? `${report.metrics.games.fairSims} fair sims excluded`
+                        : "Waiting for completed weeks",
                     },
                     {
                       label: "Discord Active",
@@ -593,7 +607,7 @@ export default function LeagueHealthPage() {
                 <div className="hidden grid-cols-[1.25fr_1.35fr_0.9fr_0.95fr_0.9fr_0.65fr] gap-4 border-b border-white/[0.07] px-6 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-zinc-700 lg:grid">
                   <span>Team</span>
                   <span>Owner</span>
-                  <span>Game</span>
+                  <span>Actual Games</span>
                   <span>Discord</span>
                   <span>Active Checks</span>
                   <span>Health</span>
@@ -647,22 +661,26 @@ export default function LeagueHealthPage() {
 
                         <div>
                           <p className="text-xs font-black uppercase tracking-[0.12em] text-zinc-700 lg:hidden">
-                            Game
+                            Actual Games
                           </p>
                           <p
                             className={`mt-1 font-black lg:mt-0 ${
-                              team.game?.status === "final"
+                              team.games.eligible > 0 &&
+                              team.games.realPlayed === team.games.eligible
                                 ? "text-emerald-300"
-                                : team.game?.overdue
+                                : team.games.realPlayed === 0 &&
+                                    team.games.eligible >= 2
                                   ? "text-red-300"
-                                  : "text-zinc-300"
+                                  : "text-amber-200"
                             }`}
                           >
                             {gameLabel(team)}
                           </p>
                           <p className="mt-1 text-xs text-zinc-600">
-                            {team.game?.opponentAbbreviation
-                              ? `vs ${team.game.opponentAbbreviation}`
+                            {team.games.eligible > 0
+                              ? `${team.games.fairSims} fair sim${
+                                  team.games.fairSims === 1 ? "" : "s"
+                                } excluded`
                               : `Week ${report.league.currentWeek}`}
                           </p>
                         </div>
@@ -720,6 +738,9 @@ export default function LeagueHealthPage() {
                             )}`}
                           >
                             {team.score}
+                            <span className="ml-1.5 text-[9px] uppercase tracking-[0.08em]">
+                              {statusLabel(team.status)}
+                            </span>
                           </span>
                         </div>
 
