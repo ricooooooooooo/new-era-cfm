@@ -21,23 +21,6 @@ type MemberRow = {
   discord_id: string | null;
   discord_username: string | null;
   display_name: string;
-  is_active: boolean;
-  last_seen_at: string | null;
-};
-
-type GameRow = {
-  id: string;
-  week: number;
-  game_type: string | null;
-  home_team_id: string | null;
-  away_team_id: string | null;
-  home_team_abbreviation: string | null;
-  away_team_abbreviation: string | null;
-  scheduled_at: string | null;
-  status: "scheduled" | "in_progress" | "final" | "cancelled";
-  home_score: number | null;
-  away_score: number | null;
-  raw_payload: unknown;
 };
 
 type DiscordSummaryRow = {
@@ -47,27 +30,29 @@ type DiscordSummaryRow = {
   last_message_at: string | null;
 };
 
-type ActiveCheckRow = {
-  active_check_id: string;
-  check_type: "league" | "weekly" | "waitlist" | "unknown";
-  title: string | null;
-  started_at: string;
-};
-
-type CheckClickRow = {
-  active_check_id: string;
-  discord_id: string | null;
-  team_slug: string | null;
-  checked_in_at: string;
-};
-
 type SyncStateRow = {
-  last_started_at: string | null;
   last_completed_at: string | null;
   last_error: string | null;
   channels_scanned: number;
-  messages_seen: number;
-  messages_saved: number;
+};
+
+type GameRow = {
+  id: string;
+  season: number;
+  week: number;
+  game_type: string | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  home_team_abbreviation: string | null;
+  away_team_abbreviation: string | null;
+  status:
+    | "scheduled"
+    | "in_progress"
+    | "final"
+    | "cancelled";
+  home_score: number | null;
+  away_score: number | null;
+  raw_payload: unknown;
 };
 
 type HealthStatus =
@@ -76,18 +61,11 @@ type HealthStatus =
   | "hot_seat"
   | "replacement_risk";
 
-type HealthComponent = {
-  key: "games" | "discord" | "activeChecks";
-  label: string;
-  score: number;
-  weight: number;
-};
-
-type GameKind =
+type GameResultType =
   | "played"
-  | "sim"
-  | "unknown"
-  | "unplayed";
+  | "force_sim"
+  | "unknown_final"
+  | "not_completed";
 
 function clamp(
   value: number,
@@ -100,66 +78,14 @@ function clamp(
   );
 }
 
-function weightedScore(
-  components: HealthComponent[],
-) {
-  if (!components.length) {
-    return 0;
-  }
-
-  const weight =
-    components.reduce(
-      (total, component) =>
-        total + component.weight,
-      0,
-    );
-
-  if (!weight) {
-    return 0;
-  }
-
-  return Math.round(
-    components.reduce(
-      (total, component) =>
-        total +
-        component.score *
-          component.weight,
-      0,
-    ) / weight,
-  );
-}
-
-function healthLabel(
-  score: number,
-): HealthStatus {
-  if (score >= 80) {
-    return "active_user";
-  }
-
-  if (score >= 65) {
-    return "monitor";
-  }
-
-  if (score >= 45) {
-    return "hot_seat";
-  }
-
-  return "replacement_risk";
-}
-
-function hoursSince(
-  value: string | null,
-) {
-  if (!value) return null;
-
-  return Math.max(
-    0,
-    (
-      Date.now() -
-      new Date(value).getTime()
-    ) /
-      3_600_000,
-  );
+function asRecord(
+  value: unknown,
+): Record<string, unknown> {
+  return value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
 }
 
 function normalizeSlug(
@@ -188,15 +114,33 @@ function teamSlug(
   );
 }
 
-function asRecord(
-  value: unknown,
-) {
-  return value &&
-    typeof value === "object" &&
-    !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
+/*
+ * Madden 27 schedule calibration.
+ *
+ * Observed:
+ * 1 = game not completed
+ * 2/3 = completed variants
+ *
+ * We currently treat:
+ * 2 = actual user-played game
+ * 3 = force/sim result
+ *
+ * These remain configurable in Vercel without
+ * changing code if M27 proves the reverse.
+ */
+const EA_PLAYED_STATUS =
+  Number(
+    process.env
+      .LEAGUE_HEALTH_EA_PLAYED_STATUS ??
+      2,
+  );
+
+const EA_FORCE_SIM_STATUS =
+  Number(
+    process.env
+      .LEAGUE_HEALTH_EA_FORCE_SIM_STATUS ??
+      3,
+  );
 
 function rawEaStatus(
   game: GameRow,
@@ -206,152 +150,97 @@ function rawEaStatus(
       game.raw_payload,
     );
 
-  const parsed =
+  const value =
     Number(raw.status);
 
-  return Number.isFinite(parsed)
-    ? parsed
+  return Number.isFinite(value)
+    ? value
     : null;
 }
 
-/*
- * M27 CALIBRATION
- *
- * Current exports show:
- * 1 = unplayed
- * 2/3 = completed variants.
- *
- * We start with:
- * 2 = user-played
- * 3 = sim/force result.
- *
- * These can be flipped instantly through Vercel env
- * if our Dolphins sanity check proves Madden uses
- * them the opposite way.
- */
-const EA_PLAYED_STATUS =
-  Number(
-    process.env
-      .LEAGUE_HEALTH_EA_PLAYED_STATUS ??
-      2,
-  );
-
-const EA_SIM_STATUS =
-  Number(
-    process.env
-      .LEAGUE_HEALTH_EA_SIM_STATUS ??
-      3,
-  );
-
 function classifyGame(
   game: GameRow,
-): GameKind {
+): GameResultType {
   if (
     game.status !== "final"
   ) {
-    return "unplayed";
+    return "not_completed";
   }
 
-  const status =
+  const rawStatus =
     rawEaStatus(game);
 
   if (
-    status ===
+    rawStatus ===
     EA_PLAYED_STATUS
   ) {
     return "played";
   }
 
   if (
-    status ===
-    EA_SIM_STATUS
+    rawStatus ===
+    EA_FORCE_SIM_STATUS
   ) {
-    return "sim";
+    return "force_sim";
   }
 
-  return "unknown";
+  return "unknown_final";
+}
+
+function healthStatus(
+  score: number,
+): HealthStatus {
+  if (score >= 80) {
+    return "active_user";
+  }
+
+  if (score >= 65) {
+    return "monitor";
+  }
+
+  if (score >= 45) {
+    return "hot_seat";
+  }
+
+  return "replacement_risk";
 }
 
 function discordScore(
   messages7d: number,
-  lastMessageAt: string | null,
+  messages30d: number,
 ) {
-  if (messages7d >= 15) {
-    return 100;
+  let recentScore = 0;
+
+  if (messages7d >= 20) {
+    recentScore = 100;
+  } else if (messages7d >= 10) {
+    recentScore = 90;
+  } else if (messages7d >= 5) {
+    recentScore = 75;
+  } else if (messages7d >= 2) {
+    recentScore = 55;
+  } else if (messages7d === 1) {
+    recentScore = 35;
   }
 
-  if (messages7d >= 8) {
-    return 85;
+  let monthlyScore = 0;
+
+  if (messages30d >= 50) {
+    monthlyScore = 100;
+  } else if (messages30d >= 25) {
+    monthlyScore = 85;
+  } else if (messages30d >= 10) {
+    monthlyScore = 70;
+  } else if (messages30d >= 5) {
+    monthlyScore = 50;
+  } else if (messages30d > 0) {
+    monthlyScore = 30;
   }
 
-  if (messages7d >= 4) {
-    return 70;
-  }
-
-  if (messages7d >= 2) {
-    return 50;
-  }
-
-  if (messages7d === 1) {
-    return 30;
-  }
-
-  const age =
-    hoursSince(
-      lastMessageAt,
-    );
-
-  if (
-    age !== null &&
-    age <= 14 * 24
-  ) {
-    return 10;
-  }
-
-  return 0;
-}
-
-function weightedCheckScore(
-  results: {
-    hit: boolean;
-  }[],
-) {
-  if (!results.length) {
-    return 100;
-  }
-
-  const weights =
-    [5, 4, 3, 2, 1];
-
-  let earned = 0;
-  let possible = 0;
-
-  results
-    .slice(0, 5)
-    .forEach(
-      (
-        result,
-        index,
-      ) => {
-        const weight =
-          weights[index] ?? 1;
-
-        possible += weight;
-
-        if (result.hit) {
-          earned += weight;
-        }
-      },
-    );
-
-  return possible
-    ? Math.round(
-        (
-          earned /
-          possible
-        ) * 100,
-      )
-    : 100;
+  return Math.round(
+    recentScore * 0.75 +
+    monthlyScore * 0.25,
+  );
 }
 
 function containsTeam(
@@ -359,10 +248,8 @@ function containsTeam(
   teamId: string,
 ) {
   return (
-    game.home_team_id ===
-      teamId ||
-    game.away_team_id ===
-      teamId
+    game.home_team_id === teamId ||
+    game.away_team_id === teamId
   );
 }
 
@@ -385,7 +272,7 @@ export async function buildLeagueHealthReport() {
 
   if (!leagueResult.data) {
     throw new Error(
-      "NEW ERA league record was not found.",
+      "NEW ERA league not found.",
     );
   }
 
@@ -406,7 +293,6 @@ export async function buildLeagueHealthReport() {
     teamsResult,
     gamesResult,
     discordResult,
-    checksResult,
     syncStateResult,
   ] =
     await Promise.all([
@@ -418,18 +304,12 @@ export async function buildLeagueHealthReport() {
         .eq(
           "league_id",
           league.id,
-        )
-        .order(
-          "city",
-          {
-            ascending: true,
-          },
         ),
 
       supabaseAdmin
         .from("league_games")
         .select(
-          "id, week, game_type, home_team_id, away_team_id, home_team_abbreviation, away_team_abbreviation, scheduled_at, status, home_score, away_score, raw_payload",
+          "id, season, week, game_type, home_team_id, away_team_id, home_team_abbreviation, away_team_abbreviation, status, home_score, away_score, raw_payload",
         )
         .eq(
           "league_id",
@@ -454,29 +334,10 @@ export async function buildLeagueHealthReport() {
 
       supabaseAdmin
         .from(
-          "league_health_active_checks",
-        )
-        .select(
-          "active_check_id, check_type, title, started_at",
-        )
-        .neq(
-          "check_type",
-          "waitlist",
-        )
-        .order(
-          "started_at",
-          {
-            ascending: false,
-          },
-        )
-        .limit(5),
-
-      supabaseAdmin
-        .from(
           "league_health_sync_state",
         )
         .select(
-          "last_started_at, last_completed_at, last_error, channels_scanned, messages_seen, messages_saved",
+          "last_completed_at, last_error, channels_scanned",
         )
         .eq(
           "id",
@@ -489,7 +350,6 @@ export async function buildLeagueHealthReport() {
     teamsResult.error ||
     gamesResult.error ||
     discordResult.error ||
-    checksResult.error ||
     syncStateResult.error;
 
   if (error) {
@@ -514,40 +374,11 @@ export async function buildLeagueHealthReport() {
       []
     ) as DiscordSummaryRow[];
 
-  const checks =
-    (
-      checksResult.data ??
-      []
-    ) as ActiveCheckRow[];
-
   const syncState =
     (
       syncStateResult.data ??
       null
-    ) as
-      | SyncStateRow
-      | null;
-
-  /*
-   * Week 6 just starting DOES NOT count
-   * against anybody.
-   *
-   * Only Weeks 1-5 are accountability
-   * data while currentWeek === 6.
-   */
-  const historicalGames =
-    games.filter(
-      (game) =>
-        game.week <
-        currentWeek,
-    );
-
-  const currentGames =
-    games.filter(
-      (game) =>
-        game.week ===
-        currentWeek,
-    );
+    ) as SyncStateRow | null;
 
   const ownerIds =
     teams
@@ -563,11 +394,11 @@ export async function buildLeagueHealthReport() {
       );
 
   const membersResult =
-    ownerIds.length
+    ownerIds.length > 0
       ? await supabaseAdmin
           .from("members")
           .select(
-            "id, discord_id, discord_username, display_name, is_active, last_seen_at",
+            "id, discord_id, discord_username, display_name",
           )
           .in(
             "id",
@@ -625,153 +456,10 @@ export async function buildLeagueHealthReport() {
       ),
     );
 
-  const checkIds =
-    checks.map(
-      (check) =>
-        check.active_check_id,
-    );
-
-  const [
-    liveClicksResult,
-    archivedClicksResult,
-  ] =
-    checkIds.length
-      ? await Promise.all([
-          supabaseAdmin
-            .from(
-              "active_check_clicks",
-            )
-            .select(
-              "active_check_id, discord_id, team_slug, checked_in_at",
-            )
-            .in(
-              "active_check_id",
-              checkIds,
-            ),
-
-          supabaseAdmin
-            .from(
-              "active_check_click_archive",
-            )
-            .select(
-              "active_check_id, discord_id, team_slug, checked_in_at",
-            )
-            .in(
-              "active_check_id",
-              checkIds,
-            ),
-        ])
-      : [
-          {
-            data: [],
-            error: null,
-          },
-          {
-            data: [],
-            error: null,
-          },
-        ];
-
-  if (
-    liveClicksResult.error
-  ) {
-    throw liveClicksResult.error;
-  }
-
-  if (
-    archivedClicksResult.error
-  ) {
-    throw archivedClicksResult.error;
-  }
-
-  const clicks = [
-    ...(
-      (
-        liveClicksResult.data ??
-        []
-      ) as CheckClickRow[]
-    ),
-
-    ...(
-      (
-        archivedClicksResult.data ??
-        []
-      ) as CheckClickRow[]
-    ),
-  ];
-
-  const clickKeys =
-    new Set<string>();
-
-  for (
-    const click
-    of clicks
-  ) {
-    if (
-      click.team_slug
-    ) {
-      clickKeys.add(
-        `${click.active_check_id}:team:${normalizeSlug(
-          click.team_slug,
-        )}`,
-      );
-    }
-
-    if (
-      click.discord_id
-    ) {
-      clickKeys.add(
-        `${click.active_check_id}:user:${click.discord_id}`,
-      );
-    }
-  }
-
-  const currentGameByTeam =
-    new Map<
-      string,
-      GameRow
-    >();
-
-  for (
-    const game
-    of currentGames
-  ) {
-    if (
-      game.home_team_id
-    ) {
-      currentGameByTeam.set(
-        game.home_team_id,
-        game,
-      );
-    }
-
-    if (
-      game.away_team_id
-    ) {
-      currentGameByTeam.set(
-        game.away_team_id,
-        game,
-      );
-    }
-  }
-
   const discordAvailable =
     Boolean(
       syncState
         ?.last_completed_at,
-    );
-
-  const activeChecksAvailable =
-    checks.length > 0;
-
-  const latestCheck =
-    checks[0] ?? null;
-
-  const latestCheckAge =
-    hoursSince(
-      latestCheck
-        ?.started_at ??
-        null,
     );
 
   const teamReports =
@@ -787,10 +475,20 @@ export async function buildLeagueHealthReport() {
               )
             : null;
 
-        const slug =
-          teamSlug(team);
+        /*
+         * IMPORTANT:
+         * If Discord is not linked,
+         * Discord contributes NOTHING.
+         *
+         * It is not a zero.
+         * It is not a penalty.
+         */
+        const discordLinked =
+          Boolean(
+            owner?.discord_id,
+          );
 
-        const discordActivity =
+        const discord =
           owner?.discord_id
             ? (
                 discordById.get(
@@ -808,8 +506,17 @@ export async function buildLeagueHealthReport() {
                 lastMessageAt: null,
               };
 
-        const teamHistory =
-          historicalGames
+        /*
+         * Every PREVIOUS week counts.
+         *
+         * Current week counts only once that
+         * team's current game is completed.
+         *
+         * Therefore Week 6 does not hurt a team
+         * just because they haven't played yet.
+         */
+        const teamGames =
+          games
             .filter(
               (game) =>
                 containsTeam(
@@ -817,342 +524,254 @@ export async function buildLeagueHealthReport() {
                   team.id,
                 ),
             )
+            .filter(
+              (game) =>
+                game.week <
+                  currentWeek ||
+                (
+                  game.week ===
+                    currentWeek &&
+                  game.status ===
+                    "final"
+                ),
+            )
             .sort(
               (a, b) =>
-                b.week -
-                a.week,
+                a.week -
+                b.week,
             );
 
         const classified =
-          teamHistory.map(
+          teamGames.map(
             (game) => ({
-              game,
-              kind:
+              week:
+                game.week,
+
+              type:
                 classifyGame(
                   game,
                 ),
+
+              opponent:
+                game.home_team_id ===
+                team.id
+                  ? game
+                      .away_team_abbreviation
+                  : game
+                      .home_team_abbreviation,
             }),
           );
 
-        const realPlayed =
+        const eligible =
+          classified.length;
+
+        const played =
           classified.filter(
             (entry) =>
-              entry.kind ===
+              entry.type ===
               "played",
           ).length;
 
-        const fairSims =
+        const forceSims =
           classified.filter(
             (entry) =>
-              entry.kind ===
-              "sim",
+              entry.type ===
+              "force_sim",
           ).length;
 
         const unknownFinals =
           classified.filter(
             (entry) =>
-              entry.kind ===
-              "unknown",
+              entry.type ===
+              "unknown_final",
           ).length;
 
-        const unplayed =
-          classified.filter(
+        const recent =
+          [...classified]
+            .sort(
+              (a, b) =>
+                b.week -
+                a.week,
+            )
+            .slice(
+              0,
+              3,
+            );
+
+        const recentPlayed =
+          recent.filter(
             (entry) =>
-              entry.kind ===
-              "unplayed",
-          ).length;
-
-        const eligible =
-          teamHistory.length;
-
-        const recentTwo =
-          classified.slice(
-            0,
-            2,
-          );
-
-        const recentReal =
-          recentTwo.filter(
-            (entry) =>
-              entry.kind ===
+              entry.type ===
               "played",
           ).length;
 
-        const components:
-          HealthComponent[] =
-            [];
+        const recentForceSims =
+          recent.filter(
+            (entry) =>
+              entry.type ===
+              "force_sim",
+          ).length;
+
+        /*
+         * GAMEPLAY IS THE MAIN THING.
+         *
+         * Simply talking in Discord cannot make
+         * someone healthy if they don't play.
+         */
+        const participationRate =
+          eligible > 0
+            ? played / eligible
+            : 1;
+
+        let gameplayScore =
+          Math.round(
+            participationRate *
+            100,
+          );
+
+        /*
+         * Additional punishment for repeated
+         * force/sim outcomes.
+         */
+        if (
+          forceSims >= 2
+        ) {
+          gameplayScore -=
+            (
+              forceSims -
+              1
+            ) * 7;
+        }
+
+        gameplayScore =
+          clamp(
+            gameplayScore,
+          );
+
+        const chatScore =
+          discordScore(
+            discord.messages7d,
+            discord.messages30d,
+          );
+
+        /*
+         * 70% Madden
+         * 30% Discord
+         *
+         * BUT:
+         * unlinked Discord = Madden only.
+         */
+        let score =
+          discordLinked &&
+          discordAvailable
+            ? Math.round(
+                gameplayScore *
+                  0.70 +
+                chatScore *
+                  0.30,
+              )
+            : gameplayScore;
 
         const attention:
           string[] =
             [];
 
-        const gameScore =
+        const playRate =
           eligible > 0
-            ? Math.round(
-                (
-                  realPlayed /
-                  eligible
-                ) * 100,
-              )
-            : 100;
-
-        components.push({
-          key:
-            "games",
-          label:
-            "Actual games played",
-          score:
-            gameScore,
-          weight:
-            50,
-        });
+            ? played / eligible
+            : 1;
 
         if (
-          fairSims > 0
+          forceSims === 1
         ) {
           attention.push(
-            `${fairSims} fair sim/force result${
-              fairSims === 1
-                ? ""
-                : "s"
-            } — no game credit`,
+            "1 force/sim result",
           );
         }
 
         if (
-          unknownFinals >
-          0
+          forceSims >= 2
         ) {
           attention.push(
-            `${unknownFinals} completed game${
-              unknownFinals ===
-              1
-                ? ""
-                : "s"
-            } not verified as user-played`,
+            `${forceSims} force/sim results`,
           );
         }
 
         if (
-          unplayed > 0
+          eligible >= 2 &&
+          recentPlayed === 0
         ) {
           attention.push(
-            `${unplayed} past-week game${
-              unplayed === 1
-                ? ""
-                : "s"
-            } unplayed`,
+            "No actual game played in recent weeks",
           );
         }
 
         if (
-          recentTwo.length >=
-            2 &&
-          recentReal ===
+          eligible >= 4 &&
+          playRate < 0.5
+        ) {
+          attention.push(
+            "Played less than half of eligible games",
+          );
+        }
+
+        if (
+          discordLinked &&
+          discordAvailable &&
+          discord.messages7d ===
             0
         ) {
           attention.push(
-            "0 actual games played in last 2 eligible weeks",
+            "No Discord activity in 7 days",
           );
         }
 
-        const checkResults =
-          checks.map(
-            (check) => {
-              const hit =
-                clickKeys.has(
-                  `${check.active_check_id}:team:${slug}`,
-                ) ||
-                Boolean(
-                  owner
-                    ?.discord_id &&
-                    clickKeys.has(
-                      `${check.active_check_id}:user:${owner.discord_id}`,
-                    ),
-                );
-
-              return {
-                id:
-                  check.active_check_id,
-                hit,
-              };
-            },
+        if (
+          discordLinked &&
+          discordAvailable &&
+          discord.messages7d >
+            0 &&
+          discord.messages7d <
+            3
+        ) {
+          attention.push(
+            "Very low Discord activity",
           );
+        }
 
         /*
-         * Don't count the newest active check as
-         * missed until it has been open 12 hours.
-         */
-        const countableChecks =
-          checkResults.filter(
-            (
-              result,
-              index,
-            ) => {
-              if (
-                index > 0 ||
-                result.hit
-              ) {
-                return true;
-              }
-
-              return (
-                latestCheckAge !==
-                  null &&
-                latestCheckAge >=
-                  12
-              );
-            },
-          );
-
-        const checkHits =
-          countableChecks.filter(
-            (result) =>
-              result.hit,
-          ).length;
-
-        const checkMisses =
-          countableChecks.length -
-          checkHits;
-
-        let consecutiveMisses =
-          0;
-
-        for (
-          const result
-          of countableChecks
-        ) {
-          if (
-            result.hit
-          ) {
-            break;
-          }
-
-          consecutiveMisses +=
-            1;
-        }
-
-        if (
-          activeChecksAvailable
-        ) {
-          components.push({
-            key:
-              "activeChecks",
-            label:
-              "Active checks",
-            score:
-              weightedCheckScore(
-                countableChecks,
-              ),
-            weight:
-              30,
-          });
-        }
-
-        if (
-          consecutiveMisses >=
-          2
-        ) {
-          attention.push(
-            `${consecutiveMisses} active checks missed in a row`,
-          );
-        } else if (
-          checkMisses > 0
-        ) {
-          attention.push(
-            `${checkMisses} recent active check${
-              checkMisses ===
-              1
-                ? ""
-                : "s"
-            } missed`,
-          );
-        }
-
-        if (
-          owner &&
-          discordAvailable
-        ) {
-          components.push({
-            key:
-              "discord",
-            label:
-              "Discord chat",
-            score:
-              discordScore(
-                discordActivity
-                  .messages7d,
-                discordActivity
-                  .lastMessageAt,
-              ),
-            weight:
-              20,
-          });
-        }
-
-        if (
-          discordAvailable &&
-          discordActivity
-            .messages7d ===
-            0
-        ) {
-          attention.push(
-            "No Discord messages in 7 days",
-          );
-        } else if (
-          discordAvailable &&
-          discordActivity
-            .messages7d <
-            4
-        ) {
-          attention.push(
-            "Low Discord activity",
-          );
-        }
-
-        if (!owner) {
-          attention.unshift(
-            "No connected team owner",
-          );
-        }
-
-        let score =
-          clamp(
-            weightedScore(
-              components,
-            ),
-          );
-
-        /*
-         * HARD ACCOUNTABILITY CAPS
+         * HARD CAPS.
          *
-         * Chat activity cannot rescue an owner
-         * who simply isn't playing.
+         * This makes the page a real
+         * replacement radar.
          */
-        if (!owner) {
-          score =
-            Math.min(
-              score,
-              20,
-            );
-        }
 
+        // Multiple force/sims means Hot Seat at best.
         if (
-          eligible >= 3 &&
-          realPlayed === 0
+          forceSims >= 2
         ) {
           score =
             Math.min(
               score,
-              39,
+              64,
             );
         }
 
+        // Three force/sims = replacement territory.
         if (
-          recentTwo.length >=
-            2 &&
-          recentReal ===
-            0
+          forceSims >= 3
+        ) {
+          score =
+            Math.min(
+              score,
+              44,
+            );
+        }
+
+        // Played under half after enough weeks.
+        if (
+          eligible >= 4 &&
+          playRate < 0.5
         ) {
           score =
             Math.min(
@@ -1161,12 +780,40 @@ export async function buildLeagueHealthReport() {
             );
         }
 
+        // Basically hasn't played at all.
         if (
-          fairSims >= 2 &&
-          eligible >= 3 &&
-          realPlayed /
-            eligible <
-            0.5
+          eligible >= 4 &&
+          played <= 1
+        ) {
+          score =
+            Math.min(
+              score,
+              44,
+            );
+        }
+
+        // No real games in last three results.
+        if (
+          recent.length >= 3 &&
+          recentPlayed === 0
+        ) {
+          score =
+            Math.min(
+              score,
+              44,
+            );
+        }
+
+        // Two straight non-played outcomes = hot seat.
+        if (
+          recent.length >= 2 &&
+          recent
+            .slice(0, 2)
+            .every(
+              (entry) =>
+                entry.type !==
+                "played",
+            )
         ) {
           score =
             Math.min(
@@ -1175,45 +822,31 @@ export async function buildLeagueHealthReport() {
             );
         }
 
-        if (
-          consecutiveMisses >=
-          3
-        ) {
-          score =
-            Math.min(
-              score,
-              39,
-            );
-        } else if (
-          consecutiveMisses >=
-          2
-        ) {
-          score =
-            Math.min(
-              score,
-              59,
-            );
-        }
-
-        const currentGame =
-          currentGameByTeam.get(
-            team.id,
-          ) ??
-          null;
+        score =
+          clamp(score);
 
         return {
           team: {
             id:
               team.id,
-            slug,
+
+            slug:
+              teamSlug(team),
+
             city:
               team.city,
+
             name:
               team.name,
+
             abbreviation:
               team.abbreviation,
           },
 
+          /*
+           * Owner is DISPLAY ONLY.
+           * Absolutely no score is attached to it.
+           */
           owner:
             owner
               ? {
@@ -1225,94 +858,77 @@ export async function buildLeagueHealthReport() {
                     owner.discord_username,
                   displayName:
                     owner.display_name,
-                  websiteActive:
-                    owner.is_active,
-                  lastWebsiteSeenAt:
-                    owner.last_seen_at,
                 }
               : null,
 
-          game:
-            currentGame
-              ? {
-                  id:
-                    currentGame.id,
-                  status:
-                    currentGame.status,
-                  scheduledAt:
-                    currentGame.scheduled_at,
-                  homeScore:
-                    currentGame.home_score,
-                  awayScore:
-                    currentGame.away_score,
-                  opponentAbbreviation:
-                    currentGame
-                      .home_team_id ===
-                    team.id
-                      ? currentGame
-                          .away_team_abbreviation
-                      : currentGame
-                          .home_team_abbreviation,
-                  overdue:
-                    false,
-                }
-              : null,
-
-          games: {
+          gameplay: {
             eligible,
-            realPlayed,
-            fairSims,
+            played,
+            forceSims,
             unknownFinals,
-            unplayed,
-            recentReal,
+
+            playRate:
+              eligible > 0
+                ? Math.round(
+                    playRate *
+                    100,
+                  )
+                : 100,
+
+            gameplayScore,
+
+            recentPlayed,
+            recentForceSims,
+
+            recent:
+              recent.map(
+                (entry) => ({
+                  week:
+                    entry.week,
+                  type:
+                    entry.type,
+                  opponent:
+                    entry.opponent,
+                }),
+              ),
           },
 
           discord: {
+            linked:
+              discordLinked,
+
             available:
               discordAvailable,
+
             messages7d:
-              discordActivity
-                .messages7d,
+              discord.messages7d,
+
             messages30d:
-              discordActivity
-                .messages30d,
+              discord.messages30d,
+
             lastMessageAt:
-              discordActivity
-                .lastMessageAt,
+              discord.lastMessageAt,
+
+            score:
+              discordLinked &&
+              discordAvailable
+                ? chatScore
+                : null,
           },
 
-          activeChecks: {
-            available:
-              activeChecksAvailable,
-            total:
-              countableChecks.length,
-            hits:
-              checkHits,
-            misses:
-              checkMisses,
-            consecutiveMisses,
-            latest:
-              countableChecks.length ===
-              0
-                ? "no_data"
-                : countableChecks[0]
-                    .hit
-                  ? "hit"
-                  : "missed",
-          },
-
-          components,
           score,
+
           status:
-            healthLabel(
+            healthStatus(
               score,
             ),
+
           attention,
         };
       },
     );
 
-  const rank:
+  const riskOrder:
     Record<
       HealthStatus,
       number
@@ -1333,14 +949,19 @@ export async function buildLeagueHealthReport() {
       a,
       b,
     ) => {
-      const statusDiff =
-        rank[a.status] -
-        rank[b.status];
+      const statusDifference =
+        riskOrder[
+          a.status
+        ] -
+        riskOrder[
+          b.status
+        ];
 
       if (
-        statusDiff !== 0
+        statusDifference !==
+        0
       ) {
-        return statusDiff;
+        return statusDifference;
       }
 
       return (
@@ -1350,74 +971,51 @@ export async function buildLeagueHealthReport() {
     },
   );
 
-  const historicalKinds =
-    historicalGames.map(
-      classifyGame,
-    );
-
-  const realGames =
-    historicalKinds.filter(
-      (kind) =>
-        kind ===
+  const uniquePlayedGames =
+    games.filter(
+      (game) =>
+        classifyGame(
+          game,
+        ) ===
         "played",
     ).length;
 
-  const fairSimGames =
-    historicalKinds.filter(
-      (kind) =>
-        kind ===
-        "sim",
+  const uniqueForceSimGames =
+    games.filter(
+      (game) =>
+        classifyGame(
+          game,
+        ) ===
+        "force_sim",
     ).length;
 
-  const unknownGames =
-    historicalKinds.filter(
-      (kind) =>
-        kind ===
-        "unknown",
-    ).length;
-
-  const assignedOwners =
+  const linkedDiscordTeams =
     teamReports.filter(
       (team) =>
-        team.owner,
-    ).length;
-
-  const activeDiscord =
-    teamReports.filter(
-      (team) =>
-        team.owner &&
-        team.discord
-          .messages7d >
-          0,
-    ).length;
-
-  const latestCheckHits =
-    teamReports.filter(
-      (team) =>
-        team.activeChecks
-          .latest ===
-        "hit",
-    ).length;
-
-  const scores =
-    teamReports.map(
-      (team) =>
-        team.score,
+        team.discord.linked,
     );
 
+  const discordActiveTeams =
+    linkedDiscordTeams.filter(
+      (team) =>
+        team.discord
+          .messages7d >
+        0,
+    ).length;
+
   const overallScore =
-    scores.length
+    teamReports.length
       ? Math.round(
-          scores.reduce(
+          teamReports.reduce(
             (
               total,
-              score,
+              team,
             ) =>
               total +
-              score,
+              team.score,
             0,
           ) /
-            scores.length,
+            teamReports.length,
         )
       : 0;
 
@@ -1426,134 +1024,134 @@ export async function buildLeagueHealthReport() {
       ?.last_completed_at ??
     null;
 
-  const shouldSync =
-    !lastDiscordSync ||
-    Date.now() -
-      new Date(
-        lastDiscordSync,
-      ).getTime() >
-      3_600_000;
-
   return {
     revision:
-      "league-health-v3-real-games",
+      "league-health-v4-gameplay-discord-only",
 
     generatedAt:
       new Date()
         .toISOString(),
 
     calibration: {
-      eaPlayedStatus:
+      playedStatus:
         EA_PLAYED_STATUS,
-      eaSimStatus:
-        EA_SIM_STATUS,
+
+      forceSimStatus:
+        EA_FORCE_SIM_STATUS,
     },
 
     league: {
       id:
         league.id,
+
       name:
         league.name ??
         "NEW ERA CFM",
+
       season,
+
       currentWeek,
     },
 
     overall: {
       score:
         overallScore,
+
       status:
-        healthLabel(
+        healthStatus(
           overallScore,
         ),
+
       teamsTracked:
-        teams.length,
+        teamReports.length,
+
       attentionCount:
         teamReports.filter(
           (team) =>
-            team.status !==
+            team.status ===
+              "hot_seat" ||
+            team.status ===
+              "replacement_risk",
+        ).length,
+
+      activeUsers:
+        teamReports.filter(
+          (team) =>
+            team.status ===
             "active_user",
+        ).length,
+
+      monitors:
+        teamReports.filter(
+          (team) =>
+            team.status ===
+            "monitor",
+        ).length,
+
+      hotSeat:
+        teamReports.filter(
+          (team) =>
+            team.status ===
+            "hot_seat",
+        ).length,
+
+      replacementRisk:
+        teamReports.filter(
+          (team) =>
+            team.status ===
+            "replacement_risk",
         ).length,
     },
 
     metrics: {
-      owners: {
-        assigned:
-          assignedOwners,
-        total:
-          teams.length,
-      },
-
       games: {
-        available:
-          historicalGames.length >
-          0,
-        completed:
-          realGames,
-        total:
-          historicalGames.length,
-        pending:
-          unknownGames,
-        realPlayed:
-          realGames,
-        fairSims:
-          fairSimGames,
+        actual:
+          uniquePlayedGames,
+
+        forceSims:
+          uniqueForceSimGames,
+
+        currentWeek,
       },
 
       discord: {
         available:
           discordAvailable,
-        activeOwners:
-          activeDiscord,
-        assignedOwners,
-      },
 
-      activeChecks: {
-        available:
-          activeChecksAvailable,
-        latestCheckId:
-          latestCheck
-            ?.active_check_id ??
-          null,
-        latestTitle:
-          latestCheck
-            ?.title ??
-          null,
-        latestStartedAt:
-          latestCheck
-            ?.started_at ??
-          null,
-        hits:
-          latestCheckHits,
-        eligibleOwners:
-          assignedOwners,
-        checksTracked:
-          checks.length,
+        linkedTeams:
+          linkedDiscordTeams.length,
+
+        activeTeams:
+          discordActiveTeams,
       },
     },
 
     dataSources: {
       games: {
         ready:
-          historicalGames.length >
-          0,
+          games.length > 0,
+
         label:
-          `${realGames} actual games • ${fairSimGames} fair sims excluded`,
+          `${uniquePlayedGames} actual games • ${uniqueForceSimGames} force/sim results`,
       },
 
       discord: {
         ready:
           discordAvailable,
+
         label:
           discordAvailable
-            ? `Last synced ${lastDiscordSync}`
-            : "Discord activity has not synced yet",
+            ? `Discord activity synced ${lastDiscordSync}`
+            : "Discord activity waiting for sync",
+
         lastCompletedAt:
           lastDiscordSync,
+
         lastError:
           syncState
             ?.last_error ??
           null,
+
         channelsScanned:
           Number(
             syncState
@@ -1561,18 +1159,16 @@ export async function buildLeagueHealthReport() {
               0,
           ),
       },
-
-      activeChecks: {
-        ready:
-          activeChecksAvailable,
-        label:
-          activeChecksAvailable
-            ? `${checks.length} recent checks tracked`
-            : "Waiting for an active check",
-      },
     },
 
-    shouldSync,
+    shouldSync:
+      !lastDiscordSync ||
+      Date.now() -
+        new Date(
+          lastDiscordSync,
+        ).getTime() >
+        60 * 60 * 1000,
+
     teams:
       teamReports,
   };
