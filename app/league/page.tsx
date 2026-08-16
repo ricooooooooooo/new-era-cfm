@@ -37,17 +37,17 @@ const coverage = [
   {
     icon: "🔥",
     title: "Game of the Week",
-    href: "/media/game-of-the-week",
+    href: "/media",
   },
   {
     icon: "🏆",
     title: "Awards",
-    href: "/media/awards",
+    href: "/media",
   },
   {
     icon: "📈",
     title: "Power Rankings",
-    href: "/media/power-rankings",
+    href: "/media",
   },
   {
     icon: "📰",

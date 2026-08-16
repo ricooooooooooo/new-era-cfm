@@ -343,7 +343,7 @@ export default async function OwnerHomePage() {
 
             <div className="grid gap-3 md:grid-cols-3">
               <Link
-                href="/media/game-of-the-week"
+                href="/media"
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
               >
                 <span className="text-xl">
@@ -360,7 +360,7 @@ export default async function OwnerHomePage() {
               </Link>
 
               <Link
-                href="/media/awards"
+                href="/media"
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:bg-white/[0.055]"
               >
                 <span className="text-xl">
