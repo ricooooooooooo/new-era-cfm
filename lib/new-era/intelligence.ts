@@ -861,16 +861,170 @@ function beltLineage(
     string,
     TeamRow
   >,
+  currentSeason: number,
 ) {
-  const completed =
+  /*
+   * NEW ERA BELT:
+   *
+   * - Season 1 starts VACANT.
+   * - The first completed season's Super Bowl
+   *   champion becomes the inaugural holder.
+   * - After that, beat the holder = take the belt.
+   *
+   * We ONLY initialize from a season that is
+   * already completely behind the current season.
+   * This prevents a regular-season/playoff game
+   * from accidentally creating the belt.
+   */
+
+  const isPostseason = (
+    game: GameRow,
+  ) => {
+    const type =
+      String(
+        game.game_type ??
+          "",
+      ).toLowerCase();
+
+    return (
+      type === "postseason" ||
+      type === "playoff" ||
+      type === "playoffs"
+    );
+  };
+
+  const pastPostseasonGames =
     games
       .filter(
         (game) =>
+          game.season <
+            currentSeason &&
           game.status ===
             "final" &&
-          game.game_type ===
-            "regular" &&
-          gameWinner(game),
+          isPostseason(game) &&
+          Boolean(
+            gameWinner(game),
+          ),
+      );
+
+  /*
+   * No completed PRIOR season postseason exists.
+   * Therefore the belt has never been awarded.
+   */
+  if (
+    !pastPostseasonGames.length
+  ) {
+    return null;
+  }
+
+  const completedSeasons =
+    [
+      ...new Set(
+        pastPostseasonGames.map(
+          (game) =>
+            game.season,
+        ),
+      ),
+    ].sort(
+      (a, b) =>
+        a - b,
+    );
+
+  const inauguralSeason =
+    completedSeasons[0];
+
+  /*
+   * Once we've advanced beyond a season,
+   * its highest postseason week is its
+   * championship game.
+   */
+  const championship =
+    pastPostseasonGames
+      .filter(
+        (game) =>
+          game.season ===
+          inauguralSeason,
+      )
+      .sort(
+        (a, b) =>
+          b.week -
+            a.week ||
+          String(
+            b.scheduled_at ??
+              "",
+          ).localeCompare(
+            String(
+              a.scheduled_at ??
+                "",
+            ),
+          ),
+      )[0];
+
+  if (!championship) {
+    return null;
+  }
+
+  const inauguralWinner =
+    gameWinner(
+      championship,
+    );
+
+  if (!inauguralWinner) {
+    return null;
+  }
+
+  let holder =
+    String(
+      inauguralWinner,
+    );
+
+  let defenses = 0;
+
+  const history: {
+    season: number;
+    week: number;
+    from: string | null;
+    to: string;
+    reason: string;
+  }[] = [
+    {
+      season:
+        championship.season,
+
+      week:
+        championship.week,
+
+      from:
+        null,
+
+      to:
+        holder,
+
+      reason:
+        "INAUGURAL SUPER BOWL CHAMPION",
+    },
+  ];
+
+  /*
+   * Every legitimate game after the inaugural
+   * championship can defend/transfer the belt.
+   */
+  const laterGames =
+    games
+      .filter(
+        (game) =>
+          game.season >
+            inauguralSeason &&
+          game.status ===
+            "final" &&
+          String(
+            game.game_type ??
+              "",
+          ).toLowerCase() !==
+            "preseason" &&
+          Boolean(
+            gameWinner(game),
+          ),
       )
       .sort(
         (a, b) =>
@@ -889,47 +1043,9 @@ function beltLineage(
           ),
       );
 
-  if (
-    !completed.length
-  ) {
-    return null;
-  }
-
-  let holder =
-    String(
-      gameWinner(
-        completed[0],
-      ),
-    );
-
-  let defenses = 0;
-
-  const history: {
-    season: number;
-    week: number;
-    from: string | null;
-    to: string;
-  }[] = [
-    {
-      season:
-        completed[0]
-          .season,
-
-      week:
-        completed[0]
-          .week,
-
-      from:
-        null,
-
-      to:
-        holder,
-    },
-  ];
-
   for (
     const game
-    of completed.slice(1)
+    of laterGames
   ) {
     const holderPlayed =
       game.home_team_id ===
@@ -941,9 +1057,16 @@ function beltLineage(
       continue;
     }
 
+    const winnerId =
+      gameWinner(game);
+
+    if (!winnerId) {
+      continue;
+    }
+
     const winner =
       String(
-        gameWinner(game),
+        winnerId,
       );
 
     if (
@@ -973,6 +1096,9 @@ function beltLineage(
 
       to:
         holder,
+
+      reason:
+        "BELT TRANSFER",
     });
   }
 
@@ -990,7 +1116,7 @@ function beltLineage(
 
     history:
       history
-        .slice(-8)
+        .slice(-10)
         .reverse()
         .map(
           (entry) => ({
@@ -1003,7 +1129,7 @@ function beltLineage(
                       entry.from,
                     ),
                   )
-                : "BELT CREATED",
+                : "VACANT",
 
             toTeam:
               fullTeamName(
@@ -1493,6 +1619,10 @@ export async function buildNewEraIntelligence(
     beltLineage(
       games,
       teamById,
+      Number(
+        league.season ??
+          1,
+      ),
     );
 
   const fraudWatch =

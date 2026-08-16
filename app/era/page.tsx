@@ -504,7 +504,7 @@ export default async function EraPage() {
                 </>
               ) : (
                 <p className="mt-6 text-zinc-500">
-                  Belt lineage waiting for completed games.
+                  VACANT — the Season 1 Super Bowl champion will become the first New Era Belt holder.
                 </p>
               )}
             </article>
