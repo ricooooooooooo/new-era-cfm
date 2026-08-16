@@ -124,6 +124,20 @@ function parseChannelIds(value: string | undefined) {
   );
 }
 
+
+function countsAsRealChat(
+  channel: DiscordChannel,
+) {
+  const name =
+    (channel.name ?? "")
+      .toLowerCase()
+      .trim();
+
+  return !/active.?check|rules?|announcement|gotw|game.?of.?the.?week|potw|player.?of.?the.?week|trade.?alert|prediction|sportsbook|website.?feed|bot|logs?|dev.?market|milestone|hall.?of.?champions|playoff.?bracket/i.test(
+    name,
+  );
+}
+
 function hasActiveCheckButton(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((item) => hasActiveCheckButton(item));
@@ -424,7 +438,8 @@ export async function syncDiscordLeagueActivity(
         if (
           authorId &&
           !message.author?.bot &&
-          !message.webhook_id
+          !message.webhook_id &&
+          countsAsRealChat(scan.channel)
         ) {
           eventRows.push({
             message_id: message.id,
