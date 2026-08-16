@@ -16,14 +16,6 @@ type DiscordUser = {
   avatar: string | null;
 };
 
-const navLinks = [
-  { label: "Dashboard", href: "/", ready: true },
-  { label: "Standings", href: "/standings", ready: true },
-  { label: "Teams", href: "/teams", ready: true },
-  { label: "Members", href: "/members", ready: true },
-  { label: "Schedule", href: "/schedule", ready: false },
-  { label: "Trades", href: "/trades", ready: false },
-];
 
 function DiscordIcon() {
   return (
@@ -165,13 +157,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       : null;
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080909]/90 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:px-6 lg:ml-72">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080909]/90 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:px-6 lg:ml-20">
       <div className="flex min-w-0 items-center gap-3 lg:gap-8">
         <button
           type="button"
           onClick={onMenuClick}
-          aria-label="Open menu"
-          className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-zinc-200 transition active:scale-95 active:bg-white/[0.08] lg:hidden"
+          aria-label="Open all tools"
+          className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-zinc-200 transition hover:bg-white/[0.07] active:scale-95 active:bg-white/[0.08]"
         >
           <svg
             aria-hidden="true"
@@ -189,7 +181,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </button>
 
         <Link
-          href="/"
+          href="/home"
           className="group flex min-w-0 shrink items-center gap-2.5"
         >
           <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_14px_rgba(168,85,247,0.4)]">
@@ -213,44 +205,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             </p>
           </div>
         </Link>
-
-        <nav className="hidden items-center gap-1 xl:flex">
-          {navLinks.map((link) => {
-            const isActive =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(link.href);
-
-            if (!link.ready) {
-              return (
-                <span
-                  key={link.href}
-                  className="cursor-not-allowed rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700"
-                >
-                  {link.label}
-                </span>
-              );
-            }
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                  isActive
-                    ? "bg-white/[0.07] text-white"
-                    : "text-zinc-500 hover:bg-white/[0.035] hover:text-zinc-200"
-                }`}
-              >
-                {link.label}
-
-                {isActive && (
-                  <span className="absolute inset-x-3 -bottom-[9px] h-px bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
       </div>
 
       <div className="flex shrink-0 items-center gap-3">

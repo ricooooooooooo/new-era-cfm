@@ -27,14 +27,14 @@ type DiscordSessionResponse = {
 };
 
 const leagueLinks = [
-  { label: "Franchise HQ", href: "/dashboard" },
-  { label: "League Hub", href: "/" },
+  { label: "Home", href: "/home" },
+  { label: "My Game", href: "/my-game" },
+  { label: "Predictions", href: "/predictions" },
+  { label: "New Era Market", href: "/market" },
   { label: "Standings", href: "/standings" },
-  { label: "Teams", href: "/teams" },
   { label: "Schedule", href: "/schedule" },
-  { label: "Prediction Market", href: "/predictions" },
-  { label: "NE Coin Upgrade Store", href: "/market" },
-  { label: "My NE Coin Wallet", href: "/wallet" },
+  { label: "Teams", href: "/teams" },
+  { label: "Members", href: "/members" },
   { label: "Trade Center", href: "/trade-center" },
   { label: "Media", href: "/media" },
   { label: "Apply for Staff", href: "/staff" },
@@ -148,9 +148,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
+    onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -173,7 +171,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   }, [open, onClose]);
 
   function handleNavigationClick() {
-    if (window.innerWidth < 1024) onClose();
+    onClose();
   }
 
   function isLinkActive(href: string) {
@@ -197,7 +195,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         type="button"
         aria-label="Close navigation"
         onClick={onClose}
-        className={`fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -206,7 +204,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         aria-label="Main navigation"
-        className={`fixed left-0 top-0 z-[90] flex h-[100dvh] min-h-0 w-[86vw] max-w-72 touch-pan-y flex-col overflow-x-hidden overflow-y-scroll overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[22px_0_70px_rgba(0,0,0,0.62)] transition-transform duration-300 ease-out [-webkit-overflow-scrolling:touch] lg:w-72 lg:translate-x-0 lg:py-8 ${
+        className={`fixed left-0 top-0 z-[90] flex h-[100dvh] min-h-0 w-[86vw] max-w-72 touch-pan-y flex-col overflow-x-hidden overflow-y-scroll overscroll-contain border-r border-white/10 bg-[#070809] px-6 py-6 shadow-[22px_0_70px_rgba(0,0,0,0.62)] transition-transform duration-300 ease-out [-webkit-overflow-scrolling:touch] ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -243,7 +241,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-2xl leading-none text-zinc-400 transition hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-2xl leading-none text-zinc-400 transition hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white"
           >
             ×
           </button>
@@ -310,18 +308,18 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-purple-300">
-                League Status
+                All Tools
               </p>
 
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
             </div>
 
             <h2 className="mt-3 text-xl font-black text-white">
-              Healthy
+              New Era HQ
             </h2>
 
             <p className="mt-1 text-sm text-zinc-500">
-              32 / 32 Owners Active
+              League + staff controls
             </p>
           </div>
         </div>
