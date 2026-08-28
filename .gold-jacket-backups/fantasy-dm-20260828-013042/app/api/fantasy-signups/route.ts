@@ -23,6 +23,7 @@ function publicSignup(signup: FantasyLedgerSignup) {
     spotNumber: signup.spotNumber,
     discordUsername: signup.discordUsername,
     sleeperUsername: signup.sleeperUsername,
+    teamName: signup.teamName,
     createdAt: signup.createdAt,
   };
 }
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
     kind: "gold_jacket_fantasy_signup",
     discordUsername: input.discordUsername,
     sleeperUsername: input.sleeperUsername,
+    teamName: input.teamName || null,
   };
 
   const { data: inserted, error: insertError } = await supabaseAdmin
@@ -195,6 +197,7 @@ export async function POST(request: NextRequest) {
         "kind",
         "discordUsername",
         "sleeperUsername",
+        "teamName",
       ],
       item_count: 1,
       request_headers: {
@@ -250,20 +253,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let channelPosted = false;
-  let inviteDmSent = false;
+  let discordPosted = false;
 
   try {
-    const result = await sendFantasySignupNotification({
+    discordPosted = await sendFantasySignupNotification({
       baseUrl: request.nextUrl.origin,
       spotNumber: claimed.spotNumber,
       totalFilled: after.length,
       discordUsername: claimed.discordUsername,
       sleeperUsername: claimed.sleeperUsername,
+      teamName: claimed.teamName,
     });
-
-    channelPosted = result.channelPosted;
-    inviteDmSent = result.inviteDmSent;
   } catch (notificationError) {
     console.error(
       "Fantasy signup Discord notification error:",
@@ -277,8 +277,7 @@ export async function POST(request: NextRequest) {
       count: after.length,
       capacity: CAPACITY,
       full: after.length >= CAPACITY,
-      channelPosted,
-      inviteDmSent,
+      discordPosted,
     },
     { status: 201 },
   );

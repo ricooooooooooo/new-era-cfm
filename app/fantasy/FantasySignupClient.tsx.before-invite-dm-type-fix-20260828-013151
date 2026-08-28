@@ -25,7 +25,6 @@ type SignupResponse = {
   capacity?: number;
   full?: boolean;
   error?: string;
-  inviteDmSent?: boolean;
 };
 
 const CAPACITY = 10;

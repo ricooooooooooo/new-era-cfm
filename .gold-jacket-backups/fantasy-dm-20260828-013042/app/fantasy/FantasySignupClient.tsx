@@ -7,6 +7,7 @@ type Signup = {
   spotNumber: number;
   discordUsername: string;
   sleeperUsername: string;
+  teamName: string | null;
   createdAt: string;
 };
 
@@ -16,7 +17,6 @@ type SignupListResponse = {
   full: boolean;
   signups: Signup[];
   error?: string;
-  inviteDmSent?: boolean;
 };
 
 type SignupResponse = {
@@ -25,11 +25,9 @@ type SignupResponse = {
   capacity?: number;
   full?: boolean;
   error?: string;
-  inviteDmSent?: boolean;
 };
 
 const CAPACITY = 10;
-const SLEEPER_INVITE_URL = "http://sleeper.com/i/Y28Mj5mRaOdla";
 
 export default function FantasySignupClient() {
   const [signups, setSignups] = useState<Signup[]>([]);
@@ -37,9 +35,9 @@ export default function FantasySignupClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<Signup | null>(null);
-  const [inviteDmSent, setInviteDmSent] = useState(false);
   const [discordUsername, setDiscordUsername] = useState("");
   const [sleeperUsername, setSleeperUsername] = useState("");
+  const [teamName, setTeamName] = useState("");
   const [website, setWebsite] = useState("");
 
   const loadSignups = useCallback(async () => {
@@ -93,6 +91,7 @@ export default function FantasySignupClient() {
         body: JSON.stringify({
           discordUsername,
           sleeperUsername,
+          teamName,
           website,
         }),
       });
@@ -104,9 +103,9 @@ export default function FantasySignupClient() {
       }
 
       setSuccess(data.signup);
-      setInviteDmSent(Boolean(data.inviteDmSent));
       setDiscordUsername("");
       setSleeperUsername("");
+      setTeamName("");
       await loadSignups();
     } catch (submitError) {
       setError(
@@ -130,7 +129,7 @@ export default function FantasySignupClient() {
               Gold Jacket
             </p>
             <p className="mt-1 text-xl font-black tracking-[-0.04em] text-white transition group-hover:text-[#e6c65d]">
-              Gold Jacket Fantasy
+              Fantasy Football
             </p>
           </a>
 
@@ -197,18 +196,8 @@ export default function FantasySignupClient() {
                   Spot #{success.spotNumber} is yours.
                 </h2>
                 <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-zinc-400">
-                  {inviteDmSent
-                    ? "Your Sleeper league invite was sent to your Discord DMs."
-                    : "Your spot is locked. If Discord blocked the bot DM, use the Sleeper invite below."}
+                  Your signup is locked. Watch the Gold Jacket Fantasy Discord section for draft and payment information.
                 </p>
-                <a
-                  href={SLEEPER_INVITE_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-5 inline-flex rounded-xl bg-[#d4af37] px-5 py-3 text-sm font-black text-black transition hover:bg-[#efd469]"
-                >
-                  Join Sleeper League
-                </a>
                 <button
                   type="button"
                   onClick={() => setSuccess(null)}
@@ -272,7 +261,22 @@ export default function FantasySignupClient() {
                         className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm font-bold text-white outline-none transition placeholder:text-zinc-700 focus:border-[#d4af37]/55 focus:bg-black/55"
                       />
                     </label>
-<label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                        Fantasy Team Name <span className="text-zinc-700">Optional</span>
+                      </span>
+                      <input
+                        value={teamName}
+                        onChange={(event) => setTeamName(event.target.value)}
+                        placeholder="You can decide later"
+                        autoComplete="off"
+                        maxLength={50}
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm font-bold text-white outline-none transition placeholder:text-zinc-700 focus:border-[#d4af37]/55 focus:bg-black/55"
+                      />
+                    </label>
+
+                    <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
                       Website
                       <input
                         value={website}

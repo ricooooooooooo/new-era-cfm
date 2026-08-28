@@ -1,4 +1,3 @@
-import { buildFantasyInviteDmPayload } from "@/lib/discord/fantasy-dm-payload";
 import {
   selectExactDiscordMember,
   type DiscordGuildMember,
@@ -146,12 +145,25 @@ async function sendSleeperInviteDm(
         Authorization: `Bot ${botToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(
-        buildFantasyInviteDmPayload(
-          recipientId,
-          SLEEPER_INVITE_URL,
-        ),
-      ),
+      body: JSON.stringify({
+        content:
+          "🏆 **You claimed a Gold Jacket Fantasy spot.**\n\nJoin the Sleeper league below:",
+        allowed_mentions: { parse: [] },
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 5,
+                label: "Join Gold Jacket Fantasy",
+                url: SLEEPER_INVITE_URL,
+                emoji: { name: "🏈" },
+              },
+            ],
+          },
+        ],
+      }),
       cache: "no-store",
     },
   );
