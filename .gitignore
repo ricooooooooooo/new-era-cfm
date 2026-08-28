@@ -44,3 +44,6 @@ next-env.d.ts
 .new-era-backups/
 .active-check-cron-secret.txt
 .trade-form-secret.txt
+
+# Local Gold Jacket installer backups
+.gold-jacket-backups/

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+  <defs>
+    <linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1d58b"/>
+      <stop offset=".18" stop-color="#c99641"/>
+      <stop offset=".55" stop-color="#8a5b24"/>
+      <stop offset="1" stop-color="#4f3215"/>
+    </linearGradient>
+    <radialGradient id="shine" cx=".30" cy=".18" r=".75">
+      <stop offset="0" stop-color="#fff1bf" stop-opacity=".95"/>
+      <stop offset=".18" stop-color="#e3b662" stop-opacity=".35"/>
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="darkBronze" x1="0" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#2d1b0c"/>
+      <stop offset="1" stop-color="#120c08"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="900" fill="none"/>
+
+  <g opacity=".95">
+    <ellipse cx="536" cy="792" rx="158" ry="42" fill="#0b0908" opacity=".55"/>
+
+    <path d="M507 177c-76 0-133 58-133 143 0 63 30 106 61 144 16 19 31 41 35 69l7 47h120l8-49c4-27 18-47 34-66 33-40 60-80 60-145 0-84-57-143-132-143Z"
+          fill="url(#bronze)"/>
+
+    <path d="M474 303c0-34 28-62 63-62 34 0 62 28 62 62 0 21-10 39-25 50-4 3-7 8-7 13v15h-61v-14c0-6-3-11-8-15-14-11-24-29-24-49Z"
+          fill="url(#darkBronze)" opacity=".24"/>
+
+    <path d="M472 406c13 10 37 17 64 17 30 0 55-8 68-19 0 0-11 44-69 44-52 0-63-42-63-42Z"
+          fill="#3e2511" opacity=".45"/>
+
+    <path d="M419 599h233c29 0 52 23 52 52v25H367v-25c0-29 23-52 52-52Z"
+          fill="url(#bronze)"/>
+
+    <path d="M442 674h189l47 95H394l48-95Z"
+          fill="url(#bronze)"/>
+
+    <path d="M476 189c-50 16-84 61-84 114 0 48 18 83 46 118 20 24 39 54 45 91h30l-10-63c-4-26-17-48-34-68-27-33-42-61-42-99 0-38 20-73 49-93Z"
+          fill="#fff3c4" opacity=".12"/>
+
+    <path d="M585 218c39 20 66 60 66 109 0 44-16 78-46 114-19 24-33 50-38 86l-8 55h27l7-47c4-28 19-50 35-69 31-38 61-81 61-144 0-48-19-88-52-116Z"
+          fill="#2a180c" opacity=".22"/>
+
+    <ellipse cx="480" cy="279" rx="18" ry="11" fill="#fff3c6" opacity=".22"/>
+    <ellipse cx="544" cy="253" rx="46" ry="25" fill="url(#shine)" opacity=".52"/>
+    <ellipse cx="562" cy="555" rx="76" ry="36" fill="#ffefb6" opacity=".09"/>
+  </g>
+</svg>

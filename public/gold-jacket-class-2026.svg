@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 620">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#090805"/>
+      <stop offset=".48" stop-color="#1a120a"/>
+      <stop offset="1" stop-color="#070706"/>
+    </linearGradient>
+    <radialGradient id="warm" cx=".78" cy=".18" r=".72">
+      <stop offset="0" stop-color="#d3a74c" stop-opacity=".20"/>
+      <stop offset=".55" stop-color="#8b5f25" stop-opacity=".055"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0" stop-color="#efd98f"/>
+      <stop offset=".5" stop-color="#b98a32"/>
+      <stop offset="1" stop-color="#72501b"/>
+    </linearGradient>
+    <pattern id="wall" width="350" height="175" patternUnits="userSpaceOnUse">
+      <g opacity=".22">
+        <path d="M45 26 70 35v19c0 14-9 25-25 31-16-6-25-17-25-31V35l25-9Z"
+              fill="none" stroke="url(#gold)" stroke-width="2"/>
+        <path d="m35 44 8-4 2 5 2-5 8 4-3 25H38l-3-25Z"
+              fill="none" stroke="url(#gold)" stroke-width="1.4"/>
+        <text x="92" y="46" font-family="Arial Black,Arial,sans-serif"
+              font-size="15" font-weight="900" letter-spacing="2" fill="#d4af55">GOLD JACKET</text>
+        <text x="92" y="67" font-family="Arial,sans-serif"
+              font-size="9" font-weight="700" letter-spacing="4" fill="#92723d">CLASS OF 2026</text>
+
+        <path d="M226 117 244 124v14c0 11-7 19-18 24-11-5-18-13-18-24v-14l18-7Z"
+              fill="none" stroke="url(#gold)" stroke-width="1.5"/>
+        <text x="255" y="136" font-family="Arial Black,Arial,sans-serif"
+              font-size="10" font-weight="900" letter-spacing="1.5" fill="#c79c49">2026 SELECTIONS</text>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="1400" height="620" fill="url(#bg)"/>
+  <rect width="1400" height="620" fill="url(#warm)"/>
+  <rect width="1400" height="620" fill="url(#wall)"/>
+  <rect y="410" width="1400" height="210" fill="#030303" opacity=".40"/>
+</svg>
