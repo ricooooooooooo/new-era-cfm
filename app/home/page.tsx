@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import AppLayout from "@/app/components/layout/AppLayout";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+import AdvanceCountdown from "@/app/components/AdvanceCountdown";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -61,9 +62,7 @@ export default async function OwnerHomePage() {
                 </h1>
               </div>
 
-              <div className="hidden shrink-0 rounded-full border border-[#d7b56d]/22 bg-[#d7b56d]/[0.065] px-3.5 py-2 text-[9px] font-black uppercase tracking-[0.17em] text-[#ead08a] sm:block">
-                48 Hour Advance
-              </div>
+              <AdvanceCountdown />
             </div>
           </section>
 
@@ -106,7 +105,7 @@ export default async function OwnerHomePage() {
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 bg-cover bg-[position:72%_42%] opacity-[0.74] transition duration-500 group-hover:scale-[1.025] group-hover:opacity-[0.84]"
                 style={{
-                  backgroundImage: 'url("/gold-jacket-legends-bg.png")',
+                  backgroundImage: 'url("/gold-jacket-legends-2026.png")',
                 }}
               />
               <div
