@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { getCurrentMaddenPlayers } from "@/lib/madden/player-data";
+import { splitDevShopAttributes } from "@/lib/dev-shop/attributes.mjs";
 import { findTeamBySlug } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
@@ -43,78 +44,11 @@ export type StorePlayer = {
   devTrait: string | null;
   headshotUrl: string | null;
   teamAbbreviation: string | null;
+  hasFranchiseData: boolean;
+  ratingsCapturedAt: string | null;
   physicalAttributes: AttributeOption[];
   nonPhysicalAttributes: AttributeOption[];
 };
-
-const PHYSICAL_ATTRIBUTE_LABELS: Record<string, string> = {
-  speed: "Speed",
-  acceleration: "Acceleration",
-  agility: "Agility",
-  strength: "Strength",
-  jumping: "Jumping",
-  changeofdirection: "Change of Direction",
-  stamina: "Stamina",
-  injury: "Injury",
-  toughness: "Toughness",
-  throwpower: "Throw Power",
-  kickpower: "Kick Power",
-};
-
-function normalizeKey(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-function humanizeAttribute(key: string) {
-  return key
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function numericAttributes(
-  attributes: Record<string, unknown>,
-): AttributeOption[] {
-  return Object.entries(attributes)
-    .map(([key, rawValue]) => {
-      const value = Number(rawValue);
-      if (!Number.isFinite(value)) return null;
-      if (value < 0 || value > 100) return null;
-
-      return {
-        key,
-        label: humanizeAttribute(key),
-        value,
-      };
-    })
-    .filter((entry): entry is AttributeOption => Boolean(entry))
-    .sort((a, b) => a.label.localeCompare(b.label));
-}
-
-function splitAttributes(attributes: Record<string, unknown>) {
-  const all = numericAttributes(attributes);
-  const physical: AttributeOption[] = [];
-  const nonPhysical: AttributeOption[] = [];
-
-  for (const attribute of all) {
-    const normalized = normalizeKey(attribute.key);
-    const physicalLabel = PHYSICAL_ATTRIBUTE_LABELS[normalized];
-
-    if (physicalLabel) {
-      physical.push({
-        ...attribute,
-        label: physicalLabel,
-      });
-    } else {
-      nonPhysical.push(attribute);
-    }
-  }
-
-  return {
-    physicalAttributes: physical,
-    nonPhysicalAttributes: nonPhysical,
-  };
-}
 
 export function readDiscordUser(request: NextRequest): SavedDiscordUser | null {
   const encoded = request.cookies.get("new_era_discord_user")?.value;
@@ -224,7 +158,7 @@ export async function loadTeamPlayers({
   });
 
   return players.map((player) => {
-    const split = splitAttributes(player.attributes ?? {});
+    const split = splitDevShopAttributes(player.attributes ?? {});
 
     return {
       id: player.id,
@@ -234,6 +168,8 @@ export async function loadTeamPlayers({
       devTrait: player.devTrait,
       headshotUrl: player.headshotUrl,
       teamAbbreviation: player.teamAbbreviation,
+      hasFranchiseData: player.hasFranchiseData,
+      ratingsCapturedAt: player.capturedAt,
       ...split,
     };
   });

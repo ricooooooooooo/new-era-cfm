@@ -28,6 +28,8 @@ type StorePlayer = {
   devTrait: string | null;
   headshotUrl: string | null;
   teamAbbreviation: string | null;
+  hasFranchiseData: boolean;
+  ratingsCapturedAt: string | null;
   physicalAttributes: AttributeOption[];
   nonPhysicalAttributes: AttributeOption[];
 };
@@ -209,10 +211,34 @@ export default function DevShopStore() {
         : players[0]?.id ?? "",
     );
 
-    // A Madden sync can move players between teams. Drop stale cart lines
-    // immediately so a traded-away player cannot stay purchasable in an open tab.
+    // A Madden sync can move players or change ratings. Drop traded-away
+    // players and clear any attribute choice that is no longer legal after
+    // progression/regression so an open tab never keeps stale Madden values.
+    const playerById = new Map(players.map((player) => [player.id, player]));
     setCart((current) =>
-      current.filter((item) => validPlayerIds.has(item.playerId)),
+      current
+        .filter((item) => validPlayerIds.has(item.playerId))
+        .map((item) => {
+          if (item.kind === "dev" || !item.attributeKey) return item;
+          const player = playerById.get(item.playerId);
+          if (!player) return item;
+          const options =
+            item.kind === "physical"
+              ? player.physicalAttributes
+              : player.nonPhysicalAttributes;
+          const selected = options.find(
+            (attribute) => attribute.key === item.attributeKey,
+          );
+          const amount = item.kind === "physical" ? 1 : 2;
+          const cap = item.kind === "physical" ? 93 : 98;
+          return selected && selected.value + amount <= cap
+            ? item
+            : { ...item, attributeKey: "" };
+        }),
+    );
+
+    setFreePlayerId((current) =>
+      current && validPlayerIds.has(current) ? current : "",
     );
   }, []);
 
@@ -274,6 +300,16 @@ export default function DevShopStore() {
 
   const freePlayer =
     players.find((player) => player.id === freePlayerId) ?? null;
+
+  useEffect(() => {
+    setFreeAttributeKey((current) => {
+      if (!current) return current;
+      const attribute = freePlayer?.physicalAttributes.find(
+        (option) => option.key === current,
+      );
+      return attribute && attribute.value + 1 <= 93 ? current : "";
+    });
+  }, [freePlayer]);
 
   const cartSubtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.price, 0),
@@ -428,12 +464,8 @@ export default function DevShopStore() {
     if (!player) return [];
 
     return item.kind === "physical"
-      ? player.physicalAttributes.filter(
-          (attribute) => Number(attribute.value) + 1 <= 93,
-        )
-      : player.nonPhysicalAttributes.filter(
-          (attribute) => Number(attribute.value) + 2 <= 98,
-        );
+      ? player.physicalAttributes
+      : player.nonPhysicalAttributes;
   }
 
   async function purchase() {
@@ -629,17 +661,92 @@ export default function DevShopStore() {
               </div>
 
               {selectedPlayer ? (
-                <div className="mt-5 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em]">
-                  <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-zinc-300">
-                    {selectedPlayer.position ?? "PLAYER"}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-zinc-300">
-                    {selectedPlayer.overall ?? "—"} OVR
-                  </span>
-                  <span className="rounded-full border border-[#d7b56d]/20 bg-[#d7b56d]/[0.07] px-3 py-1.5 text-[#e6c773]">
-                    {selectedPlayer.devTrait ?? "DEV UNKNOWN"}
-                  </span>
-                </div>
+                <>
+                  <div className="mt-5 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em]">
+                    <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-zinc-300">
+                      {selectedPlayer.position ?? "PLAYER"}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-zinc-300">
+                      {selectedPlayer.overall ?? "—"} OVR
+                    </span>
+                    <span className="rounded-full border border-[#d7b56d]/20 bg-[#d7b56d]/[0.07] px-3 py-1.5 text-[#e6c773]">
+                      {selectedPlayer.devTrait ?? "DEV UNKNOWN"}
+                    </span>
+                    <span className={`rounded-full border px-3 py-1.5 ${
+                      selectedPlayer.hasFranchiseData
+                        ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300"
+                        : "border-white/10 bg-white/[0.03] text-zinc-500"
+                    }`}>
+                      {selectedPlayer.hasFranchiseData ? "LIVE FRANCHISE RATINGS" : "WAITING FOR LEAGUE RATINGS"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                    <div className="flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#c5a354]">
+                          Live Madden ratings
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          Ratings update automatically after each Madden sync.
+                        </p>
+                      </div>
+                      {selectedPlayer.ratingsCapturedAt ? (
+                        <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-zinc-700">
+                          Latest synced snapshot
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {selectedPlayer.physicalAttributes.length || selectedPlayer.nonPhysicalAttributes.length ? (
+                      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500">
+                            Physical • +1 • Max 93
+                          </p>
+                          <div className="mt-2 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                            {selectedPlayer.physicalAttributes.map((attribute) => (
+                              <span
+                                key={attribute.key}
+                                className={`rounded-lg border px-2 py-1 text-[10px] font-bold ${
+                                  attribute.value >= 93
+                                    ? "border-white/[0.05] bg-white/[0.02] text-zinc-700"
+                                    : "border-[#d7b56d]/15 bg-[#d7b56d]/[0.04] text-zinc-300"
+                                }`}
+                              >
+                                {attribute.label} <b className="text-white">{attribute.value}</b>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500">
+                            Non-Physical • +2 • Max 98
+                          </p>
+                          <div className="mt-2 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                            {selectedPlayer.nonPhysicalAttributes.map((attribute) => (
+                              <span
+                                key={attribute.key}
+                                className={`rounded-lg border px-2 py-1 text-[10px] font-bold ${
+                                  attribute.value + 2 > 98
+                                    ? "border-white/[0.05] bg-white/[0.02] text-zinc-700"
+                                    : "border-[#d7b56d]/15 bg-[#d7b56d]/[0.04] text-zinc-300"
+                                }`}
+                              >
+                                {attribute.label} <b className="text-white">{attribute.value}</b>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-xl border border-amber-400/10 bg-amber-400/[0.04] p-3 text-xs leading-5 text-zinc-500">
+                        Detailed attribute ratings will appear here after the Gold Jacket league roster is synced from Madden. The launch baseline only contains OVR-level data.
+                      </div>
+                    )}
+                  </div>
+                </>
               ) : null}
             </section>
 
@@ -883,11 +990,21 @@ export default function DevShopStore() {
                               className="mt-2 w-full rounded-lg border border-white/10 bg-[#0a0a09] px-3 py-2 text-xs text-white outline-none focus:border-[#d7b56d]/50"
                             >
                               <option value="">Choose attribute</option>
-                              {options.map((attribute) => (
-                                <option key={attribute.key} value={attribute.key}>
-                                  {attribute.label} • {attribute.value}
-                                </option>
-                              ))}
+                              {options.map((attribute) => {
+                                const amount = item.kind === "physical" ? 1 : 2;
+                                const cap = item.kind === "physical" ? 93 : 98;
+                                const next = attribute.value + amount;
+                                const allowed = next <= cap;
+                                return (
+                                  <option
+                                    key={attribute.key}
+                                    value={attribute.key}
+                                    disabled={!allowed}
+                                  >
+                                    {attribute.label} • {attribute.value} → {next}{allowed ? "" : ` • EXCEEDS ${cap} CAP`}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </label>
                         );
@@ -933,13 +1050,19 @@ export default function DevShopStore() {
                           className="mt-2 w-full rounded-lg border border-[#d7b56d]/20 bg-[#0a0a09] px-3 py-2 text-xs text-white outline-none"
                         >
                           <option value="">Choose physical attribute</option>
-                          {(freePlayer?.physicalAttributes ?? [])
-                            .filter((attribute) => attribute.value < 93)
-                            .map((attribute) => (
-                              <option key={attribute.key} value={attribute.key}>
-                                {attribute.label} • {attribute.value}
+                          {(freePlayer?.physicalAttributes ?? []).map((attribute) => {
+                            const next = attribute.value + 1;
+                            const allowed = next <= 93;
+                            return (
+                              <option
+                                key={attribute.key}
+                                value={attribute.key}
+                                disabled={!allowed}
+                              >
+                                {attribute.label} • {attribute.value} → {next}{allowed ? "" : " • MAX 93"}
                               </option>
-                            ))}
+                            );
+                          })}
                         </select>
                       </div>
                     ) : null}
