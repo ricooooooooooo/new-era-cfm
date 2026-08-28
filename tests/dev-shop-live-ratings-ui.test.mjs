@@ -11,8 +11,8 @@ async function source(path) {
 test("server classifies the latest Madden snapshot through the Dev Shop rating map", async () => {
   const text = await source("lib/dev-shop/server.ts");
   assert.match(text, /splitDevShopAttributes/);
-  assert.match(text, /hasFranchiseData:\s*player\.hasFranchiseData/);
-  assert.match(text, /ratingsCapturedAt:\s*player\.capturedAt/);
+  assert.match(text, /ratingsMode:\s*resolved\.ratingsMode/);
+  assert.match(text, /ratingsCapturedAt:\s*resolved\.hasFranchiseData/);
 });
 
 test("checkout UI shows current to upgraded rating previews", async () => {
@@ -21,7 +21,7 @@ test("checkout UI shows current to upgraded rating previews", async () => {
   assert.match(text, /const next = attribute\.value \+ amount/);
   assert.match(text, /attribute\.label} • {attribute\.value} → {next}/);
   assert.match(text, /const next = attribute\.value \+ 1/);
-  assert.match(text, /Live Madden ratings/);
+  assert.match(text, /PRELAUNCH RATING PREVIEW/);
   assert.match(text, /Ratings update automatically after each Madden sync/);
 });
 

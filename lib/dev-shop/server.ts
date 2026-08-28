@@ -2,6 +2,11 @@ import type { NextRequest } from "next/server";
 
 import { getCurrentMaddenPlayers } from "@/lib/madden/player-data";
 import { splitDevShopAttributes } from "@/lib/dev-shop/attributes.mjs";
+import {
+  choosePrelaunchAttributePreview,
+  mergePrelaunchPreview,
+  type RatingsMode,
+} from "@/lib/dev-shop/prelaunch-ratings.mjs";
 import { findTeamBySlug } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
@@ -45,7 +50,9 @@ export type StorePlayer = {
   headshotUrl: string | null;
   teamAbbreviation: string | null;
   hasFranchiseData: boolean;
+  ratingsMode: RatingsMode;
   ratingsCapturedAt: string | null;
+  ratingsPreviewCapturedAt: string | null;
   physicalAttributes: AttributeOption[];
   nonPhysicalAttributes: AttributeOption[];
 };
@@ -144,6 +151,38 @@ export async function loadDevShopLedger(): Promise<DevShopLedgerOrder[]> {
   return buildOrderLedger(await loadDevShopRows());
 }
 
+
+type LegacyEaPreviewRow = {
+  player_id: string;
+  attributes: Record<string, unknown> | null;
+  captured_at: string | null;
+};
+
+async function loadLegacyEaAttributePreviews(playerIds: string[]) {
+  if (playerIds.length === 0) return new Map();
+
+  const rows: LegacyEaPreviewRow[] = [];
+  const chunkSize = 200;
+
+  for (let index = 0; index < playerIds.length; index += chunkSize) {
+    const chunk = playerIds.slice(index, index + chunkSize);
+
+    const { data, error } = await supabaseAdmin
+      .from("madden_player_snapshots")
+      .select("player_id,attributes,captured_at")
+      .eq("source", "ea_franchise")
+      .in("player_id", chunk)
+      .order("captured_at", { ascending: false })
+      .limit(5000);
+
+    if (error) throw error;
+    rows.push(...((data ?? []) as LegacyEaPreviewRow[]));
+  }
+
+  return choosePrelaunchAttributePreview(rows);
+}
+
+
 export async function loadTeamPlayers({
   leagueId,
   teamAbbreviation,
@@ -157,19 +196,35 @@ export async function loadTeamPlayers({
     limit: 100,
   });
 
+  const hasGoldJacketFranchiseData = players.some(
+    (player) => player.hasFranchiseData,
+  );
+
+  const previewByPlayer = hasGoldJacketFranchiseData
+    ? new Map()
+    : await loadLegacyEaAttributePreviews(players.map((player) => player.id));
+
   return players.map((player) => {
-    const split = splitDevShopAttributes(player.attributes ?? {});
+    const resolved = mergePrelaunchPreview(
+      player,
+      previewByPlayer.get(player.id) ?? null,
+    );
+    const split = splitDevShopAttributes(resolved.attributes ?? {});
 
     return {
-      id: player.id,
-      name: player.name,
-      position: player.position,
-      overall: player.overall,
-      devTrait: player.devTrait,
-      headshotUrl: player.headshotUrl,
-      teamAbbreviation: player.teamAbbreviation,
-      hasFranchiseData: player.hasFranchiseData,
-      ratingsCapturedAt: player.capturedAt,
+      id: resolved.id,
+      name: resolved.name,
+      position: resolved.position,
+      overall: resolved.overall,
+      devTrait: resolved.devTrait,
+      headshotUrl: resolved.headshotUrl,
+      teamAbbreviation: resolved.teamAbbreviation,
+      hasFranchiseData: resolved.hasFranchiseData,
+      ratingsMode: resolved.ratingsMode,
+      ratingsCapturedAt: resolved.hasFranchiseData
+        ? resolved.capturedAt
+        : resolved.ratingsPreviewCapturedAt ?? resolved.capturedAt,
+      ratingsPreviewCapturedAt: resolved.ratingsPreviewCapturedAt,
       ...split,
     };
   });

@@ -29,7 +29,9 @@ type StorePlayer = {
   headshotUrl: string | null;
   teamAbbreviation: string | null;
   hasFranchiseData: boolean;
+  ratingsMode: "gold_jacket_live" | "prelaunch_preview" | "baseline_only";
   ratingsCapturedAt: string | null;
+  ratingsPreviewCapturedAt: string | null;
   physicalAttributes: AttributeOption[];
   nonPhysicalAttributes: AttributeOption[];
 };
@@ -125,6 +127,17 @@ function capStatus(
 
   if (
     product.key === "non_physical_plus_2" &&
+    selectedPlayer.nonPhysicalAttributes.length === 0
+  ) {
+    return {
+      remaining: 0,
+      label: "RATINGS DATA NOT LOADED",
+      soldOut: true,
+    };
+  }
+
+  if (
+    product.key === "non_physical_plus_2" &&
     !selectedPlayer.nonPhysicalAttributes.some(
       (attribute) => Number(attribute.value) + 2 <= 98,
     )
@@ -132,6 +145,17 @@ function capStatus(
     return {
       remaining: 0,
       label: "NO ELIGIBLE ATTRIBUTES • 98 CAP",
+      soldOut: true,
+    };
+  }
+
+  if (
+    product.key === "physical_plus_1" &&
+    selectedPlayer.physicalAttributes.length === 0
+  ) {
+    return {
+      remaining: 0,
+      label: "RATINGS DATA NOT LOADED",
       soldOut: true,
     };
   }
@@ -673,11 +697,17 @@ export default function DevShopStore() {
                       {selectedPlayer.devTrait ?? "DEV UNKNOWN"}
                     </span>
                     <span className={`rounded-full border px-3 py-1.5 ${
-                      selectedPlayer.hasFranchiseData
+                      selectedPlayer.ratingsMode === "gold_jacket_live"
                         ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300"
-                        : "border-white/10 bg-white/[0.03] text-zinc-500"
+                        : selectedPlayer.ratingsMode === "prelaunch_preview"
+                          ? "border-amber-300/20 bg-amber-300/[0.07] text-amber-200"
+                          : "border-white/10 bg-white/[0.03] text-zinc-500"
                     }`}>
-                      {selectedPlayer.hasFranchiseData ? "LIVE FRANCHISE RATINGS" : "WAITING FOR LEAGUE RATINGS"}
+                      {selectedPlayer.ratingsMode === "gold_jacket_live"
+                        ? "LIVE GOLD JACKET RATINGS"
+                        : selectedPlayer.ratingsMode === "prelaunch_preview"
+                          ? "PRELAUNCH RATING PREVIEW"
+                          : "RATINGS DATA NOT LOADED"}
                     </span>
                   </div>
 
@@ -685,10 +715,16 @@ export default function DevShopStore() {
                     <div className="flex flex-wrap items-end justify-between gap-2">
                       <div>
                         <p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#c5a354]">
-                          Live Madden ratings
+                          {selectedPlayer.ratingsMode === "gold_jacket_live"
+                            ? "Live Gold Jacket ratings"
+                            : selectedPlayer.ratingsMode === "prelaunch_preview"
+                              ? "Prelaunch attribute preview"
+                              : "Madden ratings"}
                         </p>
                         <p className="mt-1 text-xs text-zinc-500">
-                          Ratings update automatically after each Madden sync.
+                          {selectedPlayer.ratingsMode === "prelaunch_preview"
+                            ? "Temporary detailed attributes from the most recent franchise snapshot. Gold Jacket's first EA sync replaces these automatically."
+                            : "Ratings update automatically after each Madden sync."}
                         </p>
                       </div>
                       {selectedPlayer.ratingsCapturedAt ? (
@@ -742,7 +778,7 @@ export default function DevShopStore() {
                       </div>
                     ) : (
                       <div className="mt-4 rounded-xl border border-amber-400/10 bg-amber-400/[0.04] p-3 text-xs leading-5 text-zinc-500">
-                        Detailed attribute ratings will appear here after the Gold Jacket league roster is synced from Madden. The launch baseline only contains OVR-level data.
+                        RATINGS DATA NOT LOADED. Detailed attributes will appear after a usable franchise snapshot is available; this is not a rating-cap failure.
                       </div>
                     )}
                   </div>
