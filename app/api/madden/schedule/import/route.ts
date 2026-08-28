@@ -26,7 +26,7 @@ export async function GET() {
     status: "ready",
     liveProviderReady: true,
     acceptedShape: {
-      leagueSlug: "new-era-cfm",
+      leagueSlug: "gold-jacket-cfm",
       source: "ea_franchise",
       provider: "direct_ea",
       gameVersion: "Madden 27",

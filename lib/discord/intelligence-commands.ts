@@ -37,7 +37,7 @@ function siteUrl() {
       .NEXT_PUBLIC_SITE_URL ||
     process.env
       .SITE_URL ||
-    "https://new-era-cfm.vercel.app"
+    "https://gold-jacket-cfm.vercel.app"
   ).replace(
     /\/+$/,
     "",

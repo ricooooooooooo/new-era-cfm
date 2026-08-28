@@ -150,7 +150,7 @@ export async function importCanonicalSchedule(
     throw new Error("At least one schedule game is required.");
   }
 
-  const leagueSlug = input.leagueSlug?.trim() || "new-era-cfm";
+  const leagueSlug = input.leagueSlug?.trim() || "gold-jacket-cfm";
   const source = input.source?.trim() || "ea_franchise";
   const provider = input.provider?.trim() || source;
   const gameVersion = input.gameVersion?.trim() || "Madden 27";

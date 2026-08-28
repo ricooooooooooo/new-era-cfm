@@ -300,7 +300,7 @@ async function markerExists(marker: string) {
   const result = await supabaseAdmin
     .from("league_syncs")
     .select("id")
-    .eq("source", "new_era_weekly")
+    .eq("source", "gold_jacket_weekly")
     .eq("export_type", marker)
     .limit(1);
 
@@ -316,7 +316,7 @@ async function writeMarker(
   const result = await supabaseAdmin
     .from("league_syncs")
     .insert({
-      source: "new_era_weekly",
+      source: "gold_jacket_weekly",
       export_type: marker,
       status: "received",
       payload,
@@ -752,7 +752,7 @@ function weeklySiteUrl() {
   return (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
-    "https://new-era-cfm.vercel.app"
+    "https://gold-jacket-cfm.vercel.app"
   ).replace(/\/+$/, "");
 }
 
@@ -1533,7 +1533,7 @@ async function postGotw({
     (
       process.env.NEXT_PUBLIC_SITE_URL ||
       process.env.SITE_URL ||
-      "https://new-era-cfm.vercel.app"
+      "https://gold-jacket-cfm.vercel.app"
     ).replace(/\/+$/, "");
 
   const imageParams = new URLSearchParams({

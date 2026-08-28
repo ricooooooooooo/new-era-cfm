@@ -287,7 +287,7 @@ export async function buildLeagueHealthReport() {
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 

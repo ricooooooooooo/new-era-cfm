@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         supabaseAdmin
           .from("leagues")
           .select("season")
-          .eq("slug", "new-era-cfm")
+          .eq("slug", "gold-jacket-cfm")
           .maybeSingle(),
       ]);
 

@@ -104,7 +104,7 @@ export async function runNewEraAutopilot(
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 
@@ -364,7 +364,7 @@ export async function getNewEraAutopilotStatus() {
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 

@@ -21,7 +21,7 @@ async function getNewEraLeagueId(): Promise<string | null> {
   const { data, error } = await supabaseAdmin
     .from("leagues")
     .select("id")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (error) {

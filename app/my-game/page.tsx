@@ -85,7 +85,7 @@ export default async function MyGamePage() {
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 

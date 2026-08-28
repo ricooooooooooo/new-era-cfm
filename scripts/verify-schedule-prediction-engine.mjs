@@ -20,7 +20,7 @@ const supabase = createClient(url, serviceKey, {
 const leagueResult = await supabase
   .from("leagues")
   .select("id, slug, season, current_week")
-  .eq("slug", "new-era-cfm")
+  .eq("slug", "gold-jacket-cfm")
   .maybeSingle();
 
 if (leagueResult.error) throw leagueResult.error;

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { data: league, error: leagueError } = await supabase
       .from("leagues")
       .select("id, name, slug")
-      .eq("slug", "new-era-cfm")
+      .eq("slug", "gold-jacket-cfm")
       .maybeSingle();
 
     if (leagueError) throw leagueError;

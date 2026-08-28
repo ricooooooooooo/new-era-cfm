@@ -28,16 +28,11 @@ type DiscordSessionResponse = {
 
 const leagueLinks = [
   { label: "Home", href: "/home" },
-  { label: "My Game", href: "/my-game" },
-  { label: "Predictions", href: "/predictions" },
-  { label: "New Era Market", href: "/market" },
-  { label: "Standings", href: "/standings" },
-  { label: "Schedule", href: "/schedule" },
-  { label: "Teams", href: "/teams" },
-  { label: "Members", href: "/members" },
-  { label: "Trade Center", href: "/trade-center" },
+  { label: "League", href: "/league" },
+  { label: "Gold Jackets", href: "/gold-jackets" },
+  { label: "Dev Shop", href: "/dev-shop" },
   { label: "Media", href: "/media" },
-  { label: "Apply for Staff", href: "/staff" },
+  { label: "Fantasy", href: "/fantasy" },
 ];
 
 const roleSections: Record<
@@ -184,7 +179,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   function linkClasses(active: boolean) {
     return `group relative block overflow-hidden rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 ${
       active
-        ? "border-purple-400/35 bg-purple-500/[0.12] text-white shadow-[inset_3px_0_0_rgba(168,85,247,0.95),0_14px_35px_rgba(0,0,0,0.28)]"
+        ? "border-amber-400/35 bg-amber-500/[0.12] text-white shadow-[inset_3px_0_0_rgba(252,211,77,0.95),0_14px_35px_rgba(0,0,0,0.28)]"
         : "border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
     }`;
   }
@@ -215,10 +210,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             aria-label="Go to your Franchise HQ"
             className="group flex min-w-0 items-center gap-3"
           >
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-purple-400/20 bg-white/[0.025] shadow-[0_0_26px_rgba(168,85,247,0.14)] transition duration-300 group-hover:scale-105 group-hover:shadow-[0_0_34px_rgba(168,85,247,0.28)]">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-amber-400/20 bg-white/[0.025] shadow-[0_0_26px_rgba(252,211,77,0.14)] transition duration-300 group-hover:scale-105 group-hover:shadow-[0_0_34px_rgba(252,211,77,0.28)]">
               <Image
-                src="/ne-icon.png"
-                alt="New Era logo"
+                src="/gold-jacket-mark.png"
+                alt="Gold Jacket emblem"
                 fill
                 priority
                 sizes="64px"
@@ -228,7 +223,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
             <div className="min-w-0">
               <h1 className="truncate text-2xl font-black tracking-[-0.045em] text-white">
-                NEW ERA
+                GOLD JACKET
               </h1>
 
               <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.24em] text-amber-300/70">
@@ -241,13 +236,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-2xl leading-none text-zinc-400 transition hover:border-purple-400/30 hover:bg-white/[0.05] hover:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] text-2xl leading-none text-zinc-400 transition hover:border-amber-400/30 hover:bg-white/[0.05] hover:text-white"
           >
             ×
           </button>
         </div>
 
-        <div className="mt-8 h-px bg-gradient-to-r from-transparent via-purple-400/35 to-transparent" />
+        <div className="mt-8 h-px bg-gradient-to-r from-transparent via-amber-300/35 to-transparent" />
 
         <div className="mt-8">
           <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/70">
@@ -283,7 +278,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     {section.title}
                   </p>
 
-                  <span className="rounded-full border border-purple-400/25 bg-purple-400/[0.07] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-purple-200">
+                  <span className="rounded-full border border-amber-400/25 bg-amber-400/[0.07] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-amber-200">
                     {role.replaceAll("_", " ")}
                   </span>
                 </div>
@@ -305,17 +300,17 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           })}
 
         <div className="mt-auto pt-8">
-          <div className="overflow-hidden rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] to-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <div className="overflow-hidden rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/[0.08] to-white/[0.02] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-purple-300">
-                All Tools
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-300">
+                Gold Jacket
               </p>
 
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
             </div>
 
             <h2 className="mt-3 text-xl font-black text-white">
-              New Era HQ
+              Gold Jacket HQ
             </h2>
 
             <p className="mt-1 text-sm text-zinc-500">

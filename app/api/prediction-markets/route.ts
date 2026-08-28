@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     const leagueResult = await supabaseAdmin
       .from("leagues")
       .select("id, season, current_week")
-      .eq("slug", "new-era-cfm")
+      .eq("slug", "gold-jacket-cfm")
       .maybeSingle();
 
     if (leagueResult.error) throw leagueResult.error;

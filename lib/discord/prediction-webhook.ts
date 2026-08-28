@@ -17,7 +17,7 @@ export async function postPredictionMarketBatch(
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
-    "https://new-era-cfm.vercel.app";
+    "https://gold-jacket-cfm.vercel.app";
 
   const response = await fetch(webhookUrl, {
     method: "POST",

@@ -20,7 +20,7 @@ const [leagueResult, runResult, gameResult] = await Promise.all([
     .select(
       "id, name, slug, season, current_week, madden_provider, madden_sync_status, madden_last_sync_at",
     )
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle(),
   supabase
     .from("madden_sync_runs")
@@ -48,7 +48,7 @@ console.log(`Sync runs recorded: ${runResult.count ?? 0}`);
 console.log("Canonical game-key columns: ready");
 
 if (!leagueResult.data) {
-  console.error("\nFAIL: The new-era-cfm league row is missing.");
+  console.error("\nFAIL: The gold-jacket-cfm league row is missing.");
   process.exit(1);
 }
 

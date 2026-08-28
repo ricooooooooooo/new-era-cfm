@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const leagueResult = await supabaseAdmin
       .from("leagues")
       .select("id, name, slug, season, current_week")
-      .eq("slug", "new-era-cfm")
+      .eq("slug", "gold-jacket-cfm")
       .maybeSingle();
 
     if (leagueResult.error) throw leagueResult.error;

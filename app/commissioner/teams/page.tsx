@@ -112,7 +112,7 @@ export default async function TeamsPage() {
   const { data: league, error: leagueError } = await supabase
     .from("leagues")
     .select("id, name")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .single();
 
   if (leagueError || !league) {

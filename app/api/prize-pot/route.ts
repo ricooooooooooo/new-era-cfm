@@ -74,7 +74,7 @@ function publicBaseUrl(request: NextRequest) {
     return origin.replace(/\/+$/, "");
   }
 
-  return "https://new-era-cfm.vercel.app";
+  return "https://gold-jacket-cfm.vercel.app";
 }
 
 async function getPrizePot(): Promise<PrizePotRow> {
@@ -93,7 +93,7 @@ async function getPrizePot(): Promise<PrizePotRow> {
   const leagueResult = await supabaseAdmin
     .from("leagues")
     .select("id")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (leagueResult.error) throw leagueResult.error;

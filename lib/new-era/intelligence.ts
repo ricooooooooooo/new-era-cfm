@@ -1263,7 +1263,7 @@ export async function buildNewEraIntelligence(
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 
@@ -1333,7 +1333,7 @@ export async function buildNewEraIntelligence(
         )
         .eq(
           "source",
-          "new_era_weekly",
+          "gold_jacket_weekly",
         )
         .order(
           "received_at",

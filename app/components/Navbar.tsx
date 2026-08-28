@@ -184,10 +184,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           href="/home"
           className="group flex min-w-0 shrink items-center gap-2.5"
         >
-          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_14px_rgba(168,85,247,0.4)]">
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_14px_rgba(252,211,77,0.35)]">
             <Image
-              src="/ne-icon.png"
-              alt="New Era logo"
+              src="/gold-jacket-mark.png"
+              alt="Gold Jacket emblem"
               fill
               priority
               sizes="36px"
@@ -197,7 +197,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
           <div className="min-w-0 leading-none">
             <p className="truncate text-sm font-black tracking-[-0.025em] text-white sm:text-base">
-              NEW ERA
+              GOLD JACKET
             </p>
 
             <p className="mt-1 hidden text-[8px] font-bold uppercase tracking-[0.22em] text-zinc-500 sm:block">
@@ -208,27 +208,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
-        <div className="relative hidden 2xl:block">
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600"
-          >
-            <path
-              d="m21 21-4.4-4.4m2.4-5.1a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
-
-          <input
-            type="text"
-            placeholder="Search league..."
-            className="w-52 rounded-xl border border-white/10 bg-white/[0.035] py-2 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-400/40 focus:bg-white/[0.055]"
-          />
-        </div>
 
         {loading ? (
           <div className="h-10 w-24 animate-pulse rounded-xl bg-white/[0.06] sm:w-32" />
@@ -308,7 +287,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     onClick={() => setDropdownOpen(false)}
                     className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
                   >
-                    My NEW ERA Profile
+                    My Gold Jacket Profile
                   </Link>
 
                   <Link

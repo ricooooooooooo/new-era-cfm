@@ -1,10 +1,9 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import WelcomeCoinClaim from "@/app/components/WelcomeCoinClaim";
 
 export const metadata: Metadata = {
-  title: "New Era CFM",
-  description: "Connected Franchise",
+  title: "Gold Jacket CFM",
+  description: "Gold Jacket Connected Franchise",
 };
 
 export default function RootLayout({
@@ -14,9 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-[#080909] text-white antialiased">
+      <body className="bg-[#080807] text-white antialiased">
         {children}
-        <WelcomeCoinClaim />
       </body>
     </html>
   );

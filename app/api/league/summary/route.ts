@@ -40,7 +40,7 @@ export async function GET() {
       .select(
         "id, name, slug, current_week, season, madden_sync_status, madden_provider",
       )
-      .eq("slug", "new-era-cfm")
+      .eq("slug", "gold-jacket-cfm")
       .maybeSingle();
 
     if (leagueResult.error) throw leagueResult.error;

@@ -43,7 +43,7 @@ export async function getMaddenSyncStatus(): Promise<MaddenSyncStatus> {
     .select(
       "id, name, slug, season, current_week, madden_external_league_id, madden_provider, madden_sync_status, madden_last_sync_at, madden_last_sync_error",
     )
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (leagueResult.error) throw leagueResult.error;

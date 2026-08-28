@@ -41,7 +41,7 @@ const [
   supabase
     .from("leagues")
     .select("id, season, current_week")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle(),
 ]);
 

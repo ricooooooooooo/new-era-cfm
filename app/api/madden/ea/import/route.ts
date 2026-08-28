@@ -211,13 +211,13 @@ export async function POST(request: NextRequest) {
     const leagueResult = await supabaseAdmin
       .from("leagues")
       .select("id, slug")
-      .eq("slug", "new-era-cfm")
+      .eq("slug", "gold-jacket-cfm")
       .maybeSingle();
 
     if (leagueResult.error) throw leagueResult.error;
 
     if (!leagueResult.data) {
-      throw new Error("The new-era-cfm league row does not exist.");
+      throw new Error("The gold-jacket-cfm league row does not exist.");
     }
 
     const leagueRow = leagueResult.data;
@@ -312,7 +312,7 @@ export async function POST(request: NextRequest) {
     }
 
     const scheduleResult = await importCanonicalSchedule({
-      leagueSlug: "new-era-cfm",
+      leagueSlug: "gold-jacket-cfm",
       source: "ea_franchise",
       provider: "direct_ea",
       gameVersion: "Madden 27",

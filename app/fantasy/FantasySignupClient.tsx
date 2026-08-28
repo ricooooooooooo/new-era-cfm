@@ -1,0 +1,384 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+
+type Signup = {
+  spotNumber: number;
+  discordUsername: string;
+  sleeperUsername: string;
+  teamName: string | null;
+  createdAt: string;
+};
+
+type SignupListResponse = {
+  count: number;
+  capacity: number;
+  full: boolean;
+  signups: Signup[];
+  error?: string;
+};
+
+type SignupResponse = {
+  signup?: Signup;
+  count?: number;
+  capacity?: number;
+  full?: boolean;
+  error?: string;
+};
+
+const CAPACITY = 10;
+
+export default function FantasySignupClient() {
+  const [signups, setSignups] = useState<Signup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState<Signup | null>(null);
+  const [discordUsername, setDiscordUsername] = useState("");
+  const [sleeperUsername, setSleeperUsername] = useState("");
+  const [teamName, setTeamName] = useState("");
+  const [website, setWebsite] = useState("");
+
+  const loadSignups = useCallback(async () => {
+    try {
+      const response = await fetch("/api/fantasy-signups", {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as SignupListResponse;
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load signups.");
+      }
+
+      setSignups(Array.isArray(data.signups) ? data.signups : []);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load fantasy signups.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSignups();
+  }, [loadSignups]);
+
+  const filledBySpot = useMemo(
+    () => new Map(signups.map((signup) => [signup.spotNumber, signup])),
+    [signups],
+  );
+
+  const count = signups.length;
+  const full = count >= CAPACITY;
+  const progress = Math.min(100, (count / CAPACITY) * 100);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting || full) return;
+
+    setSubmitting(true);
+    setError("");
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/fantasy-signups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordUsername,
+          sleeperUsername,
+          teamName,
+          website,
+        }),
+      });
+
+      const data = (await response.json()) as SignupResponse;
+
+      if (!response.ok || !data.signup) {
+        throw new Error(data.error || "Unable to claim your fantasy spot.");
+      }
+
+      setSuccess(data.signup);
+      setDiscordUsername("");
+      setSleeperUsername("");
+      setTeamName("");
+      await loadSignups();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to claim your fantasy spot.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#050505] text-[#f7f1dc]">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_80%_8%,rgba(212,175,55,0.16),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(212,175,55,0.08),transparent_32%)]" />
+
+      <div className="relative mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+        <header className="flex items-center justify-between gap-5 border-b border-[#d4af37]/20 pb-6">
+          <a href="/" className="group">
+            <p className="text-[10px] font-black uppercase tracking-[0.42em] text-[#d4af37]">
+              Gold Jacket
+            </p>
+            <p className="mt-1 text-xl font-black tracking-[-0.04em] text-white transition group-hover:text-[#e6c65d]">
+              Fantasy Football
+            </p>
+          </a>
+
+          <div className="rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#e7c95f]">
+            {count} / {CAPACITY} Filled
+          </div>
+        </header>
+
+        <section className="grid gap-8 py-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-start lg:py-14">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.34em] text-[#d4af37]">
+              Season One
+            </p>
+            <h1 className="mt-4 max-w-3xl text-5xl font-black leading-[0.92] tracking-[-0.065em] text-white sm:text-7xl">
+              10 spots.
+              <span className="block text-[#d4af37]">First come.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-zinc-400 sm:text-lg">
+              Gold Jacket Fantasy is a 10-team PPR league on Sleeper with a $10 buy-in. Once all ten spots are claimed, registration closes automatically.
+            </p>
+
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              {[
+                ["10", "Teams"],
+                ["PPR", "Scoring"],
+                ["$10", "Buy-In"],
+              ].map(([value, label]) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
+                >
+                  <p className="text-2xl font-black text-white">{value}</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600">
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8">
+              <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.16em]">
+                <span className="text-zinc-500">League Capacity</span>
+                <span className="text-[#d4af37]">{count} / {CAPACITY}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#8e6d17] via-[#d4af37] to-[#f4db82] transition-[width] duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-[#d4af37]/25 bg-[#0d0c09]/90 p-5 shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:p-7">
+            {success ? (
+              <div className="py-8 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#d4af37]/50 bg-[#d4af37]/10 text-3xl">
+                  🏆
+                </div>
+                <p className="mt-6 text-[10px] font-black uppercase tracking-[0.34em] text-[#d4af37]">
+                  You&apos;re In
+                </p>
+                <h2 className="mt-2 text-4xl font-black tracking-[-0.05em] text-white">
+                  Spot #{success.spotNumber} is yours.
+                </h2>
+                <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-zinc-400">
+                  Your signup is locked. Watch the Gold Jacket Fantasy Discord section for draft and payment information.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSuccess(null)}
+                  className="mt-7 rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-black text-white transition hover:bg-white/[0.09]"
+                >
+                  View Signup Form
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-5">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#d4af37]">
+                      Official Signup
+                    </p>
+                    <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">
+                      {full ? "League full." : "Claim your spot."}
+                    </h2>
+                  </div>
+                  <span className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs font-black text-zinc-400">
+                    Sleeper
+                  </span>
+                </div>
+
+                {full ? (
+                  <div className="mt-8 rounded-2xl border border-[#d4af37]/25 bg-[#d4af37]/10 p-6 text-center">
+                    <p className="text-5xl">🔒</p>
+                    <p className="mt-4 text-xl font-black text-white">10 / 10 — CLOSED</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-400">
+                      Every fantasy spot has been claimed.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                        Discord Username
+                      </span>
+                      <input
+                        value={discordUsername}
+                        onChange={(event) => setDiscordUsername(event.target.value)}
+                        placeholder="@rico"
+                        autoComplete="off"
+                        required
+                        maxLength={40}
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm font-bold text-white outline-none transition placeholder:text-zinc-700 focus:border-[#d4af37]/55 focus:bg-black/55"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                        Sleeper Username
+                      </span>
+                      <input
+                        value={sleeperUsername}
+                        onChange={(event) => setSleeperUsername(event.target.value)}
+                        placeholder="rico10"
+                        autoComplete="off"
+                        required
+                        maxLength={40}
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm font-bold text-white outline-none transition placeholder:text-zinc-700 focus:border-[#d4af37]/55 focus:bg-black/55"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                        Fantasy Team Name <span className="text-zinc-700">Optional</span>
+                      </span>
+                      <input
+                        value={teamName}
+                        onChange={(event) => setTeamName(event.target.value)}
+                        placeholder="You can decide later"
+                        autoComplete="off"
+                        maxLength={50}
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3.5 text-sm font-bold text-white outline-none transition placeholder:text-zinc-700 focus:border-[#d4af37]/55 focus:bg-black/55"
+                      />
+                    </label>
+
+                    <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                      Website
+                      <input
+                        value={website}
+                        onChange={(event) => setWebsite(event.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+                    </label>
+
+                    {error ? (
+                      <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+                        {error}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full rounded-xl bg-[#d4af37] px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-black transition hover:bg-[#efd469] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {submitting ? "Locking Spot..." : `Claim Spot ${count + 1}`}
+                    </button>
+
+                    <p className="text-center text-[11px] leading-5 text-zinc-600">
+                      Submitting this form claims an official league spot. Duplicate Discord or Sleeper usernames are blocked automatically.
+                    </p>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="border-t border-white/10 py-10">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]">
+                The Field
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">
+                Who&apos;s in.
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadSignups()}
+              className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500 transition hover:text-[#d4af37]"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {Array.from({ length: CAPACITY }).map((_, index) => (
+                <div key={index} className="h-28 animate-pulse rounded-2xl bg-white/[0.04]" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {Array.from({ length: CAPACITY }, (_, index) => index + 1).map(
+                (spot) => {
+                  const signup = filledBySpot.get(spot);
+
+                  return (
+                    <div
+                      key={spot}
+                      className={`min-h-28 rounded-2xl border p-4 ${
+                        signup
+                          ? "border-[#d4af37]/30 bg-[#d4af37]/[0.065]"
+                          : "border-white/10 bg-white/[0.025]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-600">
+                          Spot {spot}
+                        </span>
+                        <span className={signup ? "text-[#d4af37]" : "text-zinc-800"}>
+                          {signup ? "●" : "○"}
+                        </span>
+                      </div>
+
+                      {signup ? (
+                        <>
+                          <p className="mt-3 truncate text-sm font-black text-white">
+                            @{signup.discordUsername}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-zinc-500">
+                            @{signup.sleeperUsername}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-5 text-sm font-bold text-zinc-700">Open</p>
+                      )}
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}

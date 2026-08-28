@@ -99,7 +99,7 @@ async function latestMarker(
       )
       .eq(
         "source",
-        "new_era_weekly",
+        "gold_jacket_weekly",
       )
       .eq(
         "export_type",
@@ -133,7 +133,7 @@ export async function loadSiteWeeklyHighlights() {
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 

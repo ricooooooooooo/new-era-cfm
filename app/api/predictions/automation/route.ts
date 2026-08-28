@@ -31,7 +31,7 @@ async function getLeague() {
   const result = await supabaseAdmin
     .from("leagues")
     .select("id, season, current_week")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (result.error) throw result.error;

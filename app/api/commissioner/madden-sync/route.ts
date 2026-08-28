@@ -209,13 +209,13 @@ export async function POST(request: NextRequest) {
             configuredAt: new Date().toISOString(),
           },
         })
-        .eq("slug", "new-era-cfm")
+        .eq("slug", "gold-jacket-cfm")
         .select("id, name, season, current_week")
         .maybeSingle();
 
       if (result.error) throw result.error;
       if (!result.data) {
-        throw new Error("The new-era-cfm league row does not exist.");
+        throw new Error("The gold-jacket-cfm league row does not exist.");
       }
 
       return NextResponse.json({
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
           madden_last_sync_at: new Date().toISOString(),
           madden_last_sync_error: null,
         })
-        .eq("slug", "new-era-cfm")
+        .eq("slug", "gold-jacket-cfm")
         .select("id, season, current_week")
         .maybeSingle();
 
@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
       const week = requireInteger(body.week, "Week");
       const games = parseBulkWeek(body.bulkText, season, week);
       const result = await importCanonicalSchedule({
-        leagueSlug: "new-era-cfm",
+        leagueSlug: "gold-jacket-cfm",
         source: "manual_quick_sync",
         provider: "commissioner_quick_sync",
         gameVersion: "Madden 27",
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
         (awayScore !== null && homeScore !== null ? "final" : "scheduled");
 
       const result = await importCanonicalSchedule({
-        leagueSlug: "new-era-cfm",
+        leagueSlug: "gold-jacket-cfm",
         source: "manual_quick_sync",
         provider: "commissioner_quick_sync",
         gameVersion: "Madden 27",

@@ -1,0 +1,2 @@
+-- No database migration is required.
+-- Gold Jacket Fantasy uses the Discord Fantasy Signups channel as its source of truth.

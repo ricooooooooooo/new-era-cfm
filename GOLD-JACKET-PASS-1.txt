@@ -1,0 +1,21 @@
+GOLD JACKET CFM — WEBSITE PASS 1
+
+This patch contains only the files changed for the first Gold Jacket website pass.
+It does not include .git, .env.local, node_modules, or unrelated project files.
+
+WHAT CHANGED
+- Rebranded top navigation, drawer, ticker, metadata, and owner Home to Gold Jacket.
+- Primary navigation is now Home / League / Gold Jackets / Dev Shop / Media.
+- Removed NE Coin and Quick Actions from the owner Home experience.
+- Added the Your Gold Jacket signature-player card and Around Gold Jacket section.
+- Added working /gold-jackets and /dev-shop routes so the new nav does not 404.
+- Switched live Madden/weekly-highlight league identifiers from new-era-cfm / new_era_weekly
+  to gold-jacket-cfm / gold_jacket_weekly. Existing New Era database history is not deleted.
+- Added the Gold Jacket emblem asset.
+
+APPLY ON MAC
+From Terminal, while inside your existing repo:
+  cd ~/new-era-cfm
+  unzip -o /path/to/gold-jacket-pass-1.zip
+
+Then run your normal local verification/deploy workflow.

@@ -107,7 +107,7 @@ async function getNewEraLeagueId() {
   const result = await supabaseAdmin
     .from("leagues")
     .select("id")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (result.error) throw result.error;

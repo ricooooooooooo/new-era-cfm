@@ -227,7 +227,7 @@ async function getMissingOwners(activeCheckId: string): Promise<MissingOwner[]> 
   const leagueResult = await supabaseAdmin
     .from("leagues")
     .select("id")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (leagueResult.error) throw leagueResult.error;
@@ -651,7 +651,7 @@ export async function getActiveCheckTimerStatus() {
   const leagueResult = await supabaseAdmin
     .from("leagues")
     .select("id")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (leagueResult.error) throw leagueResult.error;
