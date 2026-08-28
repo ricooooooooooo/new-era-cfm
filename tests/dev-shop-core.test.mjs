@@ -345,3 +345,102 @@ test("clipboard format includes user, products, total, order id, and Cash App", 
   assert.match(text, /GJ-1-ABC/);
   assert.match(text, /https:\/\/cash\.app\/\$ricorips/);
 });
+
+test("non-physical cap is attribute-based at 98, not player overall", () => {
+  const player = {
+    id: "p-attr",
+    name: "Coverage Guy",
+    overall: 99,
+    physicalAttributes: [],
+    nonPhysicalAttributes: [{ key: "manCoverage", label: "Man Coverage", value: 96 }],
+  };
+
+  const allowed = validateOrderUnits({
+    units: [
+      {
+        productKey: PRODUCT_KEYS.NON_PHYSICAL,
+        productName: "+2 Non-Physical Attribute",
+        paid: true,
+        unitPrice: 1,
+        playerId: player.id,
+        playerName: player.name,
+        attributeKey: "manCoverage",
+        attributeLabel: "Man Coverage",
+      },
+    ],
+    activeLines: [],
+    season: 1,
+    discordId: "owner-a",
+    teamSlug: "cardinals",
+    playersById: new Map([[player.id, player]]),
+  });
+
+  assert.equal(allowed.ok, true);
+});
+
+test("+2 non-physical cannot push an attribute above 98", () => {
+  const player = {
+    id: "p-97",
+    name: "Coverage Guy",
+    overall: 80,
+    physicalAttributes: [],
+    nonPhysicalAttributes: [{ key: "manCoverage", label: "Man Coverage", value: 97 }],
+  };
+
+  const result = validateOrderUnits({
+    units: [
+      {
+        productKey: PRODUCT_KEYS.NON_PHYSICAL,
+        productName: "+2 Non-Physical Attribute",
+        paid: true,
+        unitPrice: 1,
+        playerId: player.id,
+        playerName: player.name,
+        attributeKey: "manCoverage",
+        attributeLabel: "Man Coverage",
+      },
+    ],
+    activeLines: [],
+    season: 1,
+    discordId: "owner-a",
+    teamSlug: "cardinals",
+    playersById: new Map([[player.id, player]]),
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, /cannot be upgraded above 98/);
+});
+
+test("multiple +2 purchases in one order respect the 98 attribute ceiling", () => {
+  const player = {
+    id: "p-95",
+    name: "Coverage Guy",
+    overall: 80,
+    physicalAttributes: [],
+    nonPhysicalAttributes: [{ key: "manCoverage", label: "Man Coverage", value: 95 }],
+  };
+
+  const units = [1, 2].map((index) => ({
+    lineId: `line-${index}`,
+    productKey: PRODUCT_KEYS.NON_PHYSICAL,
+    productName: "+2 Non-Physical Attribute",
+    paid: true,
+    unitPrice: 1,
+    playerId: player.id,
+    playerName: player.name,
+    attributeKey: "manCoverage",
+    attributeLabel: "Man Coverage",
+  }));
+
+  const result = validateOrderUnits({
+    units,
+    activeLines: [],
+    season: 1,
+    discordId: "owner-a",
+    teamSlug: "cardinals",
+    playersById: new Map([[player.id, player]]),
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, /cannot be upgraded above 98/);
+});

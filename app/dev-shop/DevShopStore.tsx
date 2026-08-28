@@ -123,11 +123,26 @@ function capStatus(
 
   if (
     product.key === "non_physical_plus_2" &&
-    Number(selectedPlayer.overall ?? 0) >= 96
+    !selectedPlayer.nonPhysicalAttributes.some(
+      (attribute) => Number(attribute.value) + 2 <= 98,
+    )
   ) {
     return {
       remaining: 0,
-      label: "96 OVR CAP REACHED",
+      label: "NO ELIGIBLE ATTRIBUTES • 98 CAP",
+      soldOut: true,
+    };
+  }
+
+  if (
+    product.key === "physical_plus_1" &&
+    !selectedPlayer.physicalAttributes.some(
+      (attribute) => Number(attribute.value) + 1 <= 93,
+    )
+  ) {
+    return {
+      remaining: 0,
+      label: "NO ELIGIBLE ATTRIBUTES • 93 CAP",
       soldOut: true,
     };
   }
@@ -413,8 +428,12 @@ export default function DevShopStore() {
     if (!player) return [];
 
     return item.kind === "physical"
-      ? player.physicalAttributes.filter((attribute) => attribute.value < 93)
-      : player.nonPhysicalAttributes;
+      ? player.physicalAttributes.filter(
+          (attribute) => Number(attribute.value) + 1 <= 93,
+        )
+      : player.nonPhysicalAttributes.filter(
+          (attribute) => Number(attribute.value) + 2 <= 98,
+        );
   }
 
   async function purchase() {
@@ -731,10 +750,10 @@ export default function DevShopStore() {
                   Each team can purchase one Star, one Superstar and one X-Factor Dev per season.
                 </p>
                 <p>
-                  Non-physical upgrades are capped at 6 per player per season and 96 OVR.
+                  Non-physical upgrades are capped at 6 per player per season, and the selected attribute cannot be upgraded above 98.
                 </p>
                 <p>
-                  Physical upgrades are capped at 3 per player for the franchise and 93 per attribute.
+                  Physical upgrades are capped at 3 per player for the franchise, and the selected attribute cannot be upgraded above 93.
                 </p>
                 <p>
                   Purchases are recorded the instant you press Purchase. Commissioner voids restore the cap.

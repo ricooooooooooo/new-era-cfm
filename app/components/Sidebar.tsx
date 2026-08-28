@@ -31,6 +31,7 @@ const leagueLinks = [
   { label: "League", href: "/league" },
   { label: "Gold Jackets", href: "/gold-jackets" },
   { label: "Media", href: "/media" },
+  { label: "Dev Shop", href: "/dev-shop" },
 ];
 
 const roleSections: Record<
