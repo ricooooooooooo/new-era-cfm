@@ -259,7 +259,7 @@ setTeamForms(
           <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-6 py-12 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:py-16">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
-                New Era Sportsbook
+                Gold Jacket Sportsbook
               </p>
               <h1 className="mt-3 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
                 Put Your NE Coin on It
@@ -301,7 +301,7 @@ setTeamForms(
             href="/market"
             className="rounded-2xl border border-purple-400/30 bg-purple-500/10 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-purple-200 hover:bg-purple-500/20"
           >
-            New Era Market →
+            Gold Jacket Market →
           </Link>
         </div>
           {message ? (

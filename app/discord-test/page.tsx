@@ -43,7 +43,7 @@ export default function DiscordTestPage() {
 
           <div className="p-8 md:p-10">
             <p className="text-sm font-black uppercase tracking-[0.35em] text-red-500">
-              New Era CFM
+              Gold Jacket CFM
             </p>
 
             <h1 className="mt-3 text-4xl font-black tracking-tight">
@@ -61,7 +61,7 @@ export default function DiscordTestPage() {
               </p>
 
               <p className="mt-3 font-black text-white">
-                ⚠️ New Era CFM Activity Warning
+                ⚠️ Gold Jacket CFM Activity Warning
               </p>
 
               <p className="mt-2 text-sm leading-6 text-zinc-400">

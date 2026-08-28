@@ -67,7 +67,7 @@ export default function MaddenSyncClient() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const [leagueName, setLeagueName] = useState("NEW ERA CFM");
+  const [leagueName, setLeagueName] = useState("GOLD JACKET CFM");
   const [externalLeagueId, setExternalLeagueId] = useState("");
   const [provider, setProvider] = useState("manual");
   const [season, setSeason] = useState(1);
@@ -228,7 +228,7 @@ export default function MaddenSyncClient() {
               Madden 27 Sync
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-              Run New Era with the official Madden 27 ratings baseline today. Quick Sync writes games into the same rows that future EA data will replace, so nothing has to be rebuilt later.
+              Run Gold Jacket with the official Madden 27 ratings baseline today. Quick Sync writes games into the same rows that future EA data will replace, so nothing has to be rebuilt later.
             </p>
           </div>
           <div className="flex gap-3">

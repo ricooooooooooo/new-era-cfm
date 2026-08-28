@@ -25,7 +25,7 @@ async function getNewEraLeagueId(): Promise<string | null> {
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load New Era league ID:", error);
+    console.error("Unable to load Gold Jacket league ID:", error);
     return null;
   }
 
@@ -89,7 +89,7 @@ export default async function RosterPage({ params }: RosterPageProps) {
                 className="mt-7 text-xs font-black uppercase tracking-[0.3em]"
                 style={{ color: team.secondary }}
               >
-                New Era Roster Center
+                Gold Jacket Roster Center
               </p>
 
               <h1 className="mt-2 text-4xl font-black tracking-[-0.055em] sm:text-6xl">

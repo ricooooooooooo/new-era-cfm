@@ -46,12 +46,12 @@ const coverage = [
   },
   {
     icon: "🧠",
-    title: "New Era Intelligence",
+    title: "Gold Jacket Intelligence",
     href: "/era",
   },
   {
     icon: "💰",
-    title: "New Era Market",
+    title: "Gold Jacket Market",
     href: "/market",
   },
 ];
@@ -64,7 +64,7 @@ const community = [
   },
   {
     icon: "💰",
-    title: "New Era Market",
+    title: "Gold Jacket Market",
     href: "/market",
   },
   {
@@ -80,7 +80,7 @@ export default function LeaguePage() {
       <div className="min-h-screen bg-[#050606] px-4 py-6 text-white sm:px-6 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <p className="text-[10px] font-black uppercase tracking-[0.26em] text-purple-300">
-            New Era
+            Gold Jacket
           </p>
 
           <h1 className="mt-2 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
@@ -131,7 +131,7 @@ export default function LeaguePage() {
 
           <section className="mt-8">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-              New Era Sports
+              Gold Jacket Sports
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">

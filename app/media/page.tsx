@@ -47,7 +47,7 @@ export default function MediaPage() {
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.32em] text-amber-300">
-                New Era Sports Network
+                Gold Jacket Sports Network
               </p>
 
               <h1 className="mt-4 text-4xl font-black tracking-[-0.05em] sm:text-6xl">
@@ -56,7 +56,7 @@ export default function MediaPage() {
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
                 Breaking trades, game recaps, signings, interviews,
-                highlights, rumors, memes, and stories created by the New Era
+                highlights, rumors, memes, and stories created by the Gold Jacket
                 community.
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function MediaPage() {
             </span>
 
             <h2 className="mt-5 text-3xl font-black tracking-[-0.04em] sm:text-5xl">
-              The first major New Era headline will appear here.
+              The first major Gold Jacket headline will appear here.
             </h2>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
@@ -146,7 +146,7 @@ export default function MediaPage() {
             <div className="flex items-start justify-between border-b border-white/10 p-6 sm:p-8">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
-                  New Era Sports Network
+                  Gold Jacket Sports Network
                 </p>
 
                 <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">

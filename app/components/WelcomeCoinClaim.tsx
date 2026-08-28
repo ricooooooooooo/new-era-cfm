@@ -115,7 +115,7 @@ export default function WelcomeCoinClaim() {
         {claimedBalance === null ? (
           <>
             <p className="mt-5 text-xs font-black uppercase tracking-[0.32em] text-purple-300">
-              Welcome to New Era
+              Welcome to Gold Jacket
             </p>
 
             <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-white">
@@ -175,7 +175,7 @@ export default function WelcomeCoinClaim() {
             </h2>
 
             <p className="mt-4 text-zinc-400">
-              Your New Era economy is active.
+              Your Gold Jacket economy is active.
             </p>
 
             <div className="mt-7 rounded-2xl border border-purple-400/20 bg-purple-500/10 p-5">
@@ -193,7 +193,7 @@ export default function WelcomeCoinClaim() {
               onClick={() => setOpen(false)}
               className="mt-7 w-full rounded-2xl bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.16em] !text-black"
             >
-              Enter New Era
+              Enter Gold Jacket
             </button>
           </>
         )}

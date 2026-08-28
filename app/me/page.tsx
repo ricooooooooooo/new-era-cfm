@@ -126,7 +126,7 @@ export default async function MePage() {
 
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-300">
-                  New Era Owner
+                  Gold Jacket Owner
                 </p>
 
                 <h1 className="mt-1 truncate text-3xl font-black">
@@ -169,7 +169,7 @@ export default async function MePage() {
 
           <section className="mt-7">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-              My New Era
+              My Gold Jacket
             </p>
 
             <div className="mt-3 space-y-2">
@@ -177,7 +177,7 @@ export default async function MePage() {
                 [
                   "Owner DNA",
                   "/era#dna",
-                  "Your live New Era OVR, archetype, ratings and hidden achievements",
+                  "Your live Gold Jacket OVR, archetype, ratings and hidden achievements",
                 ],
                 [
                   "My Profile",
@@ -190,7 +190,7 @@ export default async function MePage() {
                   "Roster, depth chart and team operations",
                 ],
                 [
-                  "New Era Market",
+                  "Gold Jacket Market",
                   "/market",
                   "Spend NE Coin on franchise upgrades",
                 ],

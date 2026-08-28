@@ -128,7 +128,7 @@ export default function PrimaryNavigation() {
 
       <nav
         aria-label="Primary navigation"
-        className="fixed inset-x-0 bottom-0 z-[70] border-t border-[#d7b35a]/15 bg-[#080807]/95 px-1 pt-1.5 shadow-[0_-18px_50px_rgba(0,0,0,.45)] backdrop-blur-2xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-[70] border-t border-[#d7b35a]/15 bg-[#080807]/95 px-1 pt-1.5 shadow-[0_-18px_50px_rgba(0,0,0,.45)] backdrop-blur-2xl sm:hidden"
         style={{ paddingBottom: "max(0.45rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto grid max-w-lg grid-cols-5">

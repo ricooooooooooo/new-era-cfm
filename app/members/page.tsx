@@ -27,7 +27,7 @@ function getMemberName(member: Member) {
   return (
     member.display_name?.trim() ||
     member.discord_username?.trim() ||
-    "New Era Member"
+    "Gold Jacket Member"
   );
 }
 
@@ -215,7 +215,7 @@ export default function MembersPage() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-300">
-                  New Era Network
+                  Gold Jacket Network
                 </p>
 
                 <h1 className="mt-4 text-4xl font-black tracking-[-0.055em] text-white sm:text-5xl lg:text-6xl">
@@ -223,7 +223,7 @@ export default function MembersPage() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-400 sm:text-lg">
-                  Find every connected owner in NEW ERA and open
+                  Find every connected owner in GOLD JACKET and open
                   their league profile, activity history, badges,
                   and future AI scouting report.
                 </p>

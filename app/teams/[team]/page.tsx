@@ -25,7 +25,7 @@ async function getNewEraLeagueId(): Promise<string | null> {
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load New Era league ID:", error);
+    console.error("Unable to load Gold Jacket league ID:", error);
     return null;
   }
 
@@ -82,7 +82,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
                 className="mt-8 text-xs font-black uppercase tracking-[0.3em]"
                 style={{ color: team.secondary }}
               >
-                New Era Franchise Headquarters
+                Gold Jacket Franchise Headquarters
               </p>
 
               <h1 className="mt-3 text-5xl font-black tracking-[-0.065em] sm:text-7xl">
@@ -144,7 +144,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
                 </h2>
                 <p className="mt-2 text-sm text-zinc-500">
                   {hasFranchiseData
-                    ? "Current New Era franchise values with baseline fallback."
+                    ? "Current Gold Jacket franchise values with baseline fallback."
                     : "Madden 27 launch ratings. EA franchise values will replace these automatically after sync."}
                 </p>
               </div>

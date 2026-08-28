@@ -91,7 +91,7 @@ export default async function DiscordConnectPage({
 
         <div className="p-8 md:p-10">
           <p className="text-sm font-black uppercase tracking-[0.3em] text-red-500">
-            New Era CFM
+            Gold Jacket CFM
           </p>
 
           <h1 className="mt-3 text-4xl font-black tracking-tight">

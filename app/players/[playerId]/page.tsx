@@ -25,7 +25,7 @@ async function getNewEraLeagueId(): Promise<string | null> {
 
   if (error) {
     console.error(
-      "Unable to load New Era league ID for player profile:",
+      "Unable to load Gold Jacket league ID for player profile:",
       error,
     );
     return null;
@@ -170,7 +170,7 @@ const rosterHref = team
                   className="text-xs font-black uppercase tracking-[0.3em]"
                   style={{ color: secondary }}
                 >
-                  New Era Player Profile
+                  Gold Jacket Player Profile
                 </p>
 
                 <h1 className="mt-3 text-5xl font-black tracking-[-0.065em] sm:text-7xl">
@@ -330,7 +330,7 @@ const rosterHref = team
                 This profile already uses the permanent Madden data layer.
                 Completed-game stats, progression, regression, roster moves,
                 contracts and updated ratings will automatically replace the
-                launch baseline when the New Era EA franchise connection is
+                launch baseline when the Gold Jacket EA franchise connection is
                 activated.
               </p>
 
@@ -343,7 +343,7 @@ const rosterHref = team
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {player.hasFranchiseData
-                    ? "Live New Era franchise values are active."
+                    ? "Live Gold Jacket franchise values are active."
                     : "EA values will override this automatically."}
                 </p>
               </div>

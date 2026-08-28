@@ -176,9 +176,9 @@ export default function OwnerConnectionsPage() {
 
     const text =
       missing.length === 0
-        ? "All 32 New Era owners have linked Discord."
+        ? "All 32 Gold Jacket owners have linked Discord."
         : [
-            `NEW ERA — MISSING DISCORD LINKS (${missing.length})`,
+            `GOLD JACKET — MISSING DISCORD LINKS (${missing.length})`,
             "",
             ...missing.map(
               (team, index) => `${index + 1}. ${team.fullName}`,
@@ -201,8 +201,8 @@ export default function OwnerConnectionsPage() {
 
     const text =
       names.length === 0
-        ? "All 32 New Era owners are linked."
-        : `The following NEW ERA owners still need to link Discord on the website: ${names.join(", ")}.\n\nSign into the NEW ERA website with Discord while holding your team role before launch.`;
+        ? "All 32 Gold Jacket owners are linked."
+        : `The following GOLD JACKET owners still need to link Discord on the website: ${names.join(", ")}.\n\nSign into the GOLD JACKET website with Discord while holding your team role before launch.`;
 
     try {
       await navigator.clipboard.writeText(text);

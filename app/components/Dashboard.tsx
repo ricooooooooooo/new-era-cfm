@@ -95,7 +95,7 @@ export default async function Dashboard() {
 
               <p className="mt-7 max-w-2xl text-base leading-8 text-zinc-400 sm:text-lg">
                 Built for owners who want more than another Discord server.
-                NEW ERA combines competition, identity, live league data, and
+                GOLD JACKET combines competition, identity, live league data, and
                 a custom franchise experience in one place.
               </p>
 
@@ -154,7 +154,7 @@ export default async function Dashboard() {
                   <div className="mt-6 space-y-3">
                     {[
                       ["01", "Connect your Discord"],
-                      ["02", "Create your NEW ERA profile"],
+                      ["02", "Create your GOLD JACKET profile"],
                       ["03", "Claim your NFL franchise"],
                       ["04", "Compete for the Season One title"],
                     ].map(([number, label]) => (
@@ -192,7 +192,7 @@ export default async function Dashboard() {
           {[
             ["32", "NFL Teams", "Every franchise represented"],
             ["Live", "Discord Sync", "Profiles and team roles connected"],
-            ["Custom", "League Website", "Built exclusively for NEW ERA"],
+            ["Custom", "League Website", "Built exclusively for GOLD JACKET"],
             ["Aug 6", "Madden 27", "Season One begins at launch"],
           ].map(([value, label, detail]) => (
             <div
@@ -223,7 +223,7 @@ export default async function Dashboard() {
             </h2>
 
             <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-400">
-              Every feature is designed to give NEW ERA its own identity,
+              Every feature is designed to give GOLD JACKET its own identity,
               reward active ownership, and make the league worth checking every
               day.
             </p>
@@ -261,7 +261,7 @@ export default async function Dashboard() {
           <article className="overflow-hidden rounded-[28px] border border-white/10 bg-[#0c0e10]">
             <div className="border-b border-white/10 px-6 py-7 sm:px-8">
               <p className="text-[10px] font-black uppercase tracking-[0.26em] text-zinc-500">
-                Available in NEW ERA
+                Available in GOLD JACKET
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-[-0.045em] sm:text-4xl">
@@ -310,7 +310,7 @@ export default async function Dashboard() {
               </h2>
 
               <p className="mt-5 max-w-md text-sm leading-7 text-zinc-400">
-                Join NEW ERA before Season One begins and secure your place in
+                Join GOLD JACKET before Season One begins and secure your place in
                 a franchise built differently from the ground up.
               </p>
 
@@ -342,7 +342,7 @@ export default async function Dashboard() {
 
         <footer className="border-t border-white/10 py-8">
           <div className="flex flex-col gap-4 text-sm text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-bold">NEW ERA CFM — Season One</p>
+            <p className="font-bold">GOLD JACKET CFM — Season One</p>
 
             <div className="flex flex-wrap gap-5">
               <span>Xbox Series X|S</span>

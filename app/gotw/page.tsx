@@ -23,7 +23,7 @@ export default async function GotwPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300">
-                New Era Featured Matchup
+                Gold Jacket Featured Matchup
               </p>
 
               <h1 className="mt-2 text-4xl font-black tracking-[-0.055em] sm:text-6xl">

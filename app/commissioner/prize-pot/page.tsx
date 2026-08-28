@@ -349,7 +349,7 @@ export default function CommissionerPrizePotPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewUrl}
-                    alt={`NEW ERA $${amount} prize pot preview`}
+                    alt={`GOLD JACKET $${amount} prize pot preview`}
                     className="aspect-video h-auto w-full object-contain"
                   />
                 </div>

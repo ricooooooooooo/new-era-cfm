@@ -13,7 +13,7 @@ import { getHqOfficeConfig } from "@/lib/hq-config"; type SavedDiscordUser = { i
 <div className="dashboard-mobile-fix min-h-[calc(100vh-8rem)] bg-[#070808] px-6 py-10 text-white">
 <div className="mx-auto max-w-6xl">
 <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.025] p-8 shadow-2xl sm:p-12">
-<p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300"> NEW ERA CFM </p>
+<p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300"> GOLD JACKET CFM </p>
 <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-[-0.06em] sm:text-6xl"> Your franchise is waiting. </h1>
 <p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-400"> Once a commissioner gives you an NFL team role in Discord, your owner dashboard will automatically become that franchise&apos;s command center. </p>
 <div className="mt-8 flex flex-wrap gap-3">
@@ -57,7 +57,7 @@ className="object-contain p-3"
 className="text-[10px] font-black uppercase tracking-[0.26em]"
 style={{ color: team.secondary }}
 >
-NEW ERA FRANCHISE HQ
+GOLD JACKET FRANCHISE HQ
 </p>
 <h1 className="mt-2 max-w-full text-[2.35rem] font-black leading-[0.96] tracking-[-0.055em] [overflow-wrap:anywhere]">
 {team.city} {team.name}
@@ -123,7 +123,7 @@ className="object-contain p-2.5"
 className="text-[10px] font-black uppercase tracking-[0.28em]"
 style={{ color: team.secondary }}
 >
-NEW ERA FRANCHISE HQ
+GOLD JACKET FRANCHISE HQ
 </p>
 <h1 className="mt-1 text-4xl font-black tracking-[-0.045em]">
 {team.city} {team.name}
@@ -163,7 +163,7 @@ Manage Roster
 <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${team.primary}, ${team.secondary})`, }} />
 <div className="grid gap-10 p-7 sm:p-10 lg:grid-cols-[1.4fr_0.6fr] lg:p-12">
 <div>
-<p className="text-xs font-black uppercase tracking-[0.32em]" style={{ color: team.secondary }} > NEW ERA FRANCHISE HQ </p>
+<p className="text-xs font-black uppercase tracking-[0.32em]" style={{ color: team.secondary }} > GOLD JACKET FRANCHISE HQ </p>
 <h1 className="mt-5 text-5xl font-black tracking-[-0.075em] sm:text-7xl"> {team.city} <span className="block">{team.name}</span>
 </h1>
 <p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-300"> Welcome back,{" "} <span className="font-black text-white"> {member?.display_name ?? user.displayName} </span> . This is your franchise command center. </p>

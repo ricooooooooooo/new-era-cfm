@@ -46,7 +46,7 @@ export default async function StandingsPage() {
                 League Standings
               </h1>
               <p className="mt-4 max-w-2xl text-zinc-400">
-                Records update from the same New Era game feed used by the schedule and prediction markets.
+                Records update from the same Gold Jacket game feed used by the schedule and prediction markets.
               </p>
             </div>
             <div className="flex gap-3">

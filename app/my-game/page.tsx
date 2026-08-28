@@ -224,7 +224,7 @@ export default async function MyGamePage() {
 
                 <div className="text-center">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                    New Era
+                    Gold Jacket
                   </p>
 
                   <p className="mt-1 text-4xl font-black italic">

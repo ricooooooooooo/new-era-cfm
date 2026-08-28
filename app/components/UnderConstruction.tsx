@@ -11,7 +11,7 @@ export default function UnderConstruction({
   title,
   description,
   features = [],
-  releaseText = "Coming before the NEW ERA season begins",
+  releaseText = "Coming before the GOLD JACKET season begins",
 }: UnderConstructionProps) {
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-[#080909] px-4 py-10 sm:px-6 lg:px-10">
@@ -26,7 +26,7 @@ export default function UnderConstruction({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-300">
-                  New Era CFM
+                  Gold Jacket CFM
                 </p>
 
                 <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">

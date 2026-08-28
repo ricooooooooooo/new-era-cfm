@@ -1,14 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AppLayout from "@/app/components/layout/AppLayout";
-import { findTeamBySlug, NFL_TEAMS } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { loadSiteWeeklyHighlights } from "@/lib/site-weekly-highlights";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type SessionUser = {
   id: string;
@@ -16,7 +14,7 @@ type SessionUser = {
   displayName: string;
 };
 
-async function session() {
+async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
   const value = store.get("new_era_discord_user")?.value;
 
@@ -32,333 +30,211 @@ async function session() {
 }
 
 export default async function OwnerHomePage() {
-  const user = await session();
+  const user = await getSessionUser();
 
   if (!user) redirect("/discord-connect");
 
-  const memberResult = await supabaseAdmin
+  const { data: member } = await supabaseAdmin
     .from("members")
-    .select("display_name, team")
+    .select("display_name")
     .eq("discord_id", user.id)
     .maybeSingle();
 
-  const member = memberResult.data;
-  const team = findTeamBySlug(member?.team ?? null);
-
-  const leagueResult = await supabaseAdmin
-    .from("leagues")
-    .select("id, season, current_week")
-    .eq("slug", "new-era-cfm")
-    .maybeSingle();
-
-  const league = leagueResult.data;
-  let currentGame: any = null;
-  let teamRow: any = null;
-
-  if (team && league) {
-    const teamResult = await supabaseAdmin
-      .from("teams")
-      .select("id, abbreviation")
-      .eq("league_id", league.id)
-      .eq("abbreviation", team.abbreviation)
-      .maybeSingle();
-
-    teamRow = teamResult.data;
-
-    if (teamRow) {
-      const gameResult = await supabaseAdmin
-        .from("league_games")
-        .select(
-          "id, week, status, home_team_id, away_team_id, home_team_abbreviation, away_team_abbreviation, home_score, away_score",
-        )
-        .eq("league_id", league.id)
-        .eq("season", league.season)
-        .eq("week", league.current_week)
-        .eq("game_type", "regular")
-        .or(
-          `home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`,
-        )
-        .limit(1)
-        .maybeSingle();
-
-      currentGame = gameResult.data;
-    }
-  }
-
-  const opponentAbbreviation =
-    currentGame && teamRow
-      ? currentGame.home_team_id === teamRow.id
-        ? currentGame.away_team_abbreviation
-        : currentGame.home_team_abbreviation
-      : null;
-
-  const opponent = opponentAbbreviation
-    ? NFL_TEAMS.find(
-        (entry) => entry.abbreviation === opponentAbbreviation,
-      ) ?? null
-    : null;
-
-  const week = Number(league?.current_week ?? 1);
-  const highlights = await loadSiteWeeklyHighlights();
+  const displayName = member?.display_name ?? user.displayName;
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#050505] text-[#f7f2e7]">
-        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-          <section className="relative overflow-hidden rounded-[1.65rem] border border-[#d7b56d]/15 bg-[radial-gradient(circle_at_8%_0%,rgba(214,177,90,.16),transparent_22rem),linear-gradient(135deg,#12110e,#080909)] px-6 py-5 shadow-[0_22px_70px_rgba(0,0,0,.35)] sm:px-7 sm:py-6">
-            <div className="pointer-events-none absolute -right-5 -top-10 text-[9rem] font-black leading-none text-[#f2d490]/[0.035]">
+      <main className="min-h-screen bg-[#050505] text-[#f7f2e7]">
+        <div className="mx-auto max-w-[1180px] px-4 pb-10 pt-5 sm:px-5 sm:pb-8 sm:pt-6 lg:px-7">
+          <section className="relative overflow-hidden rounded-[24px] border border-[#d7b56d]/16 bg-[radial-gradient(circle_at_5%_0%,rgba(214,177,90,.14),transparent_21rem),linear-gradient(135deg,#11100d,#070807)] px-5 py-4 shadow-[0_20px_65px_rgba(0,0,0,.28)] sm:px-6 sm:py-5">
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[6.5rem] font-black leading-none text-[#e8c978]/[0.025] sm:text-[8rem]">
               GJ
             </div>
 
-            <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#d7b56d]">
-                  Week {week} • Gold Jacket
+            <div className="relative flex items-end justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[9px] font-black uppercase tracking-[0.27em] text-[#cfae5c] sm:text-[10px]">
+                  Gold Jacket • Season One
                 </p>
-                <h1 className="mt-1.5 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
-                  Welcome back, {member?.display_name ?? user.displayName}.
+                <h1 className="mt-1.5 truncate text-[1.75rem] font-black tracking-[-0.055em] text-white sm:text-[2.15rem]">
+                  Welcome back, {displayName}.
                 </h1>
               </div>
 
-              <div className="w-fit rounded-full border border-[#d7b56d]/20 bg-[#d7b56d]/[0.07] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#e7c87f]">
+              <div className="hidden shrink-0 rounded-full border border-[#d7b56d]/22 bg-[#d7b56d]/[0.065] px-3.5 py-2 text-[9px] font-black uppercase tracking-[0.17em] text-[#ead08a] sm:block">
                 48 Hour Advance
               </div>
             </div>
           </section>
 
-          <section className="mt-4 grid gap-4 lg:grid-cols-2">
+          <section className="mt-3 grid gap-3 sm:grid-cols-[1.03fr_.97fr]">
             <Link
               href="/my-game"
-              className="group relative min-h-[245px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(7,7,7,.98))] p-6 transition duration-300 hover:-translate-y-0.5 hover:border-[#d7b56d]/30 sm:p-7"
+              className="group relative min-h-[200px] overflow-hidden rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_5%_0%,rgba(214,177,90,.085),transparent_17rem),linear-gradient(145deg,#0c0c0b,#070707)] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-[#d7b56d]/30 sm:min-h-[208px] sm:p-5"
             >
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d7b56d]">
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d1ae58]">
                   Your Matchup
                 </p>
-                <span className="text-zinc-600 transition group-hover:translate-x-1 group-hover:text-[#e7c87f]">
+                <span className="text-zinc-700 transition group-hover:translate-x-1 group-hover:text-[#e8ca7e]">
                   →
                 </span>
               </div>
 
-              {team ? (
-                <div className="mt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 shrink-0 rounded-2xl border border-white/10 bg-black/35">
-                      <Image
-                        src={`https://static.www.nfl.com/t_q-best/league/api/clubs/logos/${team.abbreviation}`}
-                        alt={team.name}
-                        fill
-                        unoptimized
-                        className="object-contain p-2"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-500">
-                        {team.city} {team.name}
-                      </p>
-                      <p className="mt-1 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                        {opponent ? `vs ${opponent.name}` : "Matchup loading"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-300">
-                      Week {week}
-                    </span>
-                    <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-300">
-                      {currentGame?.status ?? "Scheduled"}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-6 max-w-md text-lg font-bold text-zinc-300">
-                  Your team assignment is still syncing.
+              <div className="mt-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.17em] text-zinc-600">
+                  Gold Jacket CFM
                 </p>
-              )}
+                <h2 className="mt-2 max-w-[22rem] text-2xl font-black tracking-[-0.045em] text-white sm:text-[1.65rem]">
+                  League connection pending
+                </h2>
+                <p className="mt-2 max-w-[25rem] text-xs font-medium leading-5 text-zinc-500">
+                  Your team and opponent will appear here as soon as the new Madden league is linked.
+                </p>
+              </div>
 
-              <p className="absolute bottom-6 left-6 text-[10px] font-black uppercase tracking-[0.14em] text-zinc-500 transition group-hover:text-white sm:left-7">
-                View matchup →
-              </p>
+              <div className="absolute bottom-5 left-5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.13em] text-zinc-600">
+                Waiting for league sync
+              </div>
             </Link>
 
             <Link
               href="/gold-jackets"
-              className="group relative min-h-[245px] overflow-hidden rounded-[1.75rem] border border-[#d7b56d]/25 bg-[#0a0907] p-6 transition duration-300 hover:-translate-y-0.5 hover:border-[#e6c675]/50 sm:p-7"
-              style={{
-                backgroundImage:
-                  'linear-gradient(90deg, rgba(5,5,4,.99) 0%, rgba(7,6,5,.94) 38%, rgba(8,7,5,.72) 58%, rgba(8,7,5,.20) 100%), url("/gold-jacket-legends-bg.png")',
-                backgroundRepeat: "no-repeat",
-                backgroundSize: "cover, 60% auto",
-                backgroundPosition: "center, right center",
-              }}
+              className="gold-jacket-home-card group relative min-h-[200px] overflow-hidden rounded-[24px] border border-[#d7b56d]/30 bg-[#080704] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-[#efd37f]/55 sm:min-h-[208px] sm:p-5"
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_24%,rgba(233,193,104,.16),transparent_18rem)]" />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-cover bg-[position:72%_42%] opacity-[0.74] transition duration-500 group-hover:scale-[1.025] group-hover:opacity-[0.84]"
+                style={{
+                  backgroundImage: 'url("/gold-jacket-legends-bg.png")',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,4,.99)_0%,rgba(6,6,5,.96)_34%,rgba(7,6,4,.78)_57%,rgba(4,4,3,.22)_100%)]"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_22%,rgba(240,199,103,.18),transparent_13rem)]"
+              />
 
-              <div className="relative z-10 max-w-[64%]">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🧥</span>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#e1bf70]">
-                    Your Gold Jacket
-                  </p>
-                </div>
+              <div className="relative z-10 max-w-[59%]">
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#e1bd64]">
+                  Your Gold Jacket
+                </p>
 
-                <h2 className="mt-6 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+                <h2 className="mt-6 text-[1.6rem] font-black tracking-[-0.05em] text-white sm:text-[1.75rem]">
                   Selection Pending
                 </h2>
-                <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-[#d7b56d]">
+                <p className="mt-1.5 text-[9px] font-black uppercase tracking-[0.13em] text-[#e3c36f]">
                   70 OVR • Superstar • Age 20
                 </p>
-                <p className="mt-4 max-w-sm text-sm leading-6 text-zinc-400">
+                <p className="mt-3 max-w-[17rem] text-[11px] leading-[1.45rem] text-zinc-400">
                   One franchise legend. Reborn at 20. Build the career from scratch.
                 </p>
               </div>
 
-              <p className="absolute bottom-6 left-6 z-10 text-[10px] font-black uppercase tracking-[0.14em] text-[#e1bf70] transition group-hover:translate-x-1 sm:left-7">
+              <p className="absolute bottom-5 left-5 z-10 text-[8px] font-black uppercase tracking-[0.15em] text-[#e2c36f] transition group-hover:translate-x-1">
                 View Gold Jackets →
               </p>
             </Link>
           </section>
 
-          <section className="mt-6">
-            <div className="mb-3 flex items-end justify-between gap-4">
+          <section className="mt-5">
+            <div className="mb-2.5 flex items-end justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8f7744]">
+                <p className="text-[8px] font-black uppercase tracking-[0.23em] text-[#8d7644]">
                   Around Gold Jacket
                 </p>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
+                <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-white sm:text-[1.35rem]">
                   Happening now
                 </h2>
               </div>
-
               <Link
                 href="/league"
-                className="text-[10px] font-black uppercase tracking-[0.12em] text-[#d7b56d] transition hover:text-[#f0d38f]"
+                className="text-[8px] font-black uppercase tracking-[0.13em] text-zinc-600 transition hover:text-[#e0c16d]"
               >
                 League →
               </Link>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               <Link
                 href="/media/game-of-the-week"
-                className="group min-h-[180px] rounded-2xl border border-[#d7b56d]/20 bg-[linear-gradient(145deg,rgba(214,177,90,.10),rgba(255,255,255,.025))] p-5 transition hover:border-[#e7c87f]/40"
+                className="group min-h-[148px] rounded-[19px] border border-[#d7b56d]/22 bg-[linear-gradient(145deg,rgba(214,177,90,.055),rgba(255,255,255,.018))] p-4 transition hover:border-[#e6c875]/45"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xl">🔥</span>
-                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#d7b56d]">
+                  <span className="text-base">🔥</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.15em] text-[#cfae59]">
                     GOTW
                   </span>
                 </div>
-
-                {highlights.gotw ? (
-                  <>
-                    <p className="mt-4 text-lg font-black leading-tight">
-                      {highlights.gotw.away.name} @ {highlights.gotw.home.name}
-                    </p>
-                    <p className="mt-2 text-xs font-bold text-zinc-500">
-                      {highlights.gotw.away.record} vs {highlights.gotw.home.record}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="mt-4 text-lg font-black">Week {week} GOTW</p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-500">
-                      Matchup selection is loading.
-                    </p>
-                  </>
-                )}
-
-                <p className="mt-5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500 transition group-hover:text-white">
-                  Open matchup →
+                <p className="mt-4 text-sm font-black text-white sm:text-[15px]">
+                  Game of the Week
+                </p>
+                <p className="mt-2 text-[10px] leading-4 text-zinc-600">
+                  Selection opens with Week 1.
                 </p>
               </Link>
 
               <Link
-                href="/media/awards"
-                className="group min-h-[180px] rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-[#d7b56d]/25"
+                href="/media/player-of-the-week"
+                className="group min-h-[148px] rounded-[19px] border border-white/10 bg-white/[0.025] p-4 transition hover:border-[#d7b56d]/28"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xl">🏆</span>
-                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#d7b56d]">
+                  <span className="text-base">🏆</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.15em] text-zinc-600">
                     POTW
                   </span>
                 </div>
-
-                {highlights.potw ? (
-                  <>
-                    <p className="mt-4 text-lg font-black">
-                      Week {highlights.potw.week} Winners
-                    </p>
-                    <div className="mt-3 space-y-1.5">
-                      {highlights.potw.awards.slice(0, 2).map((award) => (
-                        <p
-                          key={award.label}
-                          className="truncate text-xs font-bold text-zinc-400"
-                        >
-                          {award.playerName}
-                          {award.team ? ` • ${award.team}` : ""}
-                        </p>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="mt-4 text-lg font-black">Players of the Week</p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-500">
-                      Awards will populate automatically.
-                    </p>
-                  </>
-                )}
-
-                <p className="mt-5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500 transition group-hover:text-white">
-                  View awards →
+                <p className="mt-4 text-sm font-black text-white sm:text-[15px]">
+                  Players of the Week
+                </p>
+                <p className="mt-2 text-[10px] leading-4 text-zinc-600">
+                  Awards begin after the first games.
                 </p>
               </Link>
 
               <Link
                 href="/gold-jackets"
-                className="group min-h-[180px] rounded-2xl border border-[#d7b56d]/20 bg-[linear-gradient(145deg,rgba(214,177,90,.07),rgba(255,255,255,.025))] p-5 transition hover:border-[#e7c87f]/40"
+                className="group min-h-[148px] rounded-[19px] border border-[#d7b56d]/17 bg-[linear-gradient(145deg,rgba(214,177,90,.04),rgba(255,255,255,.018))] p-4 transition hover:border-[#e6c875]/40"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xl">🧥</span>
-                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[#d7b56d]">
+                  <span className="text-base">🧥</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.15em] text-[#b89443]">
                     Jacket Watch
                   </span>
                 </div>
-
-                <p className="mt-4 text-lg font-black">The Legends Return</p>
-                <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  Every franchise gets one retired great at 70 OVR, Superstar dev and age 20.
+                <p className="mt-4 text-sm font-black text-white sm:text-[15px]">
+                  The Legends Return
                 </p>
-                <p className="mt-5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500 transition group-hover:text-white">
-                  View all 32 →
+                <p className="mt-2 text-[10px] leading-4 text-zinc-600">
+                  32 franchises. 32 legends.
                 </p>
               </Link>
 
               <Link
                 href="/media/power-rankings"
-                className="group min-h-[180px] rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-[#d7b56d]/25"
+                className="group min-h-[148px] rounded-[19px] border border-white/10 bg-white/[0.025] p-4 transition hover:border-[#d7b56d]/28"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xl">📈</span>
-                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-zinc-500">
+                  <span className="text-base">📈</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.15em] text-zinc-600">
                     Rankings
                   </span>
                 </div>
-                <p className="mt-4 text-lg font-black">Power Rankings</p>
-                <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  See who is climbing, falling and setting the pace this week.
+                <p className="mt-4 text-sm font-black text-white sm:text-[15px]">
+                  Power Rankings
                 </p>
-                <p className="mt-5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500 transition group-hover:text-white">
-                  View rankings →
+                <p className="mt-2 text-[10px] leading-4 text-zinc-600">
+                  First rankings drop after Week 1.
                 </p>
               </Link>
             </div>
           </section>
         </div>
-      </div>
+      </main>
     </AppLayout>
   );
 }
+

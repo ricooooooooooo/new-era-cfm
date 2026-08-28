@@ -104,7 +104,7 @@ export default async function MemberProfilePage({
   const displayName =
     member.display_name?.trim() ||
     member.discord_username?.trim() ||
-    "New Era Member";
+    "Gold Jacket Member";
 
   const activity = getActivity(member.last_seen_at);
 
@@ -208,7 +208,7 @@ export default async function MemberProfilePage({
                 </h2>
 
                 <p className="mt-4 max-w-3xl leading-7 text-zinc-400">
-                  NEW ERA will eventually analyze scheduling,
+                  GOLD JACKET will eventually analyze scheduling,
                   gameplay, trades, Discord activity, communication,
                   and league participation to build a live owner
                   report.
@@ -271,7 +271,7 @@ export default async function MemberProfilePage({
                 <div className="mt-6 space-y-5">
                   <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
                     <span className="text-sm text-zinc-500">
-                      Joined NEW ERA
+                      Joined GOLD JACKET
                     </span>
 
                     <span className="text-right text-sm font-bold text-white">

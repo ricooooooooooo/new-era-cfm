@@ -127,7 +127,7 @@ export default function ScheduleClient() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(124,58,237,0.32),transparent_34rem),radial-gradient(circle_at_85%_18%,rgba(245,158,11,0.16),transparent_30rem)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
-            New Era Schedule Center
+            Gold Jacket Schedule Center
           </p>
           <h1 className="mt-3 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
             Every Week. Every Result.

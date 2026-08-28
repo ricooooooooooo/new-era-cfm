@@ -60,7 +60,7 @@ export default async function TradeCenterPage() {
           <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:p-10">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.32em] text-purple-300">
-                NEW ERA INSIDER
+                GOLD JACKET INSIDER
               </p>
 
               <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
@@ -107,7 +107,7 @@ export default async function TradeCenterPage() {
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-purple-400/20 bg-purple-400/[0.08]">
               <Image
                 src="/ne-icon.png"
-                alt="NEW ERA"
+                alt="GOLD JACKET"
                 width={52}
                 height={52}
                 className="h-13 w-13 object-contain"
@@ -131,7 +131,7 @@ export default async function TradeCenterPage() {
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-400/30 bg-purple-500/10">
                     <Image
                       src="/ne-icon.png"
-                      alt="NEW ERA Insider"
+                      alt="GOLD JACKET Insider"
                       width={42}
                       height={42}
                       className="h-10 w-10 object-contain"
@@ -140,7 +140,7 @@ export default async function TradeCenterPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2">
-                      <p className="font-black">NEW ERA Insider</p>
+                      <p className="font-black">GOLD JACKET Insider</p>
                       <span className="text-purple-300">✓</span>
                       <p className="truncate text-sm text-zinc-500">
                         @NewEraSchefter
@@ -195,7 +195,7 @@ export default async function TradeCenterPage() {
                 </div>
 
                 <footer className="flex items-center justify-between px-5 py-4 text-xs text-zinc-600 sm:px-6">
-                  <span>NEW ERA CFM transaction wire</span>
+                  <span>GOLD JACKET CFM transaction wire</span>
                   <span>League approved</span>
                 </footer>
               </article>

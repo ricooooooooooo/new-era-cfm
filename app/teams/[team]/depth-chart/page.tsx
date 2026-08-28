@@ -114,7 +114,7 @@ export default async function DepthChartPage({
         </h2>
 
         <p className="mt-3 text-sm text-zinc-500">
-          Depth is projected from the current New Era
+          Depth is projected from the current Gold Jacket
           franchise roster and sorted by live Madden OVR.
         </p>
 

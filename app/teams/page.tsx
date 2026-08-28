@@ -115,7 +115,7 @@ const getLiveTeam = (slug: string) => liveTeams.get(slug);
         <section className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.35em] text-red-500">
-              New Era CFM
+              Gold Jacket CFM
             </p>
 
             <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">

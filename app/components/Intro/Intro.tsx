@@ -261,7 +261,7 @@ export default function Intro({ children }: { children: ReactNode }) {
                 onClick={startIntro}
                 className="rounded-full border border-white/20 bg-white/[0.08] px-8 py-4 text-sm font-bold uppercase tracking-[0.25em] text-white backdrop-blur-md transition duration-300 hover:border-white/40 hover:bg-white/[0.14] active:scale-95"
               >
-                Enter New Era
+                Enter Gold Jacket
               </button>
             </div>
           )}
@@ -306,7 +306,7 @@ export default function Intro({ children }: { children: ReactNode }) {
               <div className="relative h-[48vw] max-h-[390px] min-h-[250px] w-[74vw] max-w-[560px]">
                 <Image
                   src="/ne-logo.png"
-                  alt="New Era CFM"
+                  alt="Gold Jacket CFM"
                   fill
                   priority
                   sizes="(max-width: 768px) 74vw, 560px"

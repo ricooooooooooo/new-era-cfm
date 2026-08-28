@@ -383,7 +383,7 @@ export default async function ActiveChecksPage() {
           <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between lg:p-8">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.28em] text-red-500">
-                New Era CFM
+                Gold Jacket CFM
               </p>
 
               <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">

@@ -177,7 +177,7 @@ export default async function TeamsPage() {
               </a>
 
               <p className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-600">
-                NEW ERA Administration
+                GOLD JACKET Administration
               </p>
 
               <h1 className="mt-2 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
@@ -218,7 +218,7 @@ export default async function TeamsPage() {
 
         {!league || teamsError ? (
           <div className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.07] p-5 text-rose-200">
-            The NEW ERA league or its teams could not be loaded. Run the final
+            The GOLD JACKET league or its teams could not be loaded. Run the final
             Supabase migration first.
           </div>
         ) : (

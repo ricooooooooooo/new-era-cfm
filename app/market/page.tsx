@@ -48,7 +48,7 @@ export default function NewEraMarketPage() {
 
     if (!response.ok) {
       throw new Error(
-        result.error ?? "Unable to load New Era Market.",
+        result.error ?? "Unable to load Gold Jacket Market.",
       );
     }
 
@@ -112,11 +112,11 @@ export default function NewEraMarketPage() {
           <div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
-                New Era Economy
+                Gold Jacket Economy
               </p>
 
               <h1 className="mt-3 text-5xl font-black tracking-tight">
-                New Era Market
+                Gold Jacket Market
               </h1>
 
               <p className="mt-3 max-w-2xl text-zinc-400">

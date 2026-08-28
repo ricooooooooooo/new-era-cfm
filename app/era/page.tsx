@@ -95,7 +95,7 @@ export default async function EraPage() {
             </div>
 
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-purple-300">
-              New Era Intelligence
+              Gold Jacket Intelligence
             </p>
 
             <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
@@ -105,7 +105,7 @@ export default async function EraPage() {
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
               Live owner DNA, matchup intelligence, rivalry history,
               fraud detection, belt lineage and league storylines generated
-              from New Era Madden data.
+              from Gold Jacket Madden data.
             </p>
           </section>
 
@@ -211,7 +211,7 @@ export default async function EraPage() {
                 className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6"
               >
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
-                  Your New Era Wrapped
+                  Your Gold Jacket Wrapped
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -484,7 +484,7 @@ export default async function EraPage() {
           >
             <article className="rounded-[1.75rem] border border-amber-400/25 bg-[linear-gradient(145deg,rgba(245,158,11,.12),#090a0c)] p-6">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
-                New Era Championship
+                Gold Jacket Championship
               </p>
 
               <h2 className="mt-2 text-3xl font-black">
@@ -504,7 +504,7 @@ export default async function EraPage() {
                 </>
               ) : (
                 <p className="mt-6 text-zinc-500">
-                  VACANT — the Season 1 Super Bowl champion will become the first New Era Belt holder.
+                  VACANT — the Season 1 Super Bowl champion will become the first Gold Jacket Belt holder.
                 </p>
               )}
             </article>
@@ -717,7 +717,7 @@ export default async function EraPage() {
             </p>
 
             <h2 className="mt-1 text-3xl font-black">
-              New Era Universe
+              Gold Jacket Universe
             </h2>
 
             <p className="mt-2 text-sm text-zinc-500">

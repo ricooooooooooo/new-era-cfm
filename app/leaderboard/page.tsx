@@ -58,13 +58,13 @@ export default function LeaderboardPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.28em] text-purple-400">
-              New Era Economy
+              Gold Jacket Economy
             </p>
             <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">
               NE Coin Leaderboard
             </h1>
             <p className="mt-3 text-zinc-400">
-              The richest owners in New Era.
+              The richest owners in Gold Jacket.
             </p>
           </div>
 
