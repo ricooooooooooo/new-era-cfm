@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
       players,
       orders,
       season,
+      discordId: user.id,
+      teamSlug: memberContext.teamSlug,
     });
 
     const ownOrders = orders

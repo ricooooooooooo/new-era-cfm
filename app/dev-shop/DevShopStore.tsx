@@ -8,7 +8,7 @@ type Product = {
   price: number;
   kind: "dev" | "non_physical" | "physical";
   limit: number;
-  scope: "player_season" | "player_franchise";
+  scope: "team_season" | "player_season" | "player_franchise";
   description: string;
   capText: string;
   approvalText: string | null;
@@ -38,6 +38,7 @@ type Availability = {
   remaining: number;
   soldOut: boolean;
   reset: "season" | "franchise";
+  scope?: "team" | "player";
 };
 
 type StoreResponse = {
@@ -138,16 +139,21 @@ function capStatus(
     return {
       remaining,
       label:
-        availability?.reset === "franchise"
-          ? "3 / 3 USED • FRANCHISE LIMIT REACHED"
-          : "SOLD OUT FOR THIS PLAYER • AVAILABLE NEXT SEASON",
+        availability?.scope === "team"
+          ? "SOLD OUT • AVAILABLE NEXT SEASON"
+          : availability?.reset === "franchise"
+            ? "3 / 3 USED • FRANCHISE LIMIT REACHED"
+            : "SOLD OUT FOR THIS PLAYER • AVAILABLE NEXT SEASON",
       soldOut: true,
     };
   }
 
   return {
     remaining,
-    label: `${availability?.used ?? 0} / ${availability?.limit ?? product.limit} USED`,
+    label:
+      availability?.scope === "team"
+        ? `${availability?.used ?? 0} / ${availability?.limit ?? product.limit} USED • TEAM SEASON LIMIT`
+        : `${availability?.used ?? 0} / ${availability?.limit ?? product.limit} USED`,
     soldOut: false,
   };
 }
@@ -180,10 +186,18 @@ export default function DevShopStore() {
     setLoadError("");
 
     const players = result.players ?? [];
+    const validPlayerIds = new Set(players.map((player) => player.id));
+
     setSelectedPlayerId((current) =>
-      current && players.some((player) => player.id === current)
+      current && validPlayerIds.has(current)
         ? current
         : players[0]?.id ?? "",
+    );
+
+    // A Madden sync can move players between teams. Drop stale cart lines
+    // immediately so a traded-away player cannot stay purchasable in an open tab.
+    setCart((current) =>
+      current.filter((item) => validPlayerIds.has(item.playerId)),
     );
   }, []);
 
@@ -195,6 +209,14 @@ export default function DevShopStore() {
         );
       })
       .finally(() => setLoading(false));
+
+    const rosterRefresh = window.setInterval(() => {
+      void loadStore().catch(() => {
+        // Keep the last valid roster visible if one background refresh fails.
+      });
+    }, 60_000);
+
+    return () => window.clearInterval(rosterRefresh);
   }, [loadStore]);
 
   const players = store?.players ?? [];
@@ -280,10 +302,15 @@ export default function DevShopStore() {
   }, [cart]);
 
   function cartCount(productKey: string, playerId: string) {
-    return cart.filter(
-      (item) =>
-        item.productKey === productKey && item.playerId === playerId,
-    ).length;
+    return cart.filter((item) => {
+      if (item.productKey !== productKey) return false;
+
+      // Dev products are one per owner/team each season, regardless of
+      // which roster player receives the upgrade.
+      if (DEV_KEYS.has(productKey)) return true;
+
+      return item.playerId === playerId;
+    }).length;
   }
 
   function quantityFor(product: Product, max: number) {
@@ -701,7 +728,7 @@ export default function DevShopStore() {
               </p>
               <div className="mt-4 grid gap-3 text-sm leading-6 text-zinc-500 sm:grid-cols-2">
                 <p>
-                  Dev upgrades are limited to one of each type per player each season.
+                  Each team can purchase one Star, one Superstar and one X-Factor Dev per season.
                 </p>
                 <p>
                   Non-physical upgrades are capped at 6 per player per season and 96 OVR.

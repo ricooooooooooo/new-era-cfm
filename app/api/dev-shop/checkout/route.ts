@@ -296,6 +296,8 @@ export async function POST(request: NextRequest) {
       units,
       activeLines,
       season,
+      discordId: user.id,
+      teamSlug: memberContext.team.slug,
       playersById,
     });
 

@@ -46,6 +46,8 @@ export type DevShopLedgerOrder = {
 export type ActivePurchaseLine = DevShopLedgerLine & {
   orderId: string;
   discordId: string;
+  teamSlug: string | null;
+  teamName: string | null;
   season: number;
   leagueId: string | null;
   createdAt: string;

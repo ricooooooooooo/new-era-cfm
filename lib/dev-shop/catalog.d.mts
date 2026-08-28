@@ -1,5 +1,5 @@
 export type DevShopProductKind = "dev" | "non_physical" | "physical";
-export type DevShopProductScope = "player_season" | "player_franchise";
+export type DevShopProductScope = "team_season" | "player_season" | "player_franchise";
 
 export type DevShopProduct = {
   key: string;

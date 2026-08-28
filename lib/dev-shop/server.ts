@@ -243,17 +243,24 @@ export function buildAvailabilityByPlayer({
   players,
   orders,
   season,
+  discordId,
+  teamSlug,
 }: {
   players: StorePlayer[];
   orders: DevShopLedgerOrder[];
   season: number;
+  discordId: string;
+  teamSlug: string | null;
 }) {
   const activeLines = flattenActiveLines(orders);
 
   return Object.fromEntries(
     players.map((player) => [
       player.id,
-      getAvailability(activeLines, player.id, season),
+      getAvailability(activeLines, player.id, season, {
+        discordId,
+        teamSlug: teamSlug ?? "",
+      }),
     ]),
   );
 }

@@ -20,6 +20,7 @@ function orderRow({
   orderId = "GJ-1-A",
   token = "token-a",
   discordId = "u1",
+  teamSlug = "cardinals",
   season = 1,
   lines = [],
   receivedAt = "2026-08-28T20:00:00.000Z",
@@ -35,7 +36,7 @@ function orderRow({
       discordId,
       discordUsername: "rico",
       displayName: "Rico",
-      teamSlug: "cardinals",
+      teamSlug,
       teamName: "Arizona Cardinals",
       leagueId: null,
       season,
@@ -125,36 +126,95 @@ test("voiding an order restores cap availability", () => {
   ];
   let orders = buildOrderLedger(rows);
   let active = flattenActiveLines(orders);
-  assert.equal(getAvailability(active, "p1", 1)[PRODUCT_KEYS.XFACTOR].remaining, 0);
+  assert.equal(getAvailability(active, "p1", 1, { discordId: "u1", teamSlug: "cardinals" })[PRODUCT_KEYS.XFACTOR].remaining, 0);
 
   orders = buildOrderLedger([...rows, voidRow("GJ-X")]);
   active = flattenActiveLines(orders);
-  assert.equal(getAvailability(active, "p1", 1)[PRODUCT_KEYS.XFACTOR].remaining, 1);
+  assert.equal(getAvailability(active, "p1", 1, { discordId: "u1", teamSlug: "cardinals" })[PRODUCT_KEYS.XFACTOR].remaining, 1);
 });
 
-test("x-factor is limited to one per player per season", () => {
+test("x-factor is limited to one per owner/team per season even on different players", () => {
+  const playerTwo = { ...player, id: "p2", name: "Player Two" };
   const active = [
-    { ...unit(PRODUCT_KEYS.XFACTOR), season: 1 },
+    {
+      ...unit(PRODUCT_KEYS.XFACTOR, "p1"),
+      season: 1,
+      discordId: "u1",
+      teamSlug: "cardinals",
+    },
   ];
   const result = validateOrderUnits({
-    units: [unit(PRODUCT_KEYS.XFACTOR)],
+    units: [unit(PRODUCT_KEYS.XFACTOR, "p2")],
     activeLines: active,
     season: 1,
-    playersById: new Map([["p1", player]]),
+    discordId: "u1",
+    teamSlug: "cardinals",
+    playersById: new Map([["p1", player], ["p2", playerTwo]]),
   });
 
   assert.equal(result.ok, false);
-  assert.match(result.error, /sold out/i);
+  assert.match(result.error, /team.*season|sold out/i);
 });
 
-test("dev cap resets next season", () => {
+test("same team cannot buy a second dev after ownership changes", () => {
+  const playerTwo = { ...player, id: "p2", name: "Player Two" };
   const active = [
-    { ...unit(PRODUCT_KEYS.XFACTOR), season: 1 },
+    {
+      ...unit(PRODUCT_KEYS.SUPERSTAR, "p1"),
+      season: 1,
+      discordId: "old-owner",
+      teamSlug: "cardinals",
+    },
+  ];
+  const result = validateOrderUnits({
+    units: [unit(PRODUCT_KEYS.SUPERSTAR, "p2")],
+    activeLines: active,
+    season: 1,
+    discordId: "new-owner",
+    teamSlug: "cardinals",
+    playersById: new Map([["p1", player], ["p2", playerTwo]]),
+  });
+
+  assert.equal(result.ok, false);
+});
+
+test("different owner on a different team still has their own dev slot", () => {
+  const playerTwo = { ...player, id: "p2", name: "Player Two" };
+  const active = [
+    {
+      ...unit(PRODUCT_KEYS.STAR, "p1"),
+      season: 1,
+      discordId: "u1",
+      teamSlug: "cardinals",
+    },
+  ];
+  const result = validateOrderUnits({
+    units: [unit(PRODUCT_KEYS.STAR, "p2")],
+    activeLines: active,
+    season: 1,
+    discordId: "u2",
+    teamSlug: "ravens",
+    playersById: new Map([["p2", playerTwo]]),
+  });
+
+  assert.deepEqual(result, { ok: true });
+});
+
+test("team dev cap resets next season", () => {
+  const active = [
+    {
+      ...unit(PRODUCT_KEYS.XFACTOR),
+      season: 1,
+      discordId: "u1",
+      teamSlug: "cardinals",
+    },
   ];
   const result = validateOrderUnits({
     units: [unit(PRODUCT_KEYS.XFACTOR)],
     activeLines: active,
     season: 2,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", player]]),
   });
   assert.deepEqual(result, { ok: true });
@@ -169,6 +229,8 @@ test("non-physical is limited to six per player per season", () => {
     units: [unit(PRODUCT_KEYS.NON_PHYSICAL, "p1", "routeRunning")],
     activeLines: active,
     season: 1,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", player]]),
   });
 
@@ -186,6 +248,8 @@ test("physical is limited to three per player for the franchise", () => {
     units: [unit(PRODUCT_KEYS.PHYSICAL, "p1", "acceleration")],
     activeLines: active,
     season: 3,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", player]]),
   });
 
@@ -202,6 +266,8 @@ test("an order can contain only one free physical", () => {
     ],
     activeLines: [],
     season: 1,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", player]]),
   });
 
@@ -214,6 +280,8 @@ test("free physical requires a paid dev in that order", () => {
     units: [unit(PRODUCT_KEYS.FREE_PHYSICAL, "p1", "speed")],
     activeLines: [],
     season: 1,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", player]]),
   });
 
@@ -230,6 +298,8 @@ test("physical attribute cannot be pushed above 93", () => {
     units: [unit(PRODUCT_KEYS.PHYSICAL, "p1", "speed")],
     activeLines: [],
     season: 1,
+    discordId: "u1",
+    teamSlug: "cardinals",
     playersById: new Map([["p1", high]]),
   });
 
