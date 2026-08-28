@@ -864,7 +864,7 @@ function beltLineage(
   currentSeason: number,
 ) {
   /*
-   * NEW ERA BELT:
+   * GOLD JACKET BELT:
    *
    * - Season 1 starts VACANT.
    * - The first completed season's Super Bowl
@@ -1252,7 +1252,7 @@ function achievements(
   ];
 }
 
-export async function buildNewEraIntelligence(
+export async function buildGoldJacketIntelligence(
   discordId: string,
 ) {
   const leagueResult =
@@ -1277,7 +1277,7 @@ export async function buildNewEraIntelligence(
     !leagueResult.data
   ) {
     throw new Error(
-      "NEW ERA league not found.",
+      "GOLD JACKET league not found.",
     );
   }
 
@@ -1724,7 +1724,7 @@ export async function buildNewEraIntelligence(
                 )} Players of the Week crowned`,
 
               detail:
-                "New Era weekly awards",
+                "Gold Jacket weekly awards",
 
               date:
                 String(
@@ -1806,7 +1806,7 @@ export async function buildNewEraIntelligence(
 
   return {
     revision:
-      "new-era-intelligence-v1",
+      "gold-jacket-intelligence-v1",
 
     league: {
       season:

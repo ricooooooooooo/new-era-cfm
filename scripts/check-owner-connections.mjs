@@ -71,7 +71,7 @@ const duplicates = teams.filter(
 );
 
 console.log("");
-console.log("NEW ERA — OWNER CONNECTION AUDIT");
+console.log("GOLD JACKET — OWNER CONNECTION AUDIT");
 console.log("---------------------------------");
 console.log("Teams claimed: 32/32");
 console.log("Prize pot: $300");

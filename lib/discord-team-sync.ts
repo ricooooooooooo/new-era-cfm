@@ -103,20 +103,20 @@ function memberTime(member: WebsiteMember) {
   );
 }
 
-async function getNewEraLeagueId() {
+async function getGoldJacketLeagueId(): Promise<string | null> {
   const result = await supabaseAdmin
     .from("leagues")
     .select("id")
     .eq("slug", "gold-jacket-cfm")
+    .eq("is_active", true)
     .maybeSingle();
 
-  if (result.error) throw result.error;
-
-  if (!result.data?.id) {
-    throw new Error("NEW ERA league record was not found.");
+  if (result.error) {
+    console.error("Unable to resolve active Gold Jacket league:", result.error);
+    return null;
   }
 
-  return result.data.id as string;
+  return result.data?.id ?? null;
 }
 
 async function getCurrentWebsiteTeam(
@@ -151,7 +151,7 @@ async function reconcileOfficialTeamAssignment({
     throw new Error(`Unknown NFL team: ${teamSlug}`);
   }
 
-  const leagueId = await getNewEraLeagueId();
+  const leagueId = await getGoldJacketLeagueId();
 
   const teamResult = await supabaseAdmin
     .from("teams")
@@ -399,7 +399,7 @@ export async function syncDiscordTeamAssignment(
 
 export async function syncAllOfficialTeamOwnersFromMembers():
   Promise<BulkOwnerSyncResult> {
-  const leagueId = await getNewEraLeagueId();
+  const leagueId = await getGoldJacketLeagueId();
 
   const [teamsResult, membersResult] = await Promise.all([
     supabaseAdmin
@@ -427,7 +427,7 @@ export async function syncAllOfficialTeamOwnersFromMembers():
     (membersResult.data ?? []) as WebsiteMember[];
 
   if (teams.length === 0) {
-    throw new Error("No NEW ERA teams were found.");
+    throw new Error("No GOLD JACKET teams were found.");
   }
 
   const membersByTeam = new Map<

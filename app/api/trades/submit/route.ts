@@ -530,7 +530,7 @@ function buildTradeCaption({
 
   return `@everyone
 
-# BREAKING: OFFICIAL NEW ERA TRADE
+# BREAKING: OFFICIAL GOLD JACKET TRADE
 ${ownerMentions}
 The **${teamOne}** and **${teamTwo}** have agreed to a trade.
 
@@ -540,7 +540,7 @@ ${teamTwoSends}
 **${teamTwo} receive**
 ${teamOneSends}
 
-## NEW ERA TRADE GRADES
+## GOLD JACKET TRADE GRADES
 
 **${teamOne}: ${analysis.teamOneGrade}**
 ${analysis.teamOneReason}
@@ -552,7 +552,7 @@ ${winnerLine}
 
 *${analysis.verdict}*
 
-The deal has been approved by the NEW ERA trade committee and is now official.`;
+The deal has been approved by the GOLD JACKET trade committee and is now official.`;
 }
 
 async function downloadTradeGraphic(imageUrl: string): Promise<Blob> {
@@ -589,7 +589,7 @@ async function sendDiscordTradeAlert({
   ownerDiscordIds: string[];
 }): Promise<DiscordMessageResponse> {
   const imageBlob = await downloadTradeGraphic(imageUrl);
-  const filename = `new-era-trade-${tradeId}.png`;
+  const filename = `gold-jacket-trade-${tradeId}.png`;
 
   const payload = {
     content: caption.slice(0, 2000),
@@ -602,7 +602,7 @@ async function sendDiscordTradeAlert({
       {
         id: 0,
         filename,
-        description: "Official NEW ERA CFM trade graphic",
+        description: "Official GOLD JACKET CFM trade graphic",
       },
     ],
   };

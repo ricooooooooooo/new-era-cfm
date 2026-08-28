@@ -299,7 +299,7 @@ export default function CommissionerPredictionsPage() {
       setMessage(
         `Market graded. ${data.paidBets ?? 0} winning bets paid for ${Number(
           data.totalPaid ?? 0,
-        ).toLocaleString()} NE Coin.`,
+        ).toLocaleString()} Gold Jacket Credits.`,
       );
       await loadData();
     } catch (gradeError) {
@@ -344,7 +344,7 @@ export default function CommissionerPredictionsPage() {
       setMessage(
         `Market deleted. ${Number(
           data.totalRefunded ?? 0,
-        ).toLocaleString()} NE Coin refunded.`,
+        ).toLocaleString()} Gold Jacket Credits refunded.`,
       );
       await loadData();
     } catch (deleteError) {
@@ -363,7 +363,7 @@ export default function CommissionerPredictionsPage() {
       <main className="min-h-[calc(100vh-8rem)] bg-[#050606] px-5 py-8 text-white sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">
               Commissioner Sportsbook Control
             </p>
             <h1 className="mt-3 text-5xl font-black tracking-[-0.06em]">
@@ -393,10 +393,10 @@ export default function CommissionerPredictionsPage() {
             </div>
           ) : (
             <>
-              <section className="mt-8 rounded-3xl border border-purple-400/20 bg-purple-400/[0.045] p-6 sm:p-8">
+              <section className="mt-8 rounded-3xl border border-amber-400/20 bg-amber-400/[0.045] p-6 sm:p-8">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-200">
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-200">
                       Automatic Market Engine
                     </p>
                     <h2 className="mt-2 text-3xl font-black">
@@ -498,7 +498,7 @@ export default function CommissionerPredictionsPage() {
                           Number(event.target.value),
                         )
                       }
-                      className="mt-3 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-white outline-none focus:border-purple-400"
+                      className="mt-3 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-white outline-none focus:border-amber-400"
                     />
                   </label>
                 </div>
@@ -508,7 +508,7 @@ export default function CommissionerPredictionsPage() {
                     type="button"
                     onClick={() => void saveAutomation()}
                     disabled={savingAutomation}
-                    className="rounded-xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-purple-500 disabled:opacity-50"
+                    className="rounded-xl bg-amber-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-amber-500 disabled:opacity-50"
                   >
                     {savingAutomation
                       ? "Saving..."
@@ -541,7 +541,7 @@ export default function CommissionerPredictionsPage() {
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Market title"
-                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-amber-400"
                   />
 
                   <textarea
@@ -551,14 +551,14 @@ export default function CommissionerPredictionsPage() {
                     }
                     placeholder="Description"
                     rows={3}
-                    className="w-full resize-none rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-amber-400"
                   />
 
                   <input
                     type="datetime-local"
                     value={closesAt}
                     onChange={(event) => setClosesAt(event.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none focus:border-purple-400"
+                    className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none focus:border-amber-400"
                   />
 
                   {options.map((option, index) => (
@@ -569,7 +569,7 @@ export default function CommissionerPredictionsPage() {
                           updateOption(index, event.target.value)
                         }
                         placeholder={`Option ${index + 1}`}
-                        className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-purple-400"
+                        className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-white outline-none placeholder:text-zinc-700 focus:border-amber-400"
                       />
                       <button
                         type="button"
@@ -605,7 +605,7 @@ export default function CommissionerPredictionsPage() {
                       type="button"
                       onClick={() => void createMarket()}
                       disabled={creating}
-                      className="rounded-xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-purple-500 disabled:opacity-50"
+                      className="rounded-xl bg-amber-600 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] hover:bg-amber-500 disabled:opacity-50"
                     >
                       {creating ? "Creating..." : "Create Custom Market"}
                     </button>
@@ -647,7 +647,7 @@ export default function CommissionerPredictionsPage() {
                                   {market.status}
                                 </span>
                                 {market.auto_generated ? (
-                                  <span className="rounded-full border border-purple-300/20 bg-purple-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.13em] text-purple-200">
+                                  <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.13em] text-amber-200">
                                     Auto
                                   </span>
                                 ) : null}
@@ -673,7 +673,7 @@ export default function CommissionerPredictionsPage() {
                                           event.target.value,
                                       }))
                                     }
-                                    className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-white outline-none focus:border-purple-400"
+                                    className="w-full rounded-xl border border-white/10 bg-black/35 px-4 py-3 text-white outline-none focus:border-amber-400"
                                   >
                                     <option value="">
                                       Choose manual winner

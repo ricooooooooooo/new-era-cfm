@@ -53,7 +53,7 @@ export default async function Dashboard() {
   const cookieStore = await cookies();
 
   const isDiscordConnected = Boolean(
-    cookieStore.get("new_era_discord_user")?.value,
+    cookieStore.get("gold_jacket_discord_user")?.value,
   );
 
   return (
@@ -173,8 +173,8 @@ export default async function Dashboard() {
                     ))}
                   </div>
 
-                  <div className="mt-6 rounded-2xl border border-purple-400/20 bg-purple-400/[0.075] p-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-purple-300">
+                  <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/[0.075] p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">
                       Madden 27 Launch
                     </p>
 
@@ -214,7 +214,7 @@ export default async function Dashboard() {
 
         <section className="py-16 sm:py-20">
           <div className="max-w-3xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-purple-300">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300">
               More Than a Discord League
             </p>
 
@@ -283,7 +283,7 @@ export default async function Dashboard() {
                     className={
                       feature.status === "Ready"
                         ? "rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-emerald-300"
-                        : "rounded-full border border-purple-400/20 bg-purple-400/[0.07] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-purple-300"
+                        : "rounded-full border border-amber-400/20 bg-amber-400/[0.07] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-amber-300"
                     }
                   >
                     {feature.status}
@@ -293,13 +293,13 @@ export default async function Dashboard() {
             </div>
           </article>
 
-          <article className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-purple-500/20 via-[#0c0e10] to-[#0c0e10] p-7 sm:p-8">
+          <article className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-amber-500/20 via-[#0c0e10] to-[#0c0e10] p-7 sm:p-8">
             <div className="pointer-events-none absolute -right-10 -top-16 text-[14rem] font-black leading-none text-white/[0.025]">
               8
             </div>
 
             <div className="relative">
-              <p className="text-[10px] font-black uppercase tracking-[0.26em] text-purple-300">
+              <p className="text-[10px] font-black uppercase tracking-[0.26em] text-amber-300">
                 Ready for Madden 27
               </p>
 

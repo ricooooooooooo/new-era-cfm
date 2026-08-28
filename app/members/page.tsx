@@ -214,7 +214,7 @@ export default function MembersPage() {
           <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.07] via-white/[0.035] to-transparent p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] sm:p-8 lg:p-10">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
-                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-300">
+                <p className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-300">
                   Gold Jacket Network
                 </p>
 
@@ -284,7 +284,7 @@ export default function MembersPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 type="search"
                 placeholder="Search by name, username, or role..."
-                className="w-full rounded-2xl border border-white/10 bg-black/25 py-3.5 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-400/40 focus:bg-white/[0.045]"
+                className="w-full rounded-2xl border border-white/10 bg-black/25 py-3.5 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-amber-400/40 focus:bg-white/[0.045]"
               />
             </div>
 
@@ -327,9 +327,9 @@ export default function MembersPage() {
                     <Link
                       key={member.id}
                       href={`/members/${member.discord_id}`}
-                      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.065] to-white/[0.02] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-purple-300/30 hover:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
+                      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.065] to-white/[0.02] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-amber-300/30 hover:shadow-[0_30px_90px_rgba(0,0,0,0.45)]"
                     >
-                      <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 bg-[radial-gradient(circle,rgba(168,85,247,0.12),transparent_70%)] opacity-70 transition group-hover:opacity-100" />
+                      <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 bg-[radial-gradient(circle,rgba(212,175,55,0.12),transparent_70%)] opacity-70 transition group-hover:opacity-100" />
 
                       <div className="relative">
                         <div className="flex items-start gap-4">
@@ -365,7 +365,7 @@ export default function MembersPage() {
                                 aria-hidden="true"
                                 viewBox="0 0 24 24"
                                 fill="none"
-                                className="mt-1 h-5 w-5 shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-purple-200"
+                                className="mt-1 h-5 w-5 shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-amber-200"
                               >
                                 <path
                                   d="M5 12h14m-6-6 6 6-6 6"
@@ -383,7 +383,7 @@ export default function MembersPage() {
                               </span>
 
                               {member.is_staff && (
-                                <span className="rounded-full border border-purple-300/20 bg-purple-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-purple-200">
+                                <span className="rounded-full border border-amber-300/20 bg-amber-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-amber-200">
                                   Staff
                                 </span>
                               )}
@@ -438,7 +438,7 @@ export default function MembersPage() {
                             </div>
                           </div>
 
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-purple-200">
+                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">
                             View profile
                           </span>
                         </div>

@@ -44,7 +44,7 @@ export async function POST(
   try {
     const encodedUser =
       request.cookies.get(
-        "new_era_discord_user",
+        "gold_jacket_discord_user",
       )?.value;
 
     if (!encodedUser) {
@@ -270,7 +270,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Not enough NE Coin.",
+            "Not enough Gold Jacket Credits.",
         },
         {
           status: 400,

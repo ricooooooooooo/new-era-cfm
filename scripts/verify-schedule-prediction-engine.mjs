@@ -24,7 +24,7 @@ const leagueResult = await supabase
   .maybeSingle();
 
 if (leagueResult.error) throw leagueResult.error;
-if (!leagueResult.data) throw new Error("NEW ERA league was not found.");
+if (!leagueResult.data) throw new Error("GOLD JACKET league was not found.");
 
 const [gamesResult, settingsResult] = await Promise.all([
   supabase

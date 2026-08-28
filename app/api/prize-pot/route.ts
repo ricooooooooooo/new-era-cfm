@@ -31,7 +31,7 @@ type PrizePotRow = {
 
 function readDiscordUser(request: NextRequest): SavedDiscordUser | null {
   try {
-    const encoded = request.cookies.get("new_era_discord_user")?.value;
+    const encoded = request.cookies.get("gold_jacket_discord_user")?.value;
     if (!encoded) return null;
 
     const user = JSON.parse(
@@ -81,7 +81,7 @@ async function getPrizePot(): Promise<PrizePotRow> {
   const existing = await supabaseAdmin
     .from("prize_pot_settings")
     .select("*")
-    .eq("id", "new-era")
+    .eq("id", "gold-jacket")
     .maybeSingle();
 
   if (existing.error) throw existing.error;
@@ -101,7 +101,7 @@ async function getPrizePot(): Promise<PrizePotRow> {
   const inserted = await supabaseAdmin
     .from("prize_pot_settings")
     .insert({
-      id: "new-era",
+      id: "gold-jacket",
       league_id: leagueResult.data?.id ?? null,
       season: 1,
       amount: 300,
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
         updated_by: user.id,
         updated_at: updatedAt,
       })
-      .eq("id", "new-era")
+      .eq("id", "gold-jacket")
       .select("*")
       .single();
 
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
         last_published_at: publishedAt,
         updated_at: publishedAt,
       })
-      .eq("id", "new-era")
+      .eq("id", "gold-jacket")
       .select("*")
       .single();
 

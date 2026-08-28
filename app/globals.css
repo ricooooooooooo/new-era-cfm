@@ -4,20 +4,20 @@
   --background: #080909;
   --foreground: #f7f7f8;
 
-  --new-era-black: #080909;
-  --new-era-surface: #101113;
-  --new-era-card: #16181b;
-  --new-era-elevated: #1c1f23;
+  --gold-jacket-black: #080909;
+  --gold-jacket-surface: #101113;
+  --gold-jacket-card: #16181b;
+  --gold-jacket-elevated: #1c1f23;
 
-  --new-era-border: #292d33;
-  --new-era-border-light: #3a3f47;
+  --gold-jacket-border: #292d33;
+  --gold-jacket-border-light: #3a3f47;
 
-  --new-era-text: #f7f7f8;
-  --new-era-text-secondary: #b8bdc6;
-  --new-era-text-muted: #747a84;
+  --gold-jacket-text: #f7f7f8;
+  --gold-jacket-text-secondary: #b8bdc6;
+  --gold-jacket-text-muted: #747a84;
 
-  --new-era-silver: #d7d9dd;
-  --new-era-steel: #9ca1aa;
+  --gold-jacket-silver: #d7d9dd;
+  --gold-jacket-steel: #9ca1aa;
 }
 
 @theme inline {
@@ -34,7 +34,7 @@
 
 html {
   min-height: 100%;
-  background: var(--new-era-black);
+  background: var(--gold-jacket-black);
 }
 
 body {
@@ -47,8 +47,8 @@ body {
       rgba(255, 255, 255, 0.035),
       transparent 34rem
     ),
-    var(--new-era-black);
-  color: var(--new-era-text);
+    var(--gold-jacket-black);
+  color: var(--gold-jacket-text);
   font-family:
     var(--font-geist-sans),
     Arial,
@@ -97,7 +97,7 @@ a {
   background: #454a52;
 }
 
-@keyframes new-era-ticker-scroll {
+@keyframes gold-jacket-ticker-scroll {
   from {
     transform: translate3d(0, 0, 0);
   }
@@ -108,7 +108,7 @@ a {
 }
 
 .ticker-track {
-  animation: new-era-ticker-scroll 34s linear infinite;
+  animation: gold-jacket-ticker-scroll 34s linear infinite;
   will-change: transform;
 }
 
@@ -133,7 +133,7 @@ a {
   }
 }
 
-/* NEW ERA mobile dashboard polish */
+/* GOLD JACKET mobile dashboard polish */
 @media (max-width: 640px) {
   .dashboard-mobile-fix {
     overflow-x: clip;

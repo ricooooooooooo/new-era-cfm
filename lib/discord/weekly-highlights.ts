@@ -173,9 +173,9 @@ async function postDiscordGraphic({
       attachments: [
         {
           id: 0,
-          filename: "new-era-gotw.png",
+          filename: "gold-jacket-gotw.png",
           description:
-            "New Era Game of the Week",
+            "Gold Jacket Game of the Week",
         },
       ],
     }),
@@ -192,7 +192,7 @@ async function postDiscordGraphic({
           ) || "image/png",
       },
     ),
-    "new-era-gotw.png",
+    "gold-jacket-gotw.png",
   );
 
   const response = await fetch(
@@ -1065,7 +1065,7 @@ async function postPotw({
         color:
           defensive
             ? 0x2563eb
-            : 0x7c3aed,
+            : 0xd4af37,
         ...(thumbnail
           ? {
               thumbnail: {
@@ -1075,7 +1075,7 @@ async function postPotw({
           : {}),
         footer: {
           text:
-            `New Era CFM • Season ${season} • Week ${week}`,
+            `Gold Jacket CFM • Season ${season} • Week ${week}`,
         },
       };
     }),
@@ -1093,7 +1093,7 @@ async function postPotw({
               ? `${ownerMentions.join(
                   " ",
                 )}\n🏆 Your player won **Player of the Week** — claim your **+2 NP (non-physical) reward**.`
-              : "🏆 NEW ERA Players of the Week"),
+              : "🏆 GOLD JACKET Players of the Week"),
           allowed_mentions: {
             parse: ["everyone"],
             users: ownerIds,
@@ -1101,7 +1101,7 @@ async function postPotw({
           embeds: [
             {
               title:
-                `🏆 NEW ERA WEEK ${week} PLAYERS OF THE WEEK`,
+                `🏆 GOLD JACKET WEEK ${week} PLAYERS OF THE WEEK`,
               description:
                 "Four conference award winners. Each winning owner earns a +2 NP upgrade.",
               color: 0xf59e0b,
@@ -1236,7 +1236,7 @@ function gotwNarrative(
     return `${away.division} rivals clash as the ${awayText} ${away.name} battle the ${homeText} ${home.name}.`;
   }
 
-  return `The ${awayText} ${away.name} take on the ${homeText} ${home.name} in New Era's Game of the Week.`;
+  return `The ${awayText} ${away.name} take on the ${homeText} ${home.name} in Gold Jacket's Game of the Week.`;
 }
 
 async function findTeamEmoji(
@@ -1609,7 +1609,7 @@ async function postGotw({
     selected.homeRecord.ties === 0;
 
   let hypeText =
-    `The **${awayRecordText} ${selected.away.name}** take on the **${homeRecordText} ${selected.home.name}** in New Era's Game of the Week.`;
+    `The **${awayRecordText} ${selected.away.name}** take on the **${homeRecordText} ${selected.home.name}** in Gold Jacket's Game of the Week.`;
 
   if (
     awayPerfect &&
@@ -1644,13 +1644,13 @@ async function postGotw({
       embeds: [
         {
           title:
-            "🏈 NEW ERA GAME OF THE WEEK",
+            "🏈 GOLD JACKET GAME OF THE WEEK",
           description:
             `${hypeText}\n\n**WHO YA GOT?**`,
           color: 0xf59e0b,
           footer: {
             text:
-              `New Era CFM • Season ${season} • Week ${currentWeek} • Vote below`,
+              `Gold Jacket CFM • Season ${season} • Week ${currentWeek} • Vote below`,
           },
         },
       ],

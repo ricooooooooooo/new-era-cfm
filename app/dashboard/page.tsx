@@ -8,12 +8,12 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 import { findTeamBySlug } from "@/lib/nfl-teams";
 import { getHqOfficeConfig } from "@/lib/hq-config"; type SavedDiscordUser = { id: string; username: string; displayName: string; avatar: string | null;
-}; export const dynamic = "force-dynamic"; async function getDiscordUser(): Promise<SavedDiscordUser | null> { const cookieStore = await cookies(); const encodedUser = cookieStore.get("new_era_discord_user")?.value; if (!encodedUser) { return null; } try { return JSON.parse( Buffer.from(encodedUser, "base64url").toString("utf8"), ) as SavedDiscordUser; } catch { return null; }
+}; export const dynamic = "force-dynamic"; async function getDiscordUser(): Promise<SavedDiscordUser | null> { const cookieStore = await cookies(); const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value; if (!encodedUser) { return null; } try { return JSON.parse( Buffer.from(encodedUser, "base64url").toString("utf8"), ) as SavedDiscordUser; } catch { return null; }
 } export default async function DashboardPage() { const user = await getDiscordUser(); if (!user) { redirect("/discord-connect"); } try { await syncDiscordTeamAssignment(user.id); } catch (error) { console.error("Dashboard team sync failed:", error); } const { data: member, error } = await supabaseAdmin .from("members") .select( "display_name, discord_username, role, team, is_active, last_seen_at", ) .eq("discord_id", user.id) .maybeSingle(); if (error) { console.error("Dashboard member lookup failed:", error); } const team = findTeamBySlug(member?.team ?? null); if (!team) { return ( <AppLayout>
 <div className="dashboard-mobile-fix min-h-[calc(100vh-8rem)] bg-[#070808] px-6 py-10 text-white">
 <div className="mx-auto max-w-6xl">
 <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.025] p-8 shadow-2xl sm:p-12">
-<p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300"> GOLD JACKET CFM </p>
+<p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300"> GOLD JACKET CFM </p>
 <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-[-0.06em] sm:text-6xl"> Your franchise is waiting. </h1>
 <p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-400"> Once a commissioner gives you an NFL team role in Discord, your owner dashboard will automatically become that franchise&apos;s command center. </p>
 <div className="mt-8 flex flex-wrap gap-3">

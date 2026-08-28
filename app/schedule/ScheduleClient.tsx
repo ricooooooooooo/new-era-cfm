@@ -126,7 +126,7 @@ export default function ScheduleClient() {
       <section className="relative overflow-hidden border-b border-white/10 bg-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(124,58,237,0.32),transparent_34rem),radial-gradient(circle_at_85%_18%,rgba(245,158,11,0.16),transparent_30rem)]" />
         <div className="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">
             Gold Jacket Schedule Center
           </p>
           <h1 className="mt-3 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
@@ -189,7 +189,7 @@ export default function ScheduleClient() {
                   disabled={loading}
                   className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-black transition ${
                     selectedWeek === week
-                      ? "border-purple-400 bg-purple-500/20 text-purple-100"
+                      ? "border-amber-400 bg-amber-500/20 text-amber-100"
                       : "border-white/10 bg-white/[0.04] text-zinc-500 hover:border-white/20 hover:text-white"
                   }`}
                 >
@@ -206,7 +206,7 @@ export default function ScheduleClient() {
               Loading the schedule...
             </div>
           ) : !data || data.games.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-purple-400/20 bg-purple-400/[0.045] p-10 text-center">
+            <div className="rounded-3xl border border-dashed border-amber-400/20 bg-amber-400/[0.045] p-10 text-center">
               <p className="text-2xl font-black">
                 Waiting for the first Madden schedule sync
               </p>
@@ -303,7 +303,7 @@ export default function ScheduleClient() {
                     {game.hasOpenMarkets ? (
                       <Link
                         href={`/predictions?week=${game.week}`}
-                        className="rounded-xl bg-purple-600 px-4 py-2.5 text-center text-xs font-black uppercase tracking-[0.12em] hover:bg-purple-500"
+                        className="rounded-xl bg-amber-600 px-4 py-2.5 text-center text-xs font-black uppercase tracking-[0.12em] hover:bg-amber-500"
                       >
                         Bet This Game →
                       </Link>

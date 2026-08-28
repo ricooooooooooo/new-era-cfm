@@ -223,7 +223,7 @@ export default function OwnerConnectionsPage() {
           <div className="relative mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">
                   Commissioner Owner Audit
                 </p>
                 <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
@@ -247,7 +247,7 @@ export default function OwnerConnectionsPage() {
                   type="button"
                   onClick={() => void loadAudit(true)}
                   disabled={refreshing}
-                  className="min-h-12 rounded-xl bg-purple-600 px-5 py-3 text-sm font-black uppercase tracking-[0.1em] transition hover:bg-purple-500 active:scale-[0.98] disabled:opacity-50"
+                  className="min-h-12 rounded-xl bg-amber-600 px-5 py-3 text-sm font-black uppercase tracking-[0.1em] transition hover:bg-amber-500 active:scale-[0.98] disabled:opacity-50"
                 >
                   {refreshing ? "Refreshing..." : "Refresh Audit"}
                 </button>
@@ -336,7 +336,7 @@ export default function OwnerConnectionsPage() {
                         onClick={() => setFilter(value)}
                         className={`min-h-11 rounded-xl border px-4 py-2.5 text-sm font-black transition active:scale-[0.98] ${
                           filter === value
-                            ? "border-purple-400/40 bg-purple-500/15 text-purple-100"
+                            ? "border-amber-400/40 bg-amber-500/15 text-amber-100"
                             : "border-white/10 bg-white/[0.035] text-zinc-500"
                         }`}
                       >
@@ -350,7 +350,7 @@ export default function OwnerConnectionsPage() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search team or owner..."
-                    className="min-h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-purple-400/40 lg:max-w-sm"
+                    className="min-h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-amber-400/40 lg:max-w-sm"
                   />
                 </div>
               </section>

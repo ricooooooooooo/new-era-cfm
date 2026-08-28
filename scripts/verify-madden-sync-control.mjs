@@ -38,7 +38,7 @@ for (const result of [leagueResult, runResult, gameResult]) {
   }
 }
 
-console.log("\n## NEW ERA — MADDEN SYNC CONTROL CHECK\n");
+console.log("\n## GOLD JACKET — MADDEN SYNC CONTROL CHECK\n");
 console.log(`League: ${leagueResult.data?.name ?? "missing"}`);
 console.log(`Season: ${leagueResult.data?.season ?? "missing"}`);
 console.log(`Current week: ${leagueResult.data?.current_week ?? "missing"}`);

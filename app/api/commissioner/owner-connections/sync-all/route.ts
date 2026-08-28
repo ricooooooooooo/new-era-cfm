@@ -21,7 +21,7 @@ function readUser(
   try {
     const encoded =
       request.cookies.get(
-        "new_era_discord_user",
+        "gold_jacket_discord_user",
       )?.value;
 
     if (!encoded) return null;

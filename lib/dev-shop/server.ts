@@ -58,7 +58,7 @@ export type StorePlayer = {
 };
 
 export function readDiscordUser(request: NextRequest): SavedDiscordUser | null {
-  const encoded = request.cookies.get("new_era_discord_user")?.value;
+  const encoded = request.cookies.get("gold_jacket_discord_user")?.value;
   if (!encoded) return null;
 
   try {

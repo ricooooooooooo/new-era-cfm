@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     case "waitlist":
       title = "📋 Waitlist Activity Check";
       description =
-        "If you're still interested in joining NEW ERA, click the button below.";
+        "If you're still interested in joining GOLD JACKET, click the button below.";
       break;
     default:
       title = "🏈 League Activity Check";
@@ -108,10 +108,10 @@ export async function POST(request: NextRequest) {
             {
               title,
               description,
-              color: 0x7c3aed,
+              color: 0xd4af37,
               fields,
               footer: {
-                text: "NEW ERA CFM • Commissioner Activity Center",
+                text: "GOLD JACKET CFM • Commissioner Activity Center",
               },
               timestamp: startedAt.toISOString(),
             },

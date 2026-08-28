@@ -120,7 +120,7 @@ function payloadSummary(payload: unknown) {
 export async function GET() {
   return NextResponse.json({
     success: true,
-    service: "NEW ERA Madden 27 direct EA importer",
+    service: "GOLD JACKET Madden 27 direct EA importer",
     provider: "direct_ea",
     status: "ready",
     revision: "m27-ea-import-v3-weekly-media",
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     const externalLeagueId = stringValue(summaryLeague.leagueId);
     const leagueName =
-      stringValue(summaryLeague.leagueName) || "NewEraSzn1";
+      stringValue(summaryLeague.leagueName) || "GoldJacketSzn1";
 
     const currentWeek =
       numberValue(hubSeason.displayWeek) ||

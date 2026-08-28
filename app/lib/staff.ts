@@ -14,9 +14,9 @@ export function getStaffRole(discordId: string | null | undefined): StaffRole | 
     return null;
   }
 
-  const ownerIds = parseDiscordIds(process.env.NEW_ERA_OWNER_DISCORD_IDS);
+  const ownerIds = parseDiscordIds(process.env.GOLD_JACKET_OWNER_DISCORD_IDS);
   const commissionerIds = parseDiscordIds(
-    process.env.NEW_ERA_COMMISSIONER_DISCORD_IDS,
+    process.env.GOLD_JACKET_COMMISSIONER_DISCORD_IDS,
   );
 
   if (ownerIds.has(discordId)) {
@@ -30,6 +30,6 @@ export function getStaffRole(discordId: string | null | undefined): StaffRole | 
   return null;
 }
 
-export function isNewEraStaff(discordId: string | null | undefined) {
+export function isGoldJacketStaff(discordId: string | null | undefined) {
   return getStaffRole(discordId) !== null;
 }

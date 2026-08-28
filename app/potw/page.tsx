@@ -81,7 +81,7 @@ export default async function PotwPage() {
                       className={`relative overflow-hidden rounded-[1.75rem] border p-6 ${
                         award.defensive
                           ? "border-blue-400/20 bg-[linear-gradient(145deg,rgba(37,99,235,.13),#090a0c)]"
-                          : "border-purple-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.14),#090a0c)]"
+                          : "border-amber-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.14),#090a0c)]"
                       }`}
                     >
                       <div className="flex items-start gap-5">
@@ -106,7 +106,7 @@ export default async function PotwPage() {
                             className={`text-[9px] font-black uppercase tracking-[0.17em] ${
                               award.defensive
                                 ? "text-blue-300"
-                                : "text-purple-300"
+                                : "text-amber-300"
                             }`}
                           >
                             {award.label}

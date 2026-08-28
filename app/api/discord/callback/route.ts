@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       new URL("/discord-intro", request.url),
     );
 
-    response.cookies.set("new_era_discord_user", encodedUser, {
+    response.cookies.set("gold_jacket_discord_user", encodedUser, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

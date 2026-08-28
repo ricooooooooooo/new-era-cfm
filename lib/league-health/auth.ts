@@ -13,7 +13,7 @@ function readSavedDiscordUser(
 ): LeagueHealthUser | null {
   try {
     const encoded =
-      request.cookies.get("new_era_discord_user")?.value;
+      request.cookies.get("gold_jacket_discord_user")?.value;
 
     if (!encoded) return null;
 

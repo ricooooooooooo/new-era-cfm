@@ -1,6 +1,6 @@
 import {
-  buildNewEraIntelligence,
-} from "@/lib/new-era/intelligence";
+  buildGoldJacketIntelligence,
+} from "@/lib/gold-jacket/intelligence";
 
 type DiscordUser = {
   id?: string;
@@ -77,7 +77,7 @@ function teamName(
 function linkButton(
   path: string,
   label:
-    string = "Open New Era",
+    string = "Open Gold Jacket",
 ) {
   return [
     {
@@ -103,7 +103,7 @@ function reply({
   path,
   button,
   publicReply = false,
-  color = 0x7c3aed,
+  color = 0xd4af37,
 }: {
   title: string;
   description?: string;
@@ -150,7 +150,7 @@ function reply({
 
           footer: {
             text:
-              "NEW ERA • INTELLIGENCE NETWORK",
+              "GOLD JACKET • INTELLIGENCE NETWORK",
           },
 
           timestamp:
@@ -175,7 +175,7 @@ function simpleError(
 ) {
   return reply({
     title:
-      "⚠️ NEW ERA INTELLIGENCE",
+      "⚠️ GOLD JACKET INTELLIGENCE",
 
     description:
       message,
@@ -221,7 +221,7 @@ async function dnaCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -230,7 +230,7 @@ async function dnaCommand(
 
   if (!profile) {
     return simpleError(
-      "I couldn't find your New Era franchise. Your Discord team may not be linked yet.",
+      "I couldn't find your Gold Jacket franchise. Your Discord team may not be linked yet.",
     );
   }
 
@@ -327,7 +327,7 @@ async function scoutCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -450,7 +450,7 @@ async function wrappedCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -459,7 +459,7 @@ async function wrappedCommand(
     !data.myProfile
   ) {
     return simpleError(
-      "Your New Era Wrapped isn't available yet.",
+      "Your Gold Jacket Wrapped isn't available yet.",
     );
   }
 
@@ -468,7 +468,7 @@ async function wrappedCommand(
 
   return reply({
     title:
-      `📲 ${data.myProfile.team.abbreviation} — NEW ERA WRAPPED`,
+      `📲 ${data.myProfile.team.abbreviation} — GOLD JACKET WRAPPED`,
 
     description:
       `Your live Season ${data.league.season} profile.`,
@@ -556,7 +556,7 @@ async function rivalryCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -632,7 +632,7 @@ async function achievementsCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -702,7 +702,7 @@ async function beltCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -713,7 +713,7 @@ async function beltCommand(
     !belt?.holder
   ) {
     return simpleError(
-      "The New Era Belt doesn't have a holder yet.",
+      "The Gold Jacket Belt doesn't have a holder yet.",
     );
   }
 
@@ -728,7 +728,7 @@ async function beltCommand(
 
   return reply({
     title:
-      "👑 NEW ERA WORLD CHAMPIONSHIP",
+      "👑 GOLD JACKET WORLD CHAMPIONSHIP",
 
     description:
       `**CURRENT BELT HOLDER**\n# ${teamName(
@@ -775,7 +775,7 @@ async function fraudCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -791,7 +791,7 @@ async function fraudCommand(
 
   return reply({
     title:
-      "🚨 NEW ERA FRAUD WATCH",
+      "🚨 GOLD JACKET FRAUD WATCH",
 
     description:
       "The records look nice. The underlying numbers might not.",
@@ -834,7 +834,7 @@ async function recapsCommand(
   discordId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       discordId,
     );
 
@@ -852,7 +852,7 @@ async function recapsCommand(
 
   return reply({
     title:
-      `📺 NEW ERA — WEEK ${data.league.currentWeek} SCOREBOARD`,
+      `📺 GOLD JACKET — WEEK ${data.league.currentWeek} SCOREBOARD`,
 
     description:
       recaps
@@ -880,7 +880,7 @@ async function scoutOwnerCommand(
   targetId: string,
 ) {
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       targetId,
     );
 
@@ -889,7 +889,7 @@ async function scoutOwnerCommand(
 
   if (!profile) {
     return simpleError(
-      "That Discord user doesn't have a linked New Era franchise.",
+      "That Discord user doesn't have a linked Gold Jacket franchise.",
     );
   }
 
@@ -992,7 +992,7 @@ async function scoutOwnerCommand(
       "/era",
 
     button:
-      "Open New Era Intelligence",
+      "Open Gold Jacket Intelligence",
   });
 }
 
@@ -1046,7 +1046,7 @@ function tutorialCommand(
     )
   ) {
     return simpleError(
-      "Only New Era commissioners can post the server-wide tutorial.",
+      "Only Gold Jacket commissioners can post the server-wide tutorial.",
     );
   }
 
@@ -1066,10 +1066,10 @@ function tutorialCommand(
       embeds: [
         {
           title:
-            "🧠 NEW ERA INTELLIGENCE — OWNER GUIDE",
+            "🧠 GOLD JACKET INTELLIGENCE — OWNER GUIDE",
 
           description: [
-            "**New Era has way more built into it than standings and schedules.**",
+            "**Gold Jacket has way more built into it than standings and schedules.**",
             "",
             "You can use most of the league tools directly from Discord.",
             "",
@@ -1092,20 +1092,20 @@ function tutorialCommand(
             "Series record, meetings, rivalry heat and average margin.",
             "",
             "### 🏆 `/achievements`",
-            "**View hidden New Era achievements you've unlocked.**",
+            "**View hidden Gold Jacket achievements you've unlocked.**",
             "",
             "━━━━━━━━━━━━━━━━━━━━",
             "",
             "### 👑 `/belt`",
-            "**PUBLIC:** Shows the current New Era Championship Belt holder.",
+            "**PUBLIC:** Shows the current Gold Jacket Championship Belt holder.",
             "",
             "### 🚨 `/fraud`",
             "**PUBLIC:** Posts the current Fraud Watch rankings.",
             "",
             "### 📺 `/recaps`",
-            "**PUBLIC:** Posts recent New Era game recaps.",
+            "**PUBLIC:** Posts recent Gold Jacket game recaps.",
             "",
-            "### 🧠 `/newera`",
+            "### 🧠 `/goldjacket`",
             "**Quick command menu anytime you forget something.**",
             "",
             "━━━━━━━━━━━━━━━━━━━━",
@@ -1121,11 +1121,11 @@ function tutorialCommand(
           ),
 
           color:
-            0x7c3aed,
+            0xd4af37,
 
           footer: {
             text:
-              "NEW ERA • INTELLIGENCE NETWORK",
+              "GOLD JACKET • INTELLIGENCE NETWORK",
           },
 
           timestamp:
@@ -1146,18 +1146,18 @@ function tutorialCommand(
 function hubCommand() {
   return reply({
     title:
-      "🧠 NEW ERA INTELLIGENCE",
+      "🧠 GOLD JACKET INTELLIGENCE",
 
     description:
       [
-        "**You can use New Era without ever leaving Discord.**",
+        "**You can use Gold Jacket without ever leaving Discord.**",
         "",
         "`/scout` — scout your current opponent",
         "`/dna` — your live Owner OVR + archetype",
         "`/wrapped` — your season snapshot",
         "`/rivalry` — head-to-head history",
         "`/achievements` — secret unlocks",
-        "`/belt` — current New Era champion",
+        "`/belt` — current Gold Jacket champion",
         "`/fraud` — Fraud Watch rankings",
         "`/recaps` — latest game recaps",
         "",
@@ -1175,7 +1175,7 @@ function hubCommand() {
   });
 }
 
-export async function handleNewEraCommand(
+export async function handleGoldJacketCommand(
   interaction:
     Interaction,
 ) {
@@ -1217,7 +1217,7 @@ export async function handleNewEraCommand(
 
   const supported =
     new Set([
-      "newera",
+      "goldjacket",
       "tutorial",
       "scout",
       "dna",
@@ -1248,7 +1248,7 @@ export async function handleNewEraCommand(
 
   if (
     command ===
-    "newera"
+    "goldjacket"
   ) {
     return hubCommand();
   }
@@ -1335,12 +1335,12 @@ export async function handleNewEraCommand(
     return null;
   } catch (error) {
     console.error(
-      `NEW ERA /${command} failed:`,
+      `GOLD JACKET /${command} failed:`,
       error,
     );
 
     return simpleError(
-      "New Era Intelligence hit an error. Try again in a few seconds.",
+      "Gold Jacket Intelligence hit an error. Try again in a few seconds.",
     );
   }
 }

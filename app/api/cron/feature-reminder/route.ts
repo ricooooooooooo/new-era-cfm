@@ -5,7 +5,7 @@ import {
 
 import {
   postFeatureReminder,
-} from "@/lib/new-era/feature-reminders";
+} from "@/lib/gold-jacket/feature-reminders";
 
 export const runtime =
   "nodejs";

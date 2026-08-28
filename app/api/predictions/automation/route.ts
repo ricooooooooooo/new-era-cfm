@@ -9,7 +9,7 @@ type SavedDiscordUser = {
 
 function readUser(request: NextRequest): SavedDiscordUser | null {
   try {
-    const encoded = request.cookies.get("new_era_discord_user")?.value;
+    const encoded = request.cookies.get("gold_jacket_discord_user")?.value;
     if (!encoded) return null;
 
     return JSON.parse(
@@ -35,7 +35,7 @@ async function getLeague() {
     .maybeSingle();
 
   if (result.error) throw result.error;
-  if (!result.data) throw new Error("NEW ERA league was not found.");
+  if (!result.data) throw new Error("GOLD JACKET league was not found.");
 
   return result.data;
 }

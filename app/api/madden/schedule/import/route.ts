@@ -22,7 +22,7 @@ function providedSecret(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     success: true,
-    service: "NEW ERA canonical Madden schedule importer",
+    service: "GOLD JACKET canonical Madden schedule importer",
     status: "ready",
     liveProviderReady: true,
     acceptedShape: {

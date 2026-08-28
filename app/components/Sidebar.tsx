@@ -85,7 +85,6 @@ const roleSections: Record<
   trade_committee: {
     title: "Trade Committee",
     links: [
-      { label: "Trade Center", href: "/trade-center" },
       { label: "Pending Trades", href: "/commissioner/trades" },
       { label: "Trade History", href: "/trade-center/history" },
     ],

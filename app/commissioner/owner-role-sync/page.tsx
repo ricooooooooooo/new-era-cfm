@@ -103,7 +103,7 @@ export default function OwnerRoleSyncPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_5%,rgba(124,58,237,0.34),transparent_32rem),radial-gradient(circle_at_88%_8%,rgba(245,158,11,0.16),transparent_28rem)]" />
 
           <div className="relative mx-auto max-w-6xl px-5 py-11 sm:px-8 sm:py-14">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-purple-300">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-300">
               Owner Connection Repair
             </p>
 
@@ -127,7 +127,7 @@ export default function OwnerRoleSyncPage() {
           ) : null}
 
           {syncing ? (
-            <div className="rounded-3xl border border-purple-400/20 bg-purple-400/[0.07] p-12 text-center">
+            <div className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.07] p-12 text-center">
               <p className="text-xl font-black">
                 Synchronizing all connected
                 owners...
@@ -307,7 +307,7 @@ export default function OwnerRoleSyncPage() {
             <button
               type="button"
               onClick={() => void runSync()}
-              className="min-h-14 w-full rounded-2xl bg-purple-600 px-5 font-black"
+              className="min-h-14 w-full rounded-2xl bg-amber-600 px-5 font-black"
             >
               Sync All Owners
             </button>

@@ -720,7 +720,7 @@ export async function GET(
                 letterSpacing: "-1px",
               },
             },
-            "NEW ERA INSIDER",
+            "GOLD JACKET INSIDER",
           ),
           React.createElement(
             "div",
@@ -730,7 +730,7 @@ export async function GET(
                 fontSize: "18px",
               },
             },
-            "@NewEraSchefter",
+            "@GoldJacketSchefter",
           ),
         ),
       ),
@@ -826,7 +826,7 @@ export async function GET(
       React.createElement(
         "div",
         null,
-        "League-approved transaction • NEW ERA CFM",
+        "League-approved transaction • GOLD JACKET CFM",
       ),
       React.createElement(
         "div",

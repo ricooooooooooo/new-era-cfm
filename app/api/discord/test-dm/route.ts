@@ -79,7 +79,7 @@ export async function POST() {
           embeds: [
             {
               author: {
-                name: "NEW ERA CFM",
+                name: "GOLD JACKET CFM",
               },
               title: "🏈 ACTIVITY WARNING",
               description:
@@ -109,7 +109,7 @@ export async function POST() {
                 },
               ],
               footer: {
-                text: "New Era Connected Franchise • Automated Alert",
+                text: "Gold Jacket Connected Franchise • Automated Alert",
               },
               timestamp: new Date().toISOString(),
             },
@@ -133,7 +133,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: "New Era CFM activity warning sent successfully.",
+      message: "Gold Jacket CFM activity warning sent successfully.",
     });
   } catch (error) {
     console.error("Discord DM failed:", error);

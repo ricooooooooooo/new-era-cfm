@@ -37,7 +37,7 @@ export default async function StandingsPage() {
     <AppLayout>
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <header className="rounded-[28px] border border-white/10 bg-[#0d0f12] p-7 sm:p-8">
-          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-purple-300">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">
             {data.league ? `Season ${data.league.season} · Week ${data.league.currentWeek}` : "Season One"}
           </p>
           <div className="mt-2 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -61,7 +61,7 @@ export default async function StandingsPage() {
         </header>
 
         {data.finalGameCount === 0 ? (
-          <section className="mt-6 rounded-3xl border border-dashed border-purple-400/20 bg-purple-400/[0.045] p-8 text-center">
+          <section className="mt-6 rounded-3xl border border-dashed border-amber-400/20 bg-amber-400/[0.045] p-8 text-center">
             <p className="text-xl font-black text-white">Standings are ready.</p>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-zinc-400">
               Enter the first final score in Commissioner Madden Sync and all eight divisions will update immediately.

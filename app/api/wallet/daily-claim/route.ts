@@ -9,7 +9,7 @@ const DAILY_REWARD = 25;
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 function getDiscordId(request: NextRequest) {
-  const encodedUser = request.cookies.get("new_era_discord_user")?.value;
+  const encodedUser = request.cookies.get("gold_jacket_discord_user")?.value;
   if (!encodedUser) return null;
 
   try {
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         discord_id: discordId,
         amount: DAILY_REWARD,
         type: "daily_claim",
-        description: "Daily NE Coin claim",
+        description: "Daily Gold Jacket Credits claim",
       });
 
     if (transactionResult.error) {

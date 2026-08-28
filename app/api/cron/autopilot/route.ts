@@ -4,8 +4,8 @@ import {
 } from "next/server";
 
 import {
-  getNewEraAutopilotStatus,
-  runNewEraAutopilot,
+  getGoldJacketAutopilotStatus,
+  runGoldJacketAutopilot,
 } from "@/lib/autopilot/weekly";
 
 export const runtime =
@@ -73,10 +73,10 @@ export async function GET(
   }
 
   const result =
-    await runNewEraAutopilot();
+    await runGoldJacketAutopilot();
 
   const status =
-    await getNewEraAutopilotStatus();
+    await getGoldJacketAutopilotStatus();
 
   return NextResponse.json({
     success: true,

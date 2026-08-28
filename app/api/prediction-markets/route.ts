@@ -8,7 +8,7 @@ type SavedDiscordUser = {
 
 function readUser(request: NextRequest): SavedDiscordUser | null {
   try {
-    const encoded = request.cookies.get("new_era_discord_user")?.value;
+    const encoded = request.cookies.get("gold_jacket_discord_user")?.value;
     if (!encoded) return null;
 
     return JSON.parse(

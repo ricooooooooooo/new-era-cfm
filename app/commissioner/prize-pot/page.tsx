@@ -155,7 +155,7 @@ export default function CommissionerPrizePotPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(124,58,237,0.34),transparent_34rem),radial-gradient(circle_at_88%_12%,rgba(245,158,11,0.18),transparent_28rem)]" />
 
           <div className="relative mx-auto max-w-7xl px-5 py-11 sm:px-8 sm:py-15">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">
               Commissioner Prize Control
             </p>
             <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
@@ -188,7 +188,7 @@ export default function CommissionerPrizePotPage() {
           ) : (
             <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
               <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-300">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">
                   Pot Settings
                 </p>
 
@@ -197,7 +197,7 @@ export default function CommissionerPrizePotPage() {
                     <span className="text-sm font-black">
                       Current Pot
                     </span>
-                    <div className="mt-2 flex items-center rounded-2xl border border-white/10 bg-black/35 px-4 focus-within:border-purple-400/50">
+                    <div className="mt-2 flex items-center rounded-2xl border border-white/10 bg-black/35 px-4 focus-within:border-amber-400/50">
                       <span className="text-2xl font-black text-amber-200">
                         $
                       </span>
@@ -241,7 +241,7 @@ export default function CommissionerPrizePotPage() {
                         onChange={(event) =>
                           setSeason(Number(event.target.value))
                         }
-                        className="mt-2 min-h-12 w-full rounded-xl border border-white/10 bg-black/35 px-4 font-black outline-none focus:border-purple-400/50"
+                        className="mt-2 min-h-12 w-full rounded-xl border border-white/10 bg-black/35 px-4 font-black outline-none focus:border-amber-400/50"
                       />
                     </label>
 
@@ -249,7 +249,7 @@ export default function CommissionerPrizePotPage() {
                       <span className="text-sm font-black">
                         Teams Filled
                       </span>
-                      <div className="mt-2 flex min-h-12 items-center rounded-xl border border-white/10 bg-black/35 px-4 focus-within:border-purple-400/50">
+                      <div className="mt-2 flex min-h-12 items-center rounded-xl border border-white/10 bg-black/35 px-4 focus-within:border-amber-400/50">
                         <input
                           type="number"
                           min="0"

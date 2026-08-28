@@ -28,13 +28,13 @@ function editWebhookUrl(webhookUrl: string, messageId: string) {
 function webhookPayload(input: PrizePotWebhookInput) {
   return {
     content: "@everyone",
-    username: "NEW ERA Prize Pot",
+    username: "GOLD JACKET Prize Pot",
     allowed_mentions: {
       parse: ["everyone"],
     },
     embeds: [
       {
-        color: 0x7c3aed,
+        color: 0xd4af37,
         image: {
           url: input.imageUrl,
         },

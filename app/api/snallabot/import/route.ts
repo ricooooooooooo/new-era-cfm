@@ -43,7 +43,7 @@ function getPayloadSummary(payload: unknown) {
 export async function GET() {
   return NextResponse.json({
     success: true,
-    service: "NEW ERA Snallabot import receiver",
+    service: "GOLD JACKET Snallabot import receiver",
     status: "ready",
   });
 }

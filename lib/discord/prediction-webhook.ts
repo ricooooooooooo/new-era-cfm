@@ -25,14 +25,14 @@ export async function postPredictionMarketBatch(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      username: "New Era Sportsbook",
+      username: "Gold Jacket Sportsbook",
       embeds: [
         {
           title: `🏈 Season ${input.season} • Week ${input.week} Markets`,
           description:
             `${input.createdMarkets} new game markets are now open across ` +
             `${input.totalGames} scheduled matchups.`,
-          color: 0x7c3aed,
+          color: 0xd4af37,
           fields: [
             {
               name: "Place Your Picks",
@@ -40,7 +40,7 @@ export async function postPredictionMarketBatch(
             },
           ],
           footer: {
-            text: "NEW ERA CFM • Powered by NE Coin",
+            text: "GOLD JACKET CFM • Powered by Gold Jacket Credits",
           },
           timestamp: new Date().toISOString(),
         },

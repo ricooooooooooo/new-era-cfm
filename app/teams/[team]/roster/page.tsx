@@ -17,7 +17,7 @@ type RosterPageProps = {
   }>;
 };
 
-async function getNewEraLeagueId(): Promise<string | null> {
+async function getGoldJacketLeagueId(): Promise<string | null> {
   const { data, error } = await supabaseAdmin
     .from("leagues")
     .select("id")
@@ -38,7 +38,7 @@ export default async function RosterPage({ params }: RosterPageProps) {
 
   if (!team) notFound();
 
-  const leagueId = await getNewEraLeagueId();
+  const leagueId = await getGoldJacketLeagueId();
 
   let players: CurrentMaddenPlayer[] = [];
   let rosterError = false;

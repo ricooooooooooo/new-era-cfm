@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   const result = await supabaseAdmin
     .from("prize_pot_settings")
     .select("season, amount, teams_filled, total_teams")
-    .eq("id", "new-era")
+    .eq("id", "gold-jacket")
     .maybeSingle();
 
   const saved = result.data ?? {
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
                     letterSpacing: "13px",
                   }}
                 >
-                  NEW ERA
+                  GOLD JACKET
                 </div>
                 <div
                   style={{
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "999px",
-                  background: "#7c3aed",
+                  background: "#d4af37",
                   fontSize: "21px",
                   fontWeight: 900,
                 }}
@@ -323,7 +323,7 @@ export async function GET(request: NextRequest) {
               FULL 32-TEAM MADDEN FRANCHISE
             </div>
             <div style={{ display: "flex" }}>
-              NEW ERA • A NEW STANDARD
+              GOLD JACKET • A NEW STANDARD
             </div>
           </div>
         </div>

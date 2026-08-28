@@ -454,7 +454,7 @@ export default function LeagueHealthPage() {
           <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">
                   Commissioner Command Center
                 </p>
 

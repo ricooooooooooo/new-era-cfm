@@ -288,7 +288,7 @@ export async function getLeagueStandings() {
     league: league
       ? {
           id: league.id,
-          name: league.name ?? "NEW ERA CFM",
+          name: league.name ?? "GOLD JACKET CFM",
           season,
           currentWeek: Number(league.current_week ?? 1),
         }

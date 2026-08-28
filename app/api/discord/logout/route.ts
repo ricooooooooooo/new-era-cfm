@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     new URL("/discord-connect", request.url),
   );
 
-  response.cookies.delete("new_era_discord_user");
+  response.cookies.delete("gold_jacket_discord_user");
   response.cookies.delete("discord_oauth_state");
 
   return response;

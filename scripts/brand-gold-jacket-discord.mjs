@@ -165,7 +165,7 @@ async function patch(
 }
 
 console.log(
-  "Changing New Era bot avatar..."
+  "Changing Gold Jacket bot avatar..."
 );
 
 const bot =
@@ -178,11 +178,11 @@ const bot =
   );
 
 console.log(
-  `✅ Bot avatar updated: ${bot.username ?? "NewEra"}`,
+  `✅ Bot avatar updated: ${bot.username ?? "GoldJacket"}`,
 );
 
 console.log(
-  "Changing New Era application icon..."
+  "Changing Gold Jacket application icon..."
 );
 
 const application =
@@ -192,15 +192,15 @@ const application =
       icon,
 
       description:
-        "New Era CFM • Madden Intelligence, League Automation & Owner Tools",
+        "Gold Jacket CFM • Madden Intelligence, League Automation & Owner Tools",
     },
   );
 
 console.log(
-  `✅ Application icon updated: ${application.name ?? "NewEra"}`,
+  `✅ Application icon updated: ${application.name ?? "GoldJacket"}`,
 );
 
 console.log("");
 console.log(
-  "🔥 NEW ERA DISCORD BRANDING UPDATED",
+  "🔥 GOLD JACKET DISCORD BRANDING UPDATED",
 );

@@ -8,8 +8,8 @@ import {
 
 import AppLayout from "@/app/components/layout/AppLayout";
 import {
-  buildNewEraIntelligence,
-} from "@/lib/new-era/intelligence";
+  buildGoldJacketIntelligence,
+} from "@/lib/gold-jacket/intelligence";
 
 export const dynamic =
   "force-dynamic";
@@ -24,7 +24,7 @@ async function user() {
 
   const raw =
     store.get(
-      "new_era_discord_user",
+      "gold_jacket_discord_user",
     )?.value;
 
   if (!raw) {
@@ -78,7 +78,7 @@ export default async function EraPage() {
   }
 
   const data =
-    await buildNewEraIntelligence(
+    await buildGoldJacketIntelligence(
       session.id,
     );
 
@@ -89,12 +89,12 @@ export default async function EraPage() {
     <AppLayout>
       <main className="min-h-screen bg-[#050506] text-white">
         <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
-          <section className="relative overflow-hidden rounded-[2rem] border border-purple-400/20 bg-[radial-gradient(circle_at_10%_0%,rgba(126,34,206,.34),transparent_30rem),radial-gradient(circle_at_90%_0%,rgba(245,158,11,.13),transparent_28rem),#09090c] p-6 sm:p-9">
+          <section className="relative overflow-hidden rounded-[2rem] border border-amber-400/20 bg-[radial-gradient(circle_at_10%_0%,rgba(126,34,206,.34),transparent_30rem),radial-gradient(circle_at_90%_0%,rgba(245,158,11,.13),transparent_28rem),#09090c] p-6 sm:p-9">
             <div className="pointer-events-none absolute -right-7 -top-20 text-[16rem] font-black leading-none text-white/[0.025]">
               8
             </div>
 
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-purple-300">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300">
               Gold Jacket Intelligence
             </p>
 
@@ -114,8 +114,8 @@ export default async function EraPage() {
               id="dna"
               className="mt-5 grid gap-4 lg:grid-cols-[.78fr_1.22fr]"
             >
-              <article className="rounded-[1.75rem] border border-purple-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.15),#090a0c)] p-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-purple-300">
+              <article className="rounded-[1.75rem] border border-amber-400/20 bg-[linear-gradient(145deg,rgba(126,34,206,.15),#090a0c)] p-6">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
                   Owner DNA
                 </p>
 
@@ -135,7 +135,7 @@ export default async function EraPage() {
                       Archetype
                     </p>
 
-                    <p className="mt-1 text-lg font-black text-purple-200">
+                    <p className="mt-1 text-lg font-black text-amber-200">
                       {profile.dna.archetype}
                     </p>
                   </div>
@@ -606,7 +606,7 @@ export default async function EraPage() {
             id="achievements"
             className="mt-5"
           >
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-purple-300">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
               Hidden Unlocks
             </p>
 
@@ -625,7 +625,7 @@ export default async function EraPage() {
                     }
                     className={`rounded-2xl border p-5 ${
                       achievement.unlocked
-                        ? "border-purple-400/25 bg-purple-400/[0.08]"
+                        ? "border-amber-400/25 bg-amber-400/[0.08]"
                         : "border-white/[0.07] bg-black/30 opacity-45"
                     }`}
                   >
@@ -712,7 +712,7 @@ export default async function EraPage() {
             id="universe"
             className="mt-7 rounded-[1.75rem] border border-white/10 bg-white/[0.025] p-6"
           >
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-purple-300">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
               Permanent League Memory
             </p>
 

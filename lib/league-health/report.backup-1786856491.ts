@@ -172,13 +172,13 @@ export async function buildLeagueHealthReport() {
   const leagueResult = await supabaseAdmin
     .from("leagues")
     .select("id, name, season, current_week")
-    .eq("slug", "new-era-cfm")
+    .eq("slug", "gold-jacket-cfm")
     .maybeSingle();
 
   if (leagueResult.error) throw leagueResult.error;
 
   if (!leagueResult.data) {
-    throw new Error("NEW ERA league record was not found.");
+    throw new Error("GOLD JACKET league record was not found.");
   }
 
   const league = leagueResult.data as LeagueRow;
@@ -590,7 +590,7 @@ export async function buildLeagueHealthReport() {
     generatedAt: new Date().toISOString(),
     league: {
       id: league.id,
-      name: league.name ?? "NEW ERA CFM",
+      name: league.name ?? "GOLD JACKET CFM",
       season,
       currentWeek,
     },

@@ -74,7 +74,7 @@ const teamAccents: Record<string, string> = {
 
 async function getCurrentDiscordUser(): Promise<SavedDiscordUser | null> {
   const cookieStore = await cookies();
-  const encodedUser = cookieStore.get("new_era_discord_user")?.value;
+  const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) return null;
 

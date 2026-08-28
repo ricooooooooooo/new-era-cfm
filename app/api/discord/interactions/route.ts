@@ -6,8 +6,9 @@ import {
 
 import nacl from "tweetnacl";
 
+import { handleGoldJacketDevShopCommand } from "@/lib/discord/devshop-command";
 import {
-  handleNewEraCommand,
+  handleGoldJacketCommand,
 } from "@/lib/discord/intelligence-commands";
 
 import {
@@ -43,9 +44,9 @@ const RESPONSE_DEFERRED_CHANNEL_MESSAGE =
 const RESPONSE_UPDATE_MESSAGE =
   7;
 
-const NEW_ERA_COMMANDS =
+const GOLD_JACKET_COMMANDS =
   new Set([
-    "newera",
+    "goldjacket",
     "tutorial",
     "scout",
     "dna",
@@ -58,13 +59,13 @@ const NEW_ERA_COMMANDS =
     "scout owner",
   ]);
 
-const NEW_ERA_IMMEDIATE_COMMANDS =
+const GOLD_JACKET_IMMEDIATE_COMMANDS =
   new Set([
-    "newera",
+    "goldjacket",
     "tutorial",
   ]);
 
-const NEW_ERA_PUBLIC_COMMANDS =
+const GOLD_JACKET_PUBLIC_COMMANDS =
   new Set([
     "belt",
     "fraud",
@@ -218,7 +219,7 @@ async function activeCheckIsClosed(
  * Discord heavy command flow:
  *
  * 1. ACK immediately.
- * 2. Run New Era intelligence.
+ * 2. Run Gold Jacket intelligence.
  * 3. Replace Discord's loading response.
  */
 async function editDeferredResponse(
@@ -246,7 +247,7 @@ async function editDeferredResponse(
         ?.data ??
       {
         content:
-          "⚠️ New Era did not return a command response.",
+          "⚠️ Gold Jacket did not return a command response.",
       }
     ),
   };
@@ -301,7 +302,7 @@ async function sendDeferredError(
       {
         data: {
           content:
-            "⚠️ New Era Intelligence couldn't finish that command. Try it again in a few seconds.",
+            "⚠️ Gold Jacket Intelligence couldn't finish that command. Try it again in a few seconds.",
 
           allowed_mentions: {
             parse: [],
@@ -380,8 +381,12 @@ export async function POST(
     });
   }
 
+  if (interaction.data?.name === "devshop") {
+    return handleGoldJacketDevShopCommand(interaction);
+  }
+
   /*
-   * NEW ERA SLASH / CONTEXT COMMANDS.
+   * GOLD JACKET SLASH / CONTEXT COMMANDS.
    */
   if (
     interaction.type ===
@@ -396,7 +401,7 @@ export async function POST(
         .toLowerCase();
 
     if (
-      NEW_ERA_COMMANDS.has(
+      GOLD_JACKET_COMMANDS.has(
         commandName,
       )
     ) {
@@ -404,12 +409,12 @@ export async function POST(
        * Tiny commands don't need deferred execution.
        */
       if (
-        NEW_ERA_IMMEDIATE_COMMANDS.has(
+        GOLD_JACKET_IMMEDIATE_COMMANDS.has(
           commandName,
         )
       ) {
         const result =
-          await handleNewEraCommand(
+          await handleGoldJacketCommand(
             interaction,
           );
 
@@ -421,7 +426,7 @@ export async function POST(
       }
 
       const isPublic =
-        NEW_ERA_PUBLIC_COMMANDS.has(
+        GOLD_JACKET_PUBLIC_COMMANDS.has(
           commandName,
         );
 
@@ -429,7 +434,7 @@ export async function POST(
         async () => {
           try {
             const result =
-              await handleNewEraCommand(
+              await handleGoldJacketCommand(
                 interaction,
               );
 
@@ -445,7 +450,7 @@ export async function POST(
             );
           } catch (error) {
             console.error(
-              `Deferred New Era /${commandName} failed:`,
+              `Deferred Gold Jacket /${commandName} failed:`,
               error,
             );
 
@@ -499,7 +504,7 @@ export async function POST(
 
         data: {
           content:
-            "⛔ This NEW ERA Active Check is closed.",
+            "⛔ This GOLD JACKET Active Check is closed.",
 
           flags: 64,
         },
@@ -733,7 +738,7 @@ export async function POST(
             title:
               currentEmbed
                 ?.title ||
-              "🏈 NEW ERA CFM Activity Check",
+              "🏈 GOLD JACKET CFM Activity Check",
 
             description:
               currentEmbed
@@ -743,7 +748,7 @@ export async function POST(
             color:
               currentEmbed
                 ?.color ??
-              0x7c3aed,
+              0xd4af37,
 
             fields: [
               ...existingFields,
@@ -762,7 +767,7 @@ export async function POST(
                 ?.footer ||
               {
                 text:
-                  "NEW ERA CFM • Commissioner Activity Center",
+                  "GOLD JACKET CFM • Commissioner Activity Center",
               },
 
             timestamp:
@@ -799,7 +804,7 @@ export async function POST(
 
     data: {
       content:
-        "That New Era interaction is not currently supported.",
+        "That Gold Jacket interaction is not currently supported.",
 
       flags: 64,
     },

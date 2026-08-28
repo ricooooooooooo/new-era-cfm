@@ -74,7 +74,7 @@ export default async function DiscordConnectPage({
   const params = await searchParams;
 
   const savedUser = decodeDiscordUser(
-    cookieStore.get("new_era_discord_user")?.value,
+    cookieStore.get("gold_jacket_discord_user")?.value,
   );
 
   const errorMessage = getErrorMessage(params.error);

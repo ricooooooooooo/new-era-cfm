@@ -22,7 +22,7 @@ type RecentMember = {
 
 async function getCurrentDiscordUser(): Promise<SavedDiscordUser | null> {
   const cookieStore = await cookies();
-  const encodedUser = cookieStore.get("new_era_discord_user")?.value;
+  const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) return null;
 
@@ -127,7 +127,7 @@ export default async function CommissionerPage() {
       title: "Staff Members",
       value: staffMembersResult.count ?? 0,
       subtitle: "Owners and commissioners",
-      valueClass: "text-purple-300",
+      valueClass: "text-amber-300",
     },
     {
       title: "Pending Applications",
@@ -145,7 +145,7 @@ export default async function CommissionerPage() {
       <div className="mx-auto max-w-7xl p-6 sm:p-8">
         <header className="mb-10 flex flex-col gap-6 border-b border-white/10 pb-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-purple-200">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 
               {staffRole === "owner"
@@ -261,7 +261,7 @@ export default async function CommissionerPage() {
             <div className="mt-6 space-y-3">
               <a
                 href="/commissioner/members"
-                className="block w-full rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-center font-black text-white transition hover:from-purple-500 hover:to-indigo-500"
+                className="block w-full rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 px-4 py-3 text-center font-black text-white transition hover:from-amber-500 hover:to-indigo-500"
               >
                 Manage Members
               </a>
@@ -297,7 +297,7 @@ export default async function CommissionerPage() {
                 <button
                   type="button"
                   disabled
-                  className="w-full cursor-not-allowed rounded-xl border border-purple-400/10 bg-purple-400/[0.04] px-4 py-3 font-semibold text-purple-300/50"
+                  className="w-full cursor-not-allowed rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-4 py-3 font-semibold text-amber-300/50"
                 >
                   Staff Permissions — Owner Only
                 </button>

@@ -344,14 +344,14 @@ function reminderCopy(
   missingCount: number,
 ) {
   if (key === "six_hour") {
-    return `⚠️ **ACTIVE CHECK REMINDER**\n\nThe current NEW ERA Active Check closes in about **6 hours**.\n\n**Still missing (${missingCount}):**`;
+    return `⚠️ **ACTIVE CHECK REMINDER**\n\nThe current GOLD JACKET Active Check closes in about **6 hours**.\n\n**Still missing (${missingCount}):**`;
   }
 
   if (key === "two_hour") {
-    return `🚨 **ACTIVE CHECK WARNING**\n\nThe current NEW ERA Active Check closes in about **2 hours**.\n\n**Still missing (${missingCount}):**`;
+    return `🚨 **ACTIVE CHECK WARNING**\n\nThe current GOLD JACKET Active Check closes in about **2 hours**.\n\n**Still missing (${missingCount}):**`;
   }
 
-  return `🚨 **FINAL ACTIVE CHECK WARNING**\n\nThe current NEW ERA Active Check closes in about **30 minutes**. Failure to check in will be recorded.\n\n**Still missing (${missingCount}):**`;
+  return `🚨 **FINAL ACTIVE CHECK WARNING**\n\nThe current GOLD JACKET Active Check closes in about **30 minutes**. Failure to check in will be recorded.\n\n**Still missing (${missingCount}):**`;
 }
 
 async function postMissingOwnerReminder(options: {
@@ -404,7 +404,7 @@ async function sendFinalDm(owner: MissingOwner) {
       method: "POST",
       body: JSON.stringify({
         content:
-          "🚨 **NEW ERA — FINAL ACTIVE CHECK WARNING**\n\nYou still have not completed the current Active Check. Please hit **I'm Active** in the server now. The check closes in about **30 minutes**, and a miss will be recorded if you do not respond.",
+          "🚨 **GOLD JACKET — FINAL ACTIVE CHECK WARNING**\n\nYou still have not completed the current Active Check. Please hit **I'm Active** in the server now. The check closes in about **30 minutes**, and a miss will be recorded if you do not respond.",
       }),
     },
   );

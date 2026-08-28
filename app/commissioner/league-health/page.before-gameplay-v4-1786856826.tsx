@@ -378,7 +378,7 @@ export default function LeagueHealthPage() {
           <div className="relative mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
             <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-purple-300">
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-300">
                   Commissioner Command Center
                 </p>
 
@@ -426,13 +426,13 @@ export default function LeagueHealthPage() {
           ) : (
             <>
               <section className="grid gap-4 lg:grid-cols-[1.25fr_2.75fr]">
-                <article className="relative overflow-hidden rounded-3xl border border-purple-400/20 bg-[linear-gradient(145deg,rgba(124,58,237,0.20),rgba(255,255,255,0.025))] p-6 sm:p-8">
+                <article className="relative overflow-hidden rounded-3xl border border-amber-400/20 bg-[linear-gradient(145deg,rgba(124,58,237,0.20),rgba(255,255,255,0.025))] p-6 sm:p-8">
                   <div className="absolute right-[-2rem] top-[-4rem] text-[11rem] font-black text-white/[0.025]">
                     {report.overall.score}
                   </div>
 
                   <div className="relative">
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-300">
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">
                       Overall Health
                     </p>
 
@@ -555,7 +555,7 @@ export default function LeagueHealthPage() {
                 <div className="border-b border-white/10 p-5 sm:p-6">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-purple-300">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">
                         Owner Accountability
                       </p>
                       <h2 className="mt-2 text-3xl font-black tracking-[-0.04em]">
@@ -570,7 +570,7 @@ export default function LeagueHealthPage() {
                           setSearch(event.target.value)
                         }
                         placeholder="Search team or owner"
-                        className="min-h-11 rounded-xl border border-white/10 bg-black/35 px-4 text-sm outline-none focus:border-purple-400/50"
+                        className="min-h-11 rounded-xl border border-white/10 bg-black/35 px-4 text-sm outline-none focus:border-amber-400/50"
                       />
 
                       <div className="flex rounded-xl border border-white/10 bg-black/30 p-1">
@@ -592,7 +592,7 @@ export default function LeagueHealthPage() {
                             }
                             className={`min-h-9 rounded-lg px-3 text-xs font-black uppercase tracking-[0.1em] transition ${
                               filter === value
-                                ? "bg-purple-500/20 text-purple-100"
+                                ? "bg-amber-500/20 text-amber-100"
                                 : "text-zinc-600"
                             }`}
                           >
@@ -769,7 +769,7 @@ export default function LeagueHealthPage() {
               <section className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Link
                   href="/active-checks"
-                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-purple-400/30 hover:bg-purple-400/[0.07]"
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-amber-400/30 hover:bg-amber-400/[0.07]"
                 >
                   <p className="font-black">Active Checks</p>
                   <p className="mt-2 text-sm text-zinc-500">
@@ -779,7 +779,7 @@ export default function LeagueHealthPage() {
 
                 <Link
                   href="/schedule"
-                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-purple-400/30 hover:bg-purple-400/[0.07]"
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-amber-400/30 hover:bg-amber-400/[0.07]"
                 >
                   <p className="font-black">League Schedule</p>
                   <p className="mt-2 text-sm text-zinc-500">
@@ -789,7 +789,7 @@ export default function LeagueHealthPage() {
 
                 <Link
                   href="/commissioner/owner-connections"
-                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-purple-400/30 hover:bg-purple-400/[0.07]"
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-amber-400/30 hover:bg-amber-400/[0.07]"
                 >
                   <p className="font-black">Owner Connections</p>
                   <p className="mt-2 text-sm text-zinc-500">

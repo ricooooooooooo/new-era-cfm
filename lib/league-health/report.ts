@@ -297,7 +297,7 @@ export async function buildLeagueHealthReport() {
 
   if (!leagueResult.data) {
     throw new Error(
-      "NEW ERA league was not found.",
+      "GOLD JACKET league was not found.",
     );
   }
 
@@ -986,7 +986,7 @@ export async function buildLeagueHealthReport() {
         league.id,
       name:
         league.name ??
-        "NEW ERA CFM",
+        "GOLD JACKET CFM",
       season,
       currentWeek,
     },

@@ -245,7 +245,7 @@ export async function GET() {
       success: true,
       league: {
         id: league?.id ?? null,
-        name: league?.name ?? "NEW ERA CFM",
+        name: league?.name ?? "GOLD JACKET CFM",
         currentWeek: league?.current_week ?? null,
         season,
       },

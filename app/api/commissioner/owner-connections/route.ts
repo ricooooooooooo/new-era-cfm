@@ -25,7 +25,7 @@ type MemberRow = {
 
 function readUser(request: NextRequest): SavedDiscordUser | null {
   try {
-    const encoded = request.cookies.get("new_era_discord_user")?.value;
+    const encoded = request.cookies.get("gold_jacket_discord_user")?.value;
     if (!encoded) return null;
     const user = JSON.parse(
       Buffer.from(encoded, "base64url").toString("utf8"),

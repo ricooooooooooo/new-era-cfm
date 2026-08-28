@@ -140,7 +140,7 @@ export async function getMaddenSyncStatus(): Promise<MaddenSyncStatus> {
     success: true,
     league: {
       id: league.id,
-      name: league.name ?? "NEW ERA CFM",
+      name: league.name ?? "GOLD JACKET CFM",
       slug: league.slug,
       season,
       currentWeek,

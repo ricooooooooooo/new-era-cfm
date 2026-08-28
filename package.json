@@ -14,7 +14,10 @@
     "owners:check": "node --env-file=.env.local scripts/check-owner-connections.mjs",
     "pot:verify": "node --env-file=.env.local scripts/verify-prize-pot.mjs",
     "health:verify": "node --env-file=.env.local scripts/verify-live-league-health.mjs",
-    "madden:sync-verify": "node --env-file=.env.local scripts/verify-madden-sync-control.mjs"
+    "madden:sync-verify": "node --env-file=.env.local scripts/verify-madden-sync-control.mjs",
+    "post:fantasy-info": "node scripts/post-gold-jacket-fantasy-info.mjs",
+    "discord:register": "node scripts/register-gold-jacket-commands.mjs",
+    "discord:brand": "node scripts/brand-gold-jacket-bot.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",

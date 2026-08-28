@@ -11,7 +11,7 @@ type SavedDiscordUser = {
 const STARTING_BALANCE = 500;
 
 function readDiscordUser(request: NextRequest): SavedDiscordUser | null {
-  const encodedUser = request.cookies.get("new_era_discord_user")?.value;
+  const encodedUser = request.cookies.get("gold_jacket_discord_user")?.value;
   if (!encodedUser) return null;
 
   try {
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         discord_id: user.id,
         amount: STARTING_BALANCE,
         type: "welcome_bonus",
-        description: "New Era welcome balance",
+        description: "Gold Jacket welcome balance",
       });
 
     if (welcomeTransaction.error) {

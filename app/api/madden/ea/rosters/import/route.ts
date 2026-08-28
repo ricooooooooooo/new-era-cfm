@@ -84,7 +84,7 @@ function extractMaddenRatings(player: Row) {
     }
   }
 
-  // Friendly aliases used by the New Era UI.
+  // Friendly aliases used by the Gold Jacket UI.
   const aliases: Record<string, unknown> = {
     speed: player.speedRating,
     acceleration: player.accelRating,
@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
 
     if (leagueResult.error) throw leagueResult.error;
     if (!leagueResult.data) {
-      throw new Error("New Era league not found.");
+      throw new Error("Gold Jacket league not found.");
     }
 
     const leagueId = leagueResult.data.id;

@@ -33,7 +33,7 @@ type StaffApplication = {
 
 async function getCurrentDiscordUser(): Promise<SavedDiscordUser | null> {
   const cookieStore = await cookies();
-  const encodedUser = cookieStore.get("new_era_discord_user")?.value;
+  const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) return null;
 
@@ -166,12 +166,12 @@ export default async function StaffApplicationsPage({
           <div>
             <a
               href="/commissioner"
-              className="text-sm font-bold text-purple-300 transition hover:text-purple-200"
+              className="text-sm font-bold text-amber-300 transition hover:text-amber-200"
             >
               ← Commissioner Dashboard
             </a>
 
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-purple-200">
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               {staffRole === "owner"
                 ? "Owner Access"
@@ -209,7 +209,7 @@ export default async function StaffApplicationsPage({
                 href={`/commissioner/staff?status=${filter.value}`}
                 className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-black transition ${
                   isActive
-                    ? "border-purple-400/40 bg-purple-500/15 text-purple-200"
+                    ? "border-amber-400/40 bg-amber-500/15 text-amber-200"
                     : "border-white/10 bg-white/[0.035] text-zinc-400 hover:border-white/20 hover:text-white"
                 }`}
               >
@@ -218,7 +218,7 @@ export default async function StaffApplicationsPage({
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs ${
                     isActive
-                      ? "bg-purple-300/15 text-purple-200"
+                      ? "bg-amber-300/15 text-amber-200"
                       : "bg-white/[0.06] text-zinc-500"
                   }`}
                 >
@@ -279,7 +279,7 @@ export default async function StaffApplicationsPage({
                         ID {application.discord_id}
                       </p>
 
-                      <div className="mt-4 inline-flex rounded-xl border border-purple-400/20 bg-purple-400/[0.08] px-4 py-2 text-sm font-black text-purple-200">
+                      <div className="mt-4 inline-flex rounded-xl border border-amber-400/20 bg-amber-400/[0.08] px-4 py-2 text-sm font-black text-amber-200">
                         Applying for: {application.position}
                       </div>
                     </div>

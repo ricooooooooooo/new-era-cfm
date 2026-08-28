@@ -16,7 +16,7 @@ type SavedDiscordUser = {
 function getDiscordId(request: NextRequest) {
   try {
     const encoded =
-      request.cookies.get("new_era_discord_user")?.value;
+      request.cookies.get("gold_jacket_discord_user")?.value;
 
     if (!encoded) return null;
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Starter NE Coin already claimed.",
+          error: "Starter Gold Jacket Credits already claimed.",
         },
         { status: 409 },
       );
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         amount: WELCOME_REWARD,
         type: "welcome_claim",
         reference_id: `welcome:${discordId}`,
-        description: "New Era Welcome Claim",
+        description: "Gold Jacket Welcome Claim",
         metadata: {
           kind: "welcome_claim",
           reward: WELCOME_REWARD,
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
         error:
           error instanceof Error
             ? error.message
-            : "Unable to claim starter NE Coin.",
+            : "Unable to claim starter Gold Jacket Credits.",
       },
       { status: 500 },
     );

@@ -375,7 +375,7 @@ export async function buildLeagueHealthReport() {
       )
       .eq(
         "slug",
-        "new-era-cfm",
+        "gold-jacket-cfm",
       )
       .maybeSingle();
 
@@ -385,7 +385,7 @@ export async function buildLeagueHealthReport() {
 
   if (!leagueResult.data) {
     throw new Error(
-      "NEW ERA league record was not found.",
+      "GOLD JACKET league record was not found.",
     );
   }
 
@@ -1454,7 +1454,7 @@ export async function buildLeagueHealthReport() {
         league.id,
       name:
         league.name ??
-        "NEW ERA CFM",
+        "GOLD JACKET CFM",
       season,
       currentWeek,
     },

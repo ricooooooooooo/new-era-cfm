@@ -66,7 +66,7 @@ const ROLE_OPTIONS: {
 
 async function getCurrentDiscordUser(): Promise<SavedDiscordUser | null> {
   const cookieStore = await cookies();
-  const encodedUser = cookieStore.get("new_era_discord_user")?.value;
+  const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) {
     return null;
@@ -228,7 +228,7 @@ export default async function MembersPage({
           <div>
             <a
               href="/commissioner"
-              className="text-sm font-bold text-purple-300 transition hover:text-purple-200"
+              className="text-sm font-bold text-amber-300 transition hover:text-amber-200"
             >
               ← Commissioner Dashboard
             </a>
@@ -248,15 +248,15 @@ export default async function MembersPage({
               name="q"
               defaultValue={q}
               placeholder="Search name, Discord, or team..."
-              className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-400/50"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-amber-400/50"
             />
           </form>
         </header>
 
-        <div className="mb-6 rounded-2xl border border-purple-400/15 bg-purple-400/[0.05] px-5 py-4">
+        <div className="mb-6 rounded-2xl border border-amber-400/15 bg-amber-400/[0.05] px-5 py-4">
           <p className="text-sm text-zinc-300">
             Signed in with{" "}
-            <span className="font-black text-purple-300">
+            <span className="font-black text-amber-300">
               {formatRole(actingRole)}
             </span>{" "}
             permissions.
@@ -322,7 +322,7 @@ export default async function MembersPage({
                           : "Inactive"}
                       </span>
 
-                      <span className="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-purple-300">
+                      <span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-amber-300">
                         {formatRole(member.role)}
                       </span>
                     </div>
@@ -377,7 +377,7 @@ export default async function MembersPage({
                           name="role"
                           defaultValue={member.role}
                           disabled={!roleCanBeManaged}
-                          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#111313] px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-purple-400/50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#111313] px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-amber-400/50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {roleCanBeManaged ? (
                             availableRoles.map((role) => (
@@ -398,7 +398,7 @@ export default async function MembersPage({
                         <button
                           type="submit"
                           disabled={!roleCanBeManaged}
-                          className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-3 text-sm font-black transition hover:from-purple-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 px-5 py-3 text-sm font-black transition hover:from-amber-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Save Role
                         </button>
@@ -426,7 +426,7 @@ export default async function MembersPage({
                         name="team"
                         defaultValue={member.team ?? ""}
                         placeholder="Example: Buffalo Bills"
-                        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-purple-400/50"
+                        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-amber-400/50"
                       />
 
                       <button

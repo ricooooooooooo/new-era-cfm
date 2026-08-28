@@ -219,7 +219,7 @@ export default function MaddenSyncClient() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <header className="rounded-[30px] border border-white/10 bg-[#0d0f12] p-6 sm:p-8">
-        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-purple-300">
+        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">
           Commissioner Control
         </p>
         <div className="mt-2 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -256,7 +256,7 @@ export default function MaddenSyncClient() {
         ))}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-purple-400/20 bg-purple-400/[0.05] p-5">
+      <section className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/[0.05] p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <label className="block">
             <span className="text-sm font-black text-white">Commissioner Sync Secret</span>
@@ -266,7 +266,7 @@ export default function MaddenSyncClient() {
               onChange={(event) => setSecret(event.target.value)}
               placeholder="Paste MADDEN_SYNC_SECRET"
               autoComplete="off"
-              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white outline-none focus:border-purple-400"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white outline-none focus:border-amber-400"
             />
           </label>
           <button
@@ -330,7 +330,7 @@ export default function MaddenSyncClient() {
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            <button disabled={working} className="rounded-xl bg-purple-500 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Save League Setup</button>
+            <button disabled={working} className="rounded-xl bg-amber-500 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Save League Setup</button>
             <button type="button" disabled={working} onClick={() => void advanceWeek()} className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-black text-white disabled:opacity-50">Set Current Week</button>
           </div>
         </form>
@@ -394,7 +394,7 @@ export default function MaddenSyncClient() {
         <h2 className="mt-1 text-2xl font-black text-white">Bulk Week Import</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-500">One game per line. Use <strong className="text-zinc-300">NYJ @ NE</strong> for scheduled games or <strong className="text-zinc-300">NYJ 20 @ NE 24</strong> for finals.</p>
         <textarea value={bulkText} onChange={(event) => setBulkText(event.target.value)} rows={10} placeholder={"NYJ @ NE\nBUF @ MIA\nBAL 27 @ CIN 24"} className="mt-4 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 font-mono text-sm text-white" />
-        <button disabled={working || !bulkText.trim()} className="mt-4 rounded-xl bg-purple-500 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Import Week {currentWeek}</button>
+        <button disabled={working || !bulkText.trim()} className="mt-4 rounded-xl bg-amber-500 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Import Week {currentWeek}</button>
       </form>
 
       <section className="mt-6 rounded-[26px] border border-white/10 bg-[#0d0f12] p-6">

@@ -12,10 +12,10 @@ import {
 const ENDING_START_TIME = 12.2;
 const AUDIO_FADE_SECONDS = 0.85;
 
-const INTRO_SESSION_KEY = "new-era-intro-played";
-const REPLAY_INTRO_EVENT = "new-era:replay-intro";
+const INTRO_SESSION_KEY = "gold-jacket-intro-played";
+const REPLAY_INTRO_EVENT = "gold-jacket:replay-intro";
 
-export function replayNewEraIntro() {
+export function replayGoldJacketIntro() {
   if (typeof window === "undefined") return;
 
   window.dispatchEvent(new Event(REPLAY_INTRO_EVENT));

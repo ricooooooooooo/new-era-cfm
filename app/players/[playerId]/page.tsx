@@ -16,7 +16,7 @@ type PlayerPageProps = {
   }>;
 };
 
-async function getNewEraLeagueId(): Promise<string | null> {
+async function getGoldJacketLeagueId(): Promise<string | null> {
   const { data, error } = await supabaseAdmin
     .from("leagues")
     .select("id")
@@ -63,7 +63,7 @@ function traitClasses(trait: string | null) {
   }
 
   if (value === "star") {
-    return "border-purple-300/30 bg-purple-300/10 text-purple-100";
+    return "border-amber-300/30 bg-amber-300/10 text-amber-100";
   }
 
   return "border-white/10 bg-white/[0.05] text-zinc-400";
@@ -73,7 +73,7 @@ export default async function PlayerPage({
   params,
 }: PlayerPageProps) {
   const { playerId } = await params;
-  const leagueId = await getNewEraLeagueId();
+  const leagueId = await getGoldJacketLeagueId();
   const player = await getCurrentMaddenPlayerById(
     playerId,
     leagueId,
@@ -254,7 +254,7 @@ const rosterHref = team
           </section>
 
           <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">
             Madden Ratings
           </p>
 
@@ -288,7 +288,7 @@ const rosterHref = team
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-300">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">
                 Franchise Data
               </p>
               <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">
@@ -319,8 +319,8 @@ const rosterHref = team
               </div>
             </section>
 
-            <aside className="rounded-3xl border border-purple-400/20 bg-purple-400/[0.055] p-6 sm:p-8">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-purple-200">
+            <aside className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.055] p-6 sm:p-8">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-200">
                 Automatic EA Upgrade
               </p>
               <h2 className="mt-3 text-2xl font-black tracking-[-0.035em]">

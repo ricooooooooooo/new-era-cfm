@@ -24,7 +24,7 @@ function initials(name: string) {
 export default function PlayerHeadshot({
   name,
   src,
-  primary = "#7c3aed",
+  primary = "#d4af37",
   secondary = "#d4af37",
   size = "small",
   className = "",

@@ -17,7 +17,7 @@ type SessionUser = {
 
 async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
-  const value = store.get("new_era_discord_user")?.value;
+  const value = store.get("gold_jacket_discord_user")?.value;
 
   if (!value) return null;
 

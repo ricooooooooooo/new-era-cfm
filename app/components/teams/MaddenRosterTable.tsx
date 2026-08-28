@@ -22,7 +22,7 @@ function traitClasses(trait: string | null) {
   }
 
   if (value === "star") {
-    return "border-purple-300/25 bg-purple-300/10 text-purple-200";
+    return "border-amber-300/25 bg-amber-300/10 text-amber-200";
   }
 
   return "border-white/10 bg-white/[0.04] text-zinc-500";
@@ -66,7 +66,7 @@ export default function MaddenRosterTable({
                   />
 
                   <div className="min-w-0">
-                    <p className="truncate font-black text-white transition group-hover:text-purple-200">
+                    <p className="truncate font-black text-white transition group-hover:text-amber-200">
                       {player.name}
                     </p>
 
@@ -110,7 +110,7 @@ export default function MaddenRosterTable({
                     : "Baseline"}
                 </div>
 
-                <div className="pr-4 text-xl text-zinc-700 transition group-hover:translate-x-1 group-hover:text-purple-200">
+                <div className="pr-4 text-xl text-zinc-700 transition group-hover:translate-x-1 group-hover:text-amber-200">
                   ›
                 </div>
               </Link>

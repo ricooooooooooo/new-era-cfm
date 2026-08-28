@@ -40,7 +40,7 @@ function disconnectedResponse() {
 }
 
 export async function GET(request: NextRequest) {
-  const encodedUser = request.cookies.get("new_era_discord_user")?.value;
+  const encodedUser = request.cookies.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) {
     return disconnectedResponse();
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     console.error("Failed to decode Discord session:", error);
 
     const response = disconnectedResponse();
-    response.cookies.delete("new_era_discord_user");
+    response.cookies.delete("gold_jacket_discord_user");
 
     return response;
   }

@@ -40,7 +40,7 @@ ${teamTwoSends}
 ${teamTwo} receive:
 ${teamOneSends}
 
-The deal has been approved by the NEW ERA trade committee and is now official.`;
+The deal has been approved by the GOLD JACKET trade committee and is now official.`;
 }
 
 async function sendDiscordTradeAlert({

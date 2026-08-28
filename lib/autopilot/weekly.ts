@@ -27,7 +27,7 @@ async function markerExists(
       .select("id")
       .eq(
         "source",
-        "new_era_autopilot",
+        "gold_jacket_autopilot",
       )
       .eq(
         "export_type",
@@ -53,7 +53,7 @@ async function recordEvent(
       .from("league_syncs")
       .insert({
         source:
-          "new_era_autopilot",
+          "gold_jacket_autopilot",
 
         export_type:
           exportType,
@@ -76,7 +76,7 @@ async function recordEvent(
 
         request_headers: {
           automation:
-            "new-era-autopilot",
+            "gold-jacket-autopilot",
         },
 
         duration_ms:
@@ -88,7 +88,7 @@ async function recordEvent(
   }
 }
 
-export async function runNewEraAutopilot(
+export async function runGoldJacketAutopilot(
   input: {
     leagueId?: string;
     season?: number;
@@ -114,7 +114,7 @@ export async function runNewEraAutopilot(
 
   if (!leagueResult.data) {
     throw new Error(
-      "NEW ERA league not found.",
+      "GOLD JACKET league not found.",
     );
   }
 
@@ -355,7 +355,7 @@ export async function runNewEraAutopilot(
   };
 }
 
-export async function getNewEraAutopilotStatus() {
+export async function getGoldJacketAutopilotStatus() {
   const leagueResult =
     await supabaseAdmin
       .from("leagues")
@@ -374,7 +374,7 @@ export async function getNewEraAutopilotStatus() {
 
   if (!leagueResult.data) {
     throw new Error(
-      "NEW ERA league not found.",
+      "GOLD JACKET league not found.",
     );
   }
 
@@ -402,7 +402,7 @@ export async function getNewEraAutopilotStatus() {
       )
       .eq(
         "source",
-        "new_era_autopilot",
+        "gold_jacket_autopilot",
       )
       .order(
         "received_at",
@@ -420,7 +420,7 @@ export async function getNewEraAutopilotStatus() {
 
   return {
     revision:
-      "new-era-autopilot-v1",
+      "gold-jacket-autopilot-v1",
 
     season,
 

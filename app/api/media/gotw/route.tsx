@@ -85,7 +85,7 @@ export async function GET(
 
     const reason =
       params.get("reason") ??
-      "NEW ERA GAME OF THE WEEK";
+      "GOLD JACKET GAME OF THE WEEK";
 
     const away =
       NFL_TEAMS.find(
@@ -205,7 +205,7 @@ export async function GET(
     font-weight="900"
     letter-spacing="6"
   >
-    NEW ERA ONLINE LEAGUE
+    GOLD JACKET ONLINE LEAGUE
   </text>
 
   <text
@@ -347,7 +347,7 @@ export async function GET(
     font-weight="900"
     letter-spacing="4"
   >
-    NEW ERA
+    GOLD JACKET
   </text>
 
   <text
@@ -403,9 +403,9 @@ export async function GET(
             String(png.length),
           "cache-control":
             "public, max-age=60, s-maxage=3600",
-          "x-new-era-gotw-bytes":
+          "x-gold-jacket-gotw-bytes":
             String(png.length),
-          "x-new-era-gotw-engine":
+          "x-gold-jacket-gotw-engine":
             "sharp-v1",
         },
       },

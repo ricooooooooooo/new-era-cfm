@@ -76,7 +76,7 @@ export default function WelcomeCoinClaim() {
       if (!response.ok) {
         throw new Error(
           data.error ??
-            "Unable to claim NE Coin.",
+            "Unable to claim Gold Jacket Credits.",
         );
       }
 
@@ -87,7 +87,7 @@ export default function WelcomeCoinClaim() {
       setError(
         claimError instanceof Error
           ? claimError.message
-          : "Unable to claim NE Coin.",
+          : "Unable to claim Gold Jacket Credits.",
       );
     } finally {
       setClaiming(false);
@@ -98,13 +98,13 @@ export default function WelcomeCoinClaim() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 px-5 backdrop-blur-xl">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-purple-400/25 bg-[#0b0b0d] p-7 text-center shadow-[0_30px_120px_rgba(126,34,206,0.35)] sm:p-10">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-purple-600/20 to-transparent" />
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-amber-400/25 bg-[#0b0b0d] p-7 text-center shadow-[0_30px_120px_rgba(126,34,206,0.35)] sm:p-10">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-amber-600/20 to-transparent" />
 
         <div className="relative mx-auto h-24 w-24">
           <Image
             src="/ne-coin.png"
-            alt="NE Coin"
+            alt="Gold Jacket Credits"
             fill
             priority
             sizes="96px"
@@ -114,12 +114,12 @@ export default function WelcomeCoinClaim() {
 
         {claimedBalance === null ? (
           <>
-            <p className="mt-5 text-xs font-black uppercase tracking-[0.32em] text-purple-300">
+            <p className="mt-5 text-xs font-black uppercase tracking-[0.32em] text-amber-300">
               Welcome to Gold Jacket
             </p>
 
             <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-white">
-              Claim Your NE Coin
+              Claim Your Gold Jacket Credits
             </h2>
 
             <p className="mt-4 text-zinc-400">
@@ -138,7 +138,7 @@ export default function WelcomeCoinClaim() {
               </p>
 
               <p className="text-sm font-bold text-amber-300">
-                NE Coin
+                Gold Jacket Credits
               </p>
             </div>
 
@@ -157,11 +157,11 @@ export default function WelcomeCoinClaim() {
               type="button"
               onClick={() => void claim()}
               disabled={claiming}
-              className="mt-7 w-full rounded-2xl bg-purple-600 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-[0_16px_45px_rgba(147,51,234,0.3)] transition hover:bg-purple-500 disabled:opacity-50"
+              className="mt-7 w-full rounded-2xl bg-amber-600 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-[0_16px_45px_rgba(212,175,55,0.3)] transition hover:bg-amber-500 disabled:opacity-50"
             >
               {claiming
                 ? "Claiming..."
-                : `Claim ${reward} NE Coin`}
+                : `Claim ${reward} Gold Jacket Credits`}
             </button>
           </>
         ) : (
@@ -178,8 +178,8 @@ export default function WelcomeCoinClaim() {
               Your Gold Jacket economy is active.
             </p>
 
-            <div className="mt-7 rounded-2xl border border-purple-400/20 bg-purple-500/10 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-purple-300">
+            <div className="mt-7 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">
                 Current Balance
               </p>
 

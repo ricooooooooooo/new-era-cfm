@@ -66,7 +66,7 @@ const CATALOG = [
 function readUser(request: NextRequest): SavedDiscordUser | null {
   try {
     const encoded =
-      request.cookies.get("new_era_discord_user")?.value;
+      request.cookies.get("gold_jacket_discord_user")?.value;
 
     if (!encoded) return null;
 
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     console.error("Dev market load failed:", error);
 
     return NextResponse.json(
-      { success: false, error: "Unable to load New Era Market." },
+      { success: false, error: "Unable to load Gold Jacket Market." },
       { status: 500 },
     );
   }
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error:
-            "Your Discord account does not have a New Era team linked.",
+            "Your Discord account does not have a Gold Jacket team linked.",
         },
         { status: 400 },
       );
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Not enough NE Coin.",
+          error: "Not enough Gold Jacket Credits.",
         },
         { status: 400 },
       );
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
         amount: -item.price,
         type: "dev_market_purchase",
         reference_id: referenceId,
-        description: `New Era Market | ${item.name}`,
+        description: `Gold Jacket Market | ${item.name}`,
         metadata: {
           kind: "dev_market_purchase",
           itemKey: item.key,

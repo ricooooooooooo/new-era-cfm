@@ -22,14 +22,14 @@ const result = await supabase
   .select(
     "id, season, amount, teams_filled, total_teams, discord_message_id, last_published_at",
   )
-  .eq("id", "new-era")
+  .eq("id", "gold-jacket")
   .maybeSingle();
 
 if (result.error) throw result.error;
 if (!result.data) throw new Error("Prize-pot settings row was not found.");
 
 console.log("");
-console.log("NEW ERA — PRIZE POT CONTROL CHECK");
+console.log("GOLD JACKET — PRIZE POT CONTROL CHECK");
 console.log("----------------------------------");
 console.log(`Season: ${result.data.season}`);
 console.log(`Current pot: $${result.data.amount}`);

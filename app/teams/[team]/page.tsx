@@ -17,7 +17,7 @@ type TeamPageProps = {
   }>;
 };
 
-async function getNewEraLeagueId(): Promise<string | null> {
+async function getGoldJacketLeagueId(): Promise<string | null> {
   const { data, error } = await supabaseAdmin
     .from("leagues")
     .select("id")
@@ -38,7 +38,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
   if (!team) notFound();
 
-  const leagueId = await getNewEraLeagueId();
+  const leagueId = await getGoldJacketLeagueId();
 
   let players: CurrentMaddenPlayer[] = [];
   let rosterError = false;
@@ -172,8 +172,8 @@ export default async function TeamPage({ params }: TeamPageProps) {
             )}
           </section>
 
-          <section className="mt-6 rounded-3xl border border-purple-400/20 bg-purple-400/[0.055] p-6">
-            <p className="text-sm font-black text-purple-200">Data source ready</p>
+          <section className="mt-6 rounded-3xl border border-amber-400/20 bg-amber-400/[0.055] p-6">
+            <p className="text-sm font-black text-amber-200">Data source ready</p>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-zinc-400">
               The roster is active now from the launch baseline. Completed-game stats, progression, regression,
               transactions and updated ratings will appear from the EA franchise source as soon as that connection is enabled.

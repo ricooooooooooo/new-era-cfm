@@ -30,7 +30,7 @@ const FEATURES = [
       "CHECK YOUR OWNER DNA",
 
     text:
-      "New Era gives you a live Owner OVR, archetype, offense, defense, clutch and dominance ratings based on what you actually do in Madden.",
+      "Gold Jacket gives you a live Owner OVR, archetype, offense, defense, clutch and dominance ratings based on what you actually do in Madden.",
 
     path:
       "/era#dna",
@@ -47,7 +47,7 @@ const FEATURES = [
       "WHO HAS THE BELT?",
 
     text:
-      "The New Era Championship Belt transfers whenever the holder loses. Check the current champion and the full belt lineage.",
+      "The Gold Jacket Championship Belt transfers whenever the holder loses. Check the current champion and the full belt lineage.",
 
     path:
       "/era#belt",
@@ -64,7 +64,7 @@ const FEATURES = [
       "FRAUD WATCH",
 
     text:
-      "A good record doesn't always mean a good team. New Era automatically flags suspicious records using scoring margin and close-game results.",
+      "A good record doesn't always mean a good team. Gold Jacket automatically flags suspicious records using scoring margin and close-game results.",
 
     path:
       "/era#fraud",
@@ -81,7 +81,7 @@ const FEATURES = [
       "RIVALRY INTELLIGENCE",
 
     text:
-      "Playing somebody you've seen before? New Era remembers the series, average margin and rivalry heat automatically.",
+      "Playing somebody you've seen before? Gold Jacket remembers the series, average margin and rivalry heat automatically.",
 
     path:
       "/era#rivalry",
@@ -98,7 +98,7 @@ const FEATURES = [
       "SECRET ACHIEVEMENTS",
 
     text:
-      "Your franchise can unlock hidden New Era achievements from actual Madden results. Some requirements stay hidden until you unlock them.",
+      "Your franchise can unlock hidden Gold Jacket achievements from actual Madden results. Some requirements stay hidden until you unlock them.",
 
     path:
       "/era#achievements",
@@ -115,7 +115,7 @@ const FEATURES = [
       "AUTOMATIC GAME RECAPS",
 
     text:
-      "Every completed New Era game becomes part of the league story automatically. Check the latest results and recap headlines.",
+      "Every completed Gold Jacket game becomes part of the league story automatically. Check the latest results and recap headlines.",
 
     path:
       "/era#recaps",
@@ -129,10 +129,10 @@ const FEATURES = [
       "📜",
 
     title:
-      "THE NEW ERA UNIVERSE",
+      "THE GOLD JACKET UNIVERSE",
 
     text:
-      "GOTWs, POTWs, big results and league moments are becoming permanent New Era history instead of disappearing in Discord.",
+      "GOTWs, POTWs, big results and league moments are becoming permanent Gold Jacket history instead of disappearing in Discord.",
 
     path:
       "/era#universe",
@@ -146,7 +146,7 @@ const FEATURES = [
       "📲",
 
     title:
-      "YOUR NEW ERA WRAPPED",
+      "YOUR GOLD JACKET WRAPPED",
 
     text:
       "Record, streak, scoring average, point differential and your latest Madden result are waiting on your personal Wrapped card.",
@@ -200,7 +200,7 @@ function channelScore(
 
   if (
     value.includes(
-      "newerachat",
+      "goldjacketchat",
     )
   ) {
     return 92;
@@ -313,7 +313,7 @@ function featureSlashCommand(
   if (value.includes("RECAP")) return "/recaps";
   if (value.includes("WRAPPED")) return "/wrapped";
 
-  return "/newera";
+  return "/goldjacket";
 }
 
 async function resolveChannel() {
@@ -437,14 +437,14 @@ export async function postFeatureReminder() {
               description:
                 `${feature.text}\n\n💬 **Discord:** \`${featureSlashCommand(
                   feature.title,
-                )}\`\n\n**New Era isn't just standings. Use the tools.**`,
+                )}\`\n\n**Gold Jacket isn't just standings. Use the tools.**`,
 
               color:
-                0x7c3aed,
+                0xd4af37,
 
               footer: {
                 text:
-                  "NEW ERA • FEATURE SPOTLIGHT",
+                  "GOLD JACKET • FEATURE SPOTLIGHT",
               },
             },
           ],

@@ -5,7 +5,7 @@ type SignupNotificationInput = {
   registeredMemberCount: number;
 };
 
-const NEW_ERA_PURPLE = 0x7c3aed;
+const GOLD_JACKET_GOLD = 0xd4af37;
 
 function getDiscordAvatarUrl(member: MemberRecord): string | undefined {
   if (!member.avatar_hash) {
@@ -42,15 +42,15 @@ export async function sendSignupNotification({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      username: "NEW ERA Signups",
+      username: "GOLD JACKET Signups",
       allowed_mentions: {
         parse: [],
       },
       embeds: [
         {
           title: "🎉 NEW MEMBER REGISTERED",
-          description: `**${member.display_name}** just created their NEW ERA profile.`,
-          color: NEW_ERA_PURPLE,
+          description: `**${member.display_name}** just created their GOLD JACKET profile.`,
+          color: GOLD_JACKET_GOLD,
           thumbnail: avatarUrl
             ? {
                 url: avatarUrl,
@@ -69,7 +69,7 @@ export async function sendSignupNotification({
             },
           ],
           footer: {
-            text: "NEW ERA CFM",
+            text: "GOLD JACKET CFM",
           },
           timestamp: new Date().toISOString(),
         },

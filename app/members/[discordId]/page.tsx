@@ -124,7 +124,7 @@ export default async function MemberProfilePage({
 
           <div className="mt-6 overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.075] via-white/[0.035] to-transparent shadow-[0_30px_100px_rgba(0,0,0,0.42)]">
             <div className="relative h-44 overflow-hidden border-b border-white/10 sm:h-56">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(168,85,247,0.35),transparent_38%),radial-gradient(circle_at_80%_50%,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#15111c,#090a0c_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(212,175,55,0.35),transparent_38%),radial-gradient(circle_at_80%_50%,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#15111c,#090a0c_65%)]" />
 
               <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:36px_36px]" />
             </div>
@@ -158,7 +158,7 @@ export default async function MemberProfilePage({
                       </h1>
 
                       {member.is_staff && (
-                        <span className="rounded-full border border-purple-300/25 bg-purple-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-purple-200">
+                        <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">
                           Staff
                         </span>
                       )}
@@ -199,7 +199,7 @@ export default async function MemberProfilePage({
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
             <div className="space-y-6">
               <article className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-8">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-300">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">
                   AI Owner Report
                 </p>
 

@@ -82,7 +82,7 @@ export default async function GotwPage() {
                       {gotw.away.name}
                     </h2>
 
-                    <p className="mt-1 text-lg font-black text-purple-300">
+                    <p className="mt-1 text-lg font-black text-amber-300">
                       {gotw.away.record}
                     </p>
                   </div>
@@ -136,7 +136,7 @@ export default async function GotwPage() {
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Link
                   href="/predictions"
-                  className="flex min-h-14 items-center justify-center rounded-2xl bg-purple-600 px-5 text-sm font-black uppercase tracking-[0.1em] transition hover:bg-purple-500"
+                  className="flex min-h-14 items-center justify-center rounded-2xl bg-amber-600 px-5 text-sm font-black uppercase tracking-[0.1em] transition hover:bg-amber-500"
                 >
                   Bet on GOTW
                 </Link>

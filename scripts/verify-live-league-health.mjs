@@ -77,7 +77,7 @@ if (teams.error) throw teams.error;
 if (games.error) throw games.error;
 
 console.log("");
-console.log("NEW ERA — LIVE LEAGUE HEALTH CHECK");
+console.log("GOLD JACKET — LIVE LEAGUE HEALTH CHECK");
 console.log("-----------------------------------");
 console.log(`Teams found: ${teams.count ?? 0}`);
 console.log(

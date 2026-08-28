@@ -4,8 +4,8 @@ import {
 } from "next/server";
 
 import {
-  getNewEraAutopilotStatus,
-  runNewEraAutopilot,
+  getGoldJacketAutopilotStatus,
+  runGoldJacketAutopilot,
 } from "@/lib/autopilot/weekly";
 
 import {
@@ -42,7 +42,7 @@ export async function GET(
   return NextResponse.json({
     success: true,
     status:
-      await getNewEraAutopilotStatus(),
+      await getGoldJacketAutopilotStatus(),
   });
 }
 
@@ -70,7 +70,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
     result:
-      await runNewEraAutopilot({
+      await runGoldJacketAutopilot({
         force: true,
       }),
   });

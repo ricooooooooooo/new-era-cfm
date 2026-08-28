@@ -72,7 +72,7 @@ export async function GET() {
 
     return NextResponse.json(leaderboard);
   } catch (error) {
-    console.error("Failed to load NE Coin leaderboard:", error);
+    console.error("Failed to load Gold Jacket Credits leaderboard:", error);
 
     return NextResponse.json(
       { error: "Failed to load leaderboard." },

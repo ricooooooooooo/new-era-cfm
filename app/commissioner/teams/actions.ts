@@ -12,7 +12,7 @@ type SavedDiscordUser = {
 
 async function requireStaff() {
   const cookieStore = await cookies();
-  const encodedUser = cookieStore.get("new_era_discord_user")?.value;
+  const encodedUser = cookieStore.get("gold_jacket_discord_user")?.value;
 
   if (!encodedUser) notFound();
 

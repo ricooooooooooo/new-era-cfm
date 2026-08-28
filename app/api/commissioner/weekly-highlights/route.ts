@@ -60,7 +60,7 @@ export async function POST(
 
     if (!leagueResult.data) {
       throw new Error(
-        "New Era league not found.",
+        "Gold Jacket league not found.",
       );
     }
 

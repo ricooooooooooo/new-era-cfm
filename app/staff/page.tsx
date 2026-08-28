@@ -32,7 +32,7 @@ export default function StaffApplicationPage() {
       title: "Content Team",
       description:
         "Create power rankings, graphics, weekly recaps and league content.",
-      color: "border-purple-500",
+      color: "border-amber-500",
     },
   ];
 

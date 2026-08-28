@@ -29,7 +29,7 @@ async function getUser() {
 
   const value =
     store.get(
-      "new_era_discord_user",
+      "gold_jacket_discord_user",
     )?.value;
 
   if (!value) {
@@ -190,7 +190,7 @@ export default async function MyGamePage() {
       <div className="min-h-screen bg-[#050606] px-4 py-6 text-white sm:px-6 sm:py-9">
         <div className="mx-auto max-w-5xl">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-300">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">
               Week {week}
             </p>
 
@@ -260,7 +260,7 @@ export default async function MyGamePage() {
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 <Link
                   href="/schedule"
-                  className="flex min-h-14 items-center justify-center rounded-2xl bg-purple-600 px-4 text-center text-sm font-black transition hover:bg-purple-500"
+                  className="flex min-h-14 items-center justify-center rounded-2xl bg-amber-600 px-4 text-center text-sm font-black transition hover:bg-amber-500"
                 >
                   Schedule Game
                 </Link>

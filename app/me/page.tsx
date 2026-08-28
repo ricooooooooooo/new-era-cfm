@@ -30,7 +30,7 @@ async function getUser() {
 
   const raw =
     store.get(
-      "new_era_discord_user",
+      "gold_jacket_discord_user",
     )?.value;
 
   if (!raw) {
@@ -125,7 +125,7 @@ export default async function MePage() {
               )}
 
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-300">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
                   Gold Jacket Owner
                 </p>
 
@@ -145,9 +145,9 @@ export default async function MePage() {
           </section>
 
           <section className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-purple-400/15 bg-purple-400/[0.06] p-5">
-              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-purple-300">
-                NE Coin
+            <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] p-5">
+              <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300">
+                Gold Jacket Credits
               </p>
 
               <p className="mt-2 text-3xl font-black">
@@ -192,7 +192,7 @@ export default async function MePage() {
                 [
                   "Gold Jacket Market",
                   "/market",
-                  "Spend NE Coin on franchise upgrades",
+                  "Spend Gold Jacket Credits on franchise upgrades",
                 ],
                 [
                   "My Game",

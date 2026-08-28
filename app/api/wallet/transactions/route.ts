@@ -6,7 +6,7 @@ type SavedDiscordUser = {
 };
 
 function getDiscordId(request: NextRequest) {
-  const encodedUser = request.cookies.get("new_era_discord_user")?.value;
+  const encodedUser = request.cookies.get("gold_jacket_discord_user")?.value;
   if (!encodedUser) return null;
 
   try {

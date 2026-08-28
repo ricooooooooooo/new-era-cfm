@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
         "Current week",
       );
       const leagueName =
-        String(body.leagueName ?? "NEW ERA CFM").trim() || "NEW ERA CFM";
+        String(body.leagueName ?? "GOLD JACKET CFM").trim() || "GOLD JACKET CFM";
       const provider = String(body.provider ?? "manual").trim() || "manual";
       const externalLeagueId =
         String(body.externalLeagueId ?? "").trim() || null;
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "NEW ERA Madden 27 league setup saved.",
+        message: "GOLD JACKET Madden 27 league setup saved.",
         league: result.data,
       });
     }
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (result.error) throw result.error;
-      if (!result.data) throw new Error("NEW ERA league was not found.");
+      if (!result.data) throw new Error("GOLD JACKET league was not found.");
 
       return NextResponse.json({
         success: true,

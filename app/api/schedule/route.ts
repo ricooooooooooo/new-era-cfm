@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       league: {
         id: league.id,
-        name: league.name ?? "NEW ERA CFM",
+        name: league.name ?? "GOLD JACKET CFM",
       },
       season: selectedSeason,
       currentWeek: Number(league.current_week ?? 1),
@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
     console.error("Schedule API failed:", error);
 
     return NextResponse.json(
-      { error: "Unable to load the NEW ERA schedule." },
+      { error: "Unable to load the GOLD JACKET schedule." },
       { status: 500 },
     );
   }

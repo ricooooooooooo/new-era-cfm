@@ -242,10 +242,10 @@ export default function ActiveCheckActions() {
   return (
     <div className="w-full lg:max-w-md">
       {timerStatus?.check ? (
-        <div className="mb-4 rounded-2xl border border-purple-400/20 bg-purple-500/[0.05] p-4">
+        <div className="mb-4 rounded-2xl border border-amber-400/20 bg-amber-500/[0.05] p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-purple-300">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">
                 Current Discord Check
               </p>
               <p className="mt-1 text-sm font-black text-white">
@@ -286,7 +286,7 @@ export default function ActiveCheckActions() {
               type="button"
               onClick={attachTimerToCurrentCheck}
               disabled={isAttaching}
-              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-purple-400/30 bg-purple-500/10 px-4 py-3 text-sm font-black text-purple-200 transition hover:bg-purple-500/20 disabled:opacity-60"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-black text-amber-200 transition hover:bg-amber-500/20 disabled:opacity-60"
             >
               {isAttaching
                 ? "Attaching Timer..."
@@ -323,7 +323,7 @@ export default function ActiveCheckActions() {
               step="0.5"
               value={durationHours}
               onChange={(event) => setDurationHours(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-[#111214] px-3 py-2 text-sm font-bold text-white outline-none focus:border-purple-400/50"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-[#111214] px-3 py-2 text-sm font-bold text-white outline-none focus:border-amber-400/50"
             />
           </div>
           <label className="flex items-center gap-2 self-end rounded-xl border border-white/10 bg-[#111214] px-3 py-2 text-xs font-bold text-zinc-300">
@@ -369,7 +369,7 @@ export default function ActiveCheckActions() {
             setIsError(false);
           }}
           disabled={isPosting}
-          className="mt-2 w-full rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-purple-400/50 disabled:opacity-60"
+          className="mt-2 w-full rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-amber-400/50 disabled:opacity-60"
         >
           {activeCheckOptions.map((option) => (
             <option key={option.value} value={option.value} className="bg-[#111214] text-white">
@@ -394,7 +394,7 @@ export default function ActiveCheckActions() {
               onChange={(event) => setWeekNumber(event.target.value)}
               disabled={isPosting}
               placeholder="Example: 4"
-              className="mt-2 w-full rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-zinc-700 focus:border-purple-400/50 disabled:opacity-60"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-zinc-700 focus:border-amber-400/50 disabled:opacity-60"
             />
           </div>
         ) : null}
@@ -411,7 +411,7 @@ export default function ActiveCheckActions() {
             maxLength={500}
             rows={3}
             placeholder="Add any instructions or announcement..."
-            className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-purple-400/50 disabled:opacity-60"
+            className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#111214] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-amber-400/50 disabled:opacity-60"
           />
           <p className="mt-1 text-right text-[10px] font-bold text-zinc-700">{customMessage.length}/500</p>
         </div>
@@ -420,7 +420,7 @@ export default function ActiveCheckActions() {
           type="button"
           onClick={startActiveCheck}
           disabled={isPosting}
-          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-purple-600 px-5 py-3 text-sm font-black text-white transition hover:bg-purple-500 disabled:opacity-60"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-5 py-3 text-sm font-black text-white transition hover:bg-amber-500 disabled:opacity-60"
         >
           {isPosting ? "Posting Activity Check..." : "Launch New Activity Check"}
         </button>

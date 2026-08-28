@@ -114,7 +114,7 @@ const loadSleeperPlayers = unstable_cache(
       return [];
     }
   },
-  ["new-era-sleeper-player-index-v2"],
+  ["gold-jacket-sleeper-player-index-v2"],
   {
     revalidate: 86_400,
     tags: ["sleeper-nfl-player-index"],
