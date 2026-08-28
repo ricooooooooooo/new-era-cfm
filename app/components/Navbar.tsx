@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import GoldJacketMark from "@/app/components/GoldJacketMark";
 type NavbarProps = {
   onMenuClick: () => void;
 };
@@ -16,6 +16,13 @@ type DiscordUser = {
   avatar: string | null;
 };
 
+const navLinks = [
+  { label: "Home", href: "/home", ready: true },
+  { label: "League", href: "/league", ready: true },
+  { label: "Gold Jackets", href: "/gold-jackets", ready: true },
+  { label: "Dev Shop", href: "/market", ready: true },
+  { label: "Media", href: "/media", ready: true },
+];
 
 function DiscordIcon() {
   return (
@@ -47,9 +54,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           cache: "no-store",
         });
 
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
 
@@ -59,9 +64,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       } catch (error) {
         console.error("Failed to load Discord user:", error);
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
@@ -73,16 +76,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     let stopped = false;
 
     async function updatePresence() {
-      if (stopped || document.visibilityState === "hidden") {
-        return;
-      }
+      if (stopped || document.visibilityState === "hidden") return;
 
       try {
         await fetch("/api/member/sync", {
@@ -106,26 +105,14 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
     updatePresence();
 
-    const heartbeat = window.setInterval(() => {
-      updatePresence();
-    }, 60_000);
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibilityChange,
-    );
-
+    const heartbeat = window.setInterval(updatePresence, 60_000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("focus", updatePresence);
 
     return () => {
       stopped = true;
       window.clearInterval(heartbeat);
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange,
-      );
-
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", updatePresence);
     };
   }, [user]);
@@ -157,13 +144,13 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
       : null;
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080909]/90 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:px-6 lg:ml-20">
-      <div className="flex min-w-0 items-center gap-3 lg:gap-8">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-[#d4af37]/15 bg-[#080806]/95 px-3 shadow-[0_8px_30px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-5 lg:ml-20">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           onClick={onMenuClick}
           aria-label="Open all tools"
-          className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-zinc-200 transition hover:bg-white/[0.07] active:scale-95 active:bg-white/[0.08]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-zinc-200 transition hover:border-[#d4af37]/30 hover:bg-[#d4af37]/[0.06] active:scale-95"
         >
           <svg
             aria-hidden="true"
@@ -181,48 +168,62 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </button>
 
         <Link
-          href="/home"
-          className="group flex min-w-0 shrink items-center gap-2.5"
+          href="/"
+          className="group flex min-w-0 items-center gap-2.5"
         >
-          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl transition duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_14px_rgba(252,211,77,0.35)]">
-            <Image
-              src="/gold-jacket-mark.png"
-              alt="Gold Jacket emblem"
-              fill
-              priority
-              sizes="36px"
-              className="object-contain"
-            />
-          </div>
+          <GoldJacketMark className="h-9 w-9 shrink-0 drop-shadow-[0_0_8px_rgba(212,175,55,0.18)]" />
 
-          <div className="min-w-0 leading-none">
-            <p className="truncate text-sm font-black tracking-[-0.025em] text-white sm:text-base">
+          <div className="hidden min-w-0 leading-none sm:block">
+            <p className="truncate text-sm font-black tracking-[-0.025em] text-white">
               GOLD JACKET
             </p>
-
-            <p className="mt-1 hidden text-[8px] font-bold uppercase tracking-[0.22em] text-zinc-500 sm:block">
+            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.22em] text-[#d4af37]/70">
               Connected Franchise
             </p>
           </div>
         </Link>
+
+        <nav className="ml-3 hidden items-center gap-1 xl:flex">
+          {navLinks.map((link) => {
+            const active =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative rounded-lg px-3 py-2 text-sm font-bold transition ${
+                  active
+                    ? "bg-[#d4af37]/10 text-[#f1d477]"
+                    : "text-zinc-500 hover:bg-white/[0.035] hover:text-zinc-200"
+                }`}
+              >
+                {link.label}
+
+                {active && (
+                  <span className="absolute inset-x-3 -bottom-[9px] h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
-
         {loading ? (
-          <div className="h-10 w-24 animate-pulse rounded-xl bg-white/[0.06] sm:w-32" />
+          <div className="h-10 w-24 animate-pulse rounded-xl bg-white/[0.06]" />
         ) : user ? (
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
-              onClick={() =>
-                setDropdownOpen((current) => !current)
-              }
+              onClick={() => setDropdownOpen((current) => !current)}
               aria-expanded={dropdownOpen}
-              className={`flex touch-manipulation items-center gap-2 rounded-xl border px-2 py-2 transition active:scale-[0.98] sm:px-3 ${
+              className={`flex items-center gap-2 rounded-xl border px-2 py-2 transition sm:px-3 ${
                 dropdownOpen
-                  ? "border-white/25 bg-white/[0.08]"
-                  : "border-white/10 bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.065]"
+                  ? "border-[#d4af37]/30 bg-[#d4af37]/[0.07]"
+                  : "border-white/10 bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.06]"
               }`}
             >
               {avatarUrl ? (
@@ -232,7 +233,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                   className="h-7 w-7 rounded-full border border-white/10 object-cover"
                 />
               ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-zinc-100 to-zinc-400 text-xs font-black text-black">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d4af37] text-xs font-black text-black">
                   {user.displayName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -241,41 +242,18 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 <p className="max-w-28 truncate text-sm font-bold text-white">
                   {user.displayName}
                 </p>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
-
-                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                    Online
-                  </p>
-                </div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-600">
+                  Online
+                </p>
               </div>
-
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                fill="none"
-                className={`hidden h-3.5 w-3.5 text-zinc-500 transition sm:block ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
-              >
-                <path
-                  d="m5 7.5 5 5 5-5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-white/10 bg-[#101113]/98 p-2 shadow-[0_24px_70px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+              <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-[#d4af37]/15 bg-[#0d0d0b]/98 p-2 shadow-[0_24px_70px_rgba(0,0,0,0.7)] backdrop-blur-xl">
                 <div className="border-b border-white/10 px-3 py-3">
                   <p className="truncate text-sm font-bold text-white">
                     {user.displayName}
                   </p>
-
                   <p className="mt-1 truncate text-xs text-zinc-500">
                     @{user.username}
                   </p>
@@ -287,15 +265,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                     onClick={() => setDropdownOpen(false)}
                     className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
                   >
-                    My Gold Jacket Profile
-                  </Link>
-
-                  <Link
-                    href="/members"
-                    onClick={() => setDropdownOpen(false)}
-                    className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
-                  >
-                    League Members
+                    My Profile
                   </Link>
 
                   <Link
@@ -319,14 +289,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         ) : (
           <a
             href="/api/discord/login"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7289ff]/40 bg-[#5865F2] px-3 py-2 text-sm font-black text-white shadow-[0_0_20px_rgba(88,101,242,0.35)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#6672F5] hover:shadow-[0_0_28px_rgba(88,101,242,0.55)] active:scale-95 sm:px-4"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7289ff]/40 bg-[#5865F2] px-3 py-2 text-sm font-black text-white transition hover:bg-[#6672F5] active:scale-95 sm:px-4"
           >
             <DiscordIcon />
-
-            <span className="hidden sm:inline">
-              Connect Discord
-            </span>
-
+            <span className="hidden sm:inline">Connect Discord</span>
             <span className="sm:hidden">Connect</span>
           </a>
         )}

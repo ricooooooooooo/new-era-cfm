@@ -30,9 +30,8 @@ const leagueLinks = [
   { label: "Home", href: "/home" },
   { label: "League", href: "/league" },
   { label: "Gold Jackets", href: "/gold-jackets" },
-  { label: "Dev Shop", href: "/dev-shop" },
+  { label: "Dev Shop", href: "/market" },
   { label: "Media", href: "/media" },
-  { label: "Fantasy", href: "/fantasy" },
 ];
 
 const roleSections: Record<
@@ -227,7 +226,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               </h1>
 
               <p className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.24em] text-amber-300/70">
-                Madden 27 Franchise
+                Connected Franchise
               </p>
             </div>
           </Link>
