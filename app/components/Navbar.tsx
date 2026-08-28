@@ -20,7 +20,6 @@ const navLinks = [
   { label: "Home", href: "/home", ready: true },
   { label: "League", href: "/league", ready: true },
   { label: "Gold Jackets", href: "/gold-jackets", ready: true },
-  { label: "Dev Shop", href: "/market", ready: true },
   { label: "Media", href: "/media", ready: true },
 ];
 

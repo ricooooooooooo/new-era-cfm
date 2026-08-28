@@ -30,7 +30,6 @@ const leagueLinks = [
   { label: "Home", href: "/home" },
   { label: "League", href: "/league" },
   { label: "Gold Jackets", href: "/gold-jackets" },
-  { label: "Dev Shop", href: "/market" },
   { label: "Media", href: "/media" },
 ];
 
@@ -45,6 +44,7 @@ const roleSections: Record<
     title: "Owner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "Dev Shop Orders", href: "/commissioner/dev-shop" },
       { label: "League Health", href: "/commissioner/league-health" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Owner Connections", href: "/commissioner/owner-connections" },
@@ -62,6 +62,7 @@ const roleSections: Record<
     title: "Commissioner Center",
     links: [
       { label: "Commissioner Dashboard", href: "/commissioner" },
+      { label: "Dev Shop Orders", href: "/commissioner/dev-shop" },
       { label: "League Health", href: "/commissioner/league-health" },
       { label: "Manage Members", href: "/commissioner/members" },
       { label: "Owner Connections", href: "/commissioner/owner-connections" },

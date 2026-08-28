@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
-  buildCycleKey,
-  createAdvanceTimerState,
+  decideAdvanceTimer,
+  parseAdvanceBaseline,
   parseAdvanceTimerState,
+  type AdvanceBaseline,
   type AdvanceTimerState,
 } from "@/lib/advance-timer-core.mjs";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const TIMER_SOURCE = "gold-jacket-system";
+const BASELINE_EXPORT_TYPE = "advance_timer_baseline";
 const TIMER_EXPORT_TYPE = "advance_timer";
 
 type LeagueRow = {
@@ -23,7 +25,6 @@ type LeagueRow = {
 };
 
 type TimerRow = {
-  id: string;
   payload: unknown;
   received_at: string;
 };
@@ -41,120 +42,155 @@ async function loadGoldJacketLeague(): Promise<LeagueRow | null> {
     .select("id,name,slug,current_week,season")
     .limit(100);
 
-  if (error) {
-    console.error("Advance timer league lookup failed:", error);
-    throw new Error("Unable to read league state.");
-  }
+  if (error) throw error;
 
-  return ((data ?? []) as LeagueRow[]).find(isGoldJacketLeague) ?? null;
+  return (
+    ((data ?? []) as LeagueRow[]).find(isGoldJacketLeague) ?? null
+  );
 }
 
-async function loadLatestTimer(): Promise<AdvanceTimerState | null> {
+async function loadLatestPayload(
+  exportType: string,
+): Promise<unknown | null> {
   const { data, error } = await supabaseAdmin
     .from("league_syncs")
-    .select("id,payload,received_at")
+    .select("payload,received_at")
     .eq("source", TIMER_SOURCE)
-    .eq("export_type", TIMER_EXPORT_TYPE)
+    .eq("export_type", exportType)
     .eq("status", "completed")
     .order("received_at", { ascending: false })
     .limit(20);
 
-  if (error) {
-    console.error("Advance timer storage read failed:", error);
-    throw new Error("Unable to read advance timer.");
-  }
+  if (error) throw error;
 
-  for (const row of (data ?? []) as TimerRow[]) {
-    const parsed = parseAdvanceTimerState(row.payload);
-    if (parsed) return parsed;
-  }
-
-  return null;
+  return ((data ?? []) as TimerRow[])[0]?.payload ?? null;
 }
 
-async function persistTimer(
-  state: AdvanceTimerState,
-): Promise<AdvanceTimerState> {
-  const { data, error } = await supabaseAdmin
-    .from("league_syncs")
-    .insert({
-      source: TIMER_SOURCE,
-      export_type: TIMER_EXPORT_TYPE,
-      status: "completed",
-      payload: state,
-      payload_type: "object",
-      top_level_keys: [
-        "kind",
-        "cycleKey",
-        "leagueId",
-        "season",
-        "week",
-        "startedAt",
-        "deadlineAt",
-      ],
-      item_count: 1,
-      request_headers: {
-        system: "gold-jacket-advance-countdown",
-      },
-      processed_at: new Date().toISOString(),
-    })
-    .select("payload")
-    .single();
+async function persistBaseline(baseline: AdvanceBaseline) {
+  const { error } = await supabaseAdmin.from("league_syncs").insert({
+    source: TIMER_SOURCE,
+    export_type: BASELINE_EXPORT_TYPE,
+    status: "completed",
+    payload: baseline,
+    payload_type: "object",
+    top_level_keys: Object.keys(baseline),
+    item_count: 1,
+    request_headers: {
+      system: "gold-jacket-advance-countdown",
+    },
+    processed_at: baseline.observedAt,
+  });
 
-  if (error || !data) {
-    console.error("Advance timer storage insert failed:", error);
-    throw new Error("Unable to save advance timer.");
-  }
+  if (error) throw error;
+}
 
-  const saved = parseAdvanceTimerState(data.payload);
-  if (!saved) {
-    throw new Error("Advance timer storage returned an invalid payload.");
-  }
+async function persistTimer(timer: AdvanceTimerState) {
+  const { error } = await supabaseAdmin.from("league_syncs").insert({
+    source: TIMER_SOURCE,
+    export_type: TIMER_EXPORT_TYPE,
+    status: "completed",
+    payload: timer,
+    payload_type: "object",
+    top_level_keys: Object.keys(timer),
+    item_count: 1,
+    request_headers: {
+      system: "gold-jacket-advance-countdown",
+    },
+    processed_at: timer.startedAt,
+  });
 
-  return saved;
+  if (error) throw error;
 }
 
 export async function GET() {
   try {
     const league = await loadGoldJacketLeague();
-    const cycleKey = buildCycleKey(league);
 
-    let timer = await loadLatestTimer();
-
-    if (!timer || timer.cycleKey !== cycleKey) {
-      timer = await persistTimer(
-        createAdvanceTimerState({
-          cycleKey,
-          leagueId: league?.id ?? null,
-          season: league?.season ?? null,
-          week: league?.current_week ?? null,
-        }),
+    if (!league) {
+      return NextResponse.json(
+        {
+          success: true,
+          active: false,
+          reason: "league_not_connected",
+        },
+        {
+          headers: {
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
       );
     }
 
-    const serverNowMs = Date.now();
-    const deadlineMs = Date.parse(timer.deadlineAt);
+    const [rawBaseline, rawTimer] = await Promise.all([
+      loadLatestPayload(BASELINE_EXPORT_TYPE),
+      loadLatestPayload(TIMER_EXPORT_TYPE),
+    ]);
+
+    const baseline = parseAdvanceBaseline(rawBaseline);
+    const activeTimer = parseAdvanceTimerState(rawTimer);
+
+    const decision = decideAdvanceTimer({
+      league,
+      baseline,
+      activeTimer,
+    });
+
+    if (decision.action === "create_baseline" && decision.baseline) {
+      await persistBaseline(decision.baseline);
+    }
+
+    if (
+      decision.action === "advance" &&
+      decision.baseline &&
+      decision.timer
+    ) {
+      await persistBaseline(decision.baseline);
+      await persistTimer(decision.timer);
+    }
+
+    if (!decision.active || !decision.timer) {
+      return NextResponse.json(
+        {
+          success: true,
+          active: false,
+          reason:
+            decision.action === "create_baseline"
+              ? "waiting_for_first_advance"
+              : "waiting_for_first_advance",
+          league: {
+            id: league.id,
+            season: league.season,
+            currentWeek: league.current_week,
+          },
+        },
+        {
+          headers: {
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
+      );
+    }
+
+    const nowMs = Date.now();
+    const deadlineMs = Date.parse(decision.timer.deadlineAt);
     const remainingSeconds = Math.max(
       0,
-      Math.ceil((deadlineMs - serverNowMs) / 1000),
+      Math.ceil((deadlineMs - nowMs) / 1000),
     );
 
     return NextResponse.json(
       {
         success: true,
-        timer,
-        league: league
-          ? {
-              id: league.id,
-              name: league.name,
-              slug: league.slug,
-              season: league.season,
-              currentWeek: league.current_week,
-            }
-          : null,
-        serverNow: new Date(serverNowMs).toISOString(),
+        active: true,
+        timer: decision.timer,
+        serverNow: new Date(nowMs).toISOString(),
         remainingSeconds,
         due: remainingSeconds === 0,
+        league: {
+          id: league.id,
+          season: league.season,
+          currentWeek: league.current_week,
+        },
       },
       {
         headers: {
@@ -163,11 +199,12 @@ export async function GET() {
       },
     );
   } catch (error) {
-    console.error("Advance timer route failed:", error);
+    console.error("Gold Jacket advance timer failed:", error);
 
     return NextResponse.json(
       {
         success: false,
+        active: false,
         error: "Unable to load the advance countdown.",
       },
       {
