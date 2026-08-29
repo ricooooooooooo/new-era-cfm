@@ -4,8 +4,10 @@ import {
 } from "@/lib/gold-jackets/catalog";
 import { validateGoldJacketClaim } from "@/lib/gold-jackets/claim-rules";
 import { sendGoldJacketStaffAlert } from "@/lib/gold-jackets/discord";
+import { syncGoldJacketDiscordBoard } from "@/lib/gold-jackets/discord-board";
 import { readGoldJacketDiscordUser } from "@/lib/gold-jackets/session";
-import { findTeamBySlug } from "@/lib/nfl-teams";
+import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
+import { findTeamBySlug, findTeamFromDiscordRoleNames } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +79,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Gold Jacket ownership is determined from the claimant's LIVE
+  // Discord team role. During pre-launch the Discord sync can detect a
+  // franchise without persisting it to members.team, so members.team is
+  // intentionally not the authorization source here.
+  let liveRoleTeamSlug: string | null = null;
+
+  try {
+    const teamSync = await syncDiscordTeamAssignment(user.id);
+    liveRoleTeamSlug =
+      findTeamFromDiscordRoleNames(teamSync.roleNames)?.slug ?? null;
+  } catch (error) {
+    console.error(
+      "Unable to refresh Gold Jacket claimant Discord roles:",
+      error,
+    );
+
+    return NextResponse.json(
+      { error: "Unable to verify your live Discord team role." },
+      { status: 500 },
+    );
+  }
+
   const { data: member, error: memberError } = await supabaseAdmin
     .from("members")
     .select("id, team, display_name, discord_username")
@@ -129,7 +153,7 @@ export async function POST(request: NextRequest) {
   }
 
   const validation = validateGoldJacketClaim({
-    memberTeam: member.team,
+    memberTeam: liveRoleTeamSlug,
     requestedTeam: teamSlug,
     candidateEligible: Boolean(candidate),
     teamAlreadyClaimed: Boolean(teamClaim),
@@ -255,6 +279,20 @@ export async function POST(request: NextRequest) {
     }
     console.error("Gold Jacket claim saved but Staff Chat alert failed:", alertResult.error);
   }
+
+
+  try {
+    await syncGoldJacketDiscordBoard({
+      origin: request.nextUrl.origin,
+      teamSlug,
+    });
+  } catch (boardError) {
+    console.error(
+      "Gold Jacket claim saved but Discord board sync failed:",
+      boardError,
+    );
+  }
+
 
   return NextResponse.json(
     {
