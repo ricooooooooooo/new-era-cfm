@@ -3,7 +3,10 @@ import {
   getGoldJacketCandidate,
 } from "@/lib/gold-jackets/catalog";
 import { validateGoldJacketClaim } from "@/lib/gold-jackets/claim-rules";
-import { sendGoldJacketStaffAlert } from "@/lib/gold-jackets/discord";
+import {
+  sendGoldJacketCreationCard,
+  sendGoldJacketStaffAlert,
+} from "@/lib/gold-jackets/discord";
 import { syncGoldJacketDiscordBoard } from "@/lib/gold-jackets/discord-board";
 import { readGoldJacketDiscordUser } from "@/lib/gold-jackets/session";
 import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
@@ -255,6 +258,27 @@ export async function POST(request: NextRequest) {
     displayName,
     discordId: user.id,
   });
+
+  /*
+   * Separate mish-only build instructions.
+   *
+   * The existing induction/tracking alert above is unchanged.
+   */
+  const creationCardResult =
+    await sendGoldJacketCreationCard({
+      origin: request.nextUrl.origin,
+      team,
+      candidate,
+      displayName,
+      discordId: user.id,
+    });
+
+  if (!creationCardResult.sent) {
+    console.error(
+      "Gold Jacket claim saved but creation card failed:",
+      creationCardResult.error,
+    );
+  }
 
   if (alertResult.sent) {
     const { error: auditError } = await supabaseAdmin
