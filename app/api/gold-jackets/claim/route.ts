@@ -1,17 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse } from "next/server";
 import {
   getGoldJacketCandidate,
-} from "@/lib/gold-jackets/catalog";
+  } from "@/lib/gold-jackets/catalog";
 import { validateGoldJacketClaim } from "@/lib/gold-jackets/claim-rules";
 import {
   sendGoldJacketCreationCard,
-  sendGoldJacketStaffAlert,
+  sendGoldJacketStaffAlert
 } from "@/lib/gold-jackets/discord";
 import { syncGoldJacketDiscordBoard } from "@/lib/gold-jackets/discord-board";
 import { readGoldJacketDiscordUser } from "@/lib/gold-jackets/session";
 import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
 import { findTeamBySlug, findTeamFromDiscordRoleNames } from "@/lib/nfl-teams";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+
+import { getSystemwideGoldJacketCreationPreset } from "@/lib/gold-jackets/systemwide-creation-presets";
+import { sendSystemwideGoldJacketCreationCard } from "@/lib/gold-jackets/creation-discord";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -101,6 +106,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Unable to verify your live Discord team role." },
       { status: 500 },
+    );
+  }
+
+  const creationPreset =
+    getSystemwideGoldJacketCreationPreset(
+      candidate.key
+    );
+
+  if (!creationPreset) {
+    return NextResponse.json(
+      {
+        error:
+          "This Gold Jacket creation preset is not ready, so this legend cannot be selected yet.",
+      },
+      {
+        status: 409,
+      },
     );
   }
 
@@ -265,7 +287,7 @@ export async function POST(request: NextRequest) {
    * The existing induction/tracking alert above is unchanged.
    */
   const creationCardResult =
-    await sendGoldJacketCreationCard({
+    await sendSystemwideGoldJacketCreationCard({
       origin: request.nextUrl.origin,
       team,
       candidate,
@@ -273,6 +295,67 @@ export async function POST(request: NextRequest) {
       displayName,
       discordId: user.id,
     });
+
+  if (creationCardResult.sent) {
+    const {
+      error: creationAuditError,
+    } =
+      await supabaseAdmin
+        .from(
+          "gold_jacket_claims"
+        )
+        .update({
+          creation_card_sent_at:
+            new Date()
+              .toISOString(),
+
+          creation_card_message_id:
+            creationCardResult
+              .messageId,
+
+          creation_card_error:
+            null,
+        })
+        .eq(
+          "id",
+          claim.id
+        );
+
+    if (creationAuditError) {
+      console.error(
+        "Unable to audit Gold Jacket creation-card success:",
+        creationAuditError,
+      );
+    }
+  } else {
+    const {
+      error: creationAuditError,
+    } =
+      await supabaseAdmin
+        .from(
+          "gold_jacket_claims"
+        )
+        .update({
+          creation_card_error:
+            creationCardResult
+              .error
+              .slice(
+                0,
+                1000
+              ),
+        })
+        .eq(
+          "id",
+          claim.id
+        );
+
+    if (creationAuditError) {
+      console.error(
+        "Unable to audit Gold Jacket creation-card failure:",
+        creationAuditError,
+      );
+    }
+  }
 
   if (!creationCardResult.sent) {
     console.error(
