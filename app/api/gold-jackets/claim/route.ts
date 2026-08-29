@@ -269,6 +269,7 @@ export async function POST(request: NextRequest) {
       origin: request.nextUrl.origin,
       team,
       candidate,
+      claimId: claim.id,
       displayName,
       discordId: user.id,
     });

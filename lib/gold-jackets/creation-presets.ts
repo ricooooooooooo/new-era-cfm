@@ -14,7 +14,6 @@ export type GoldJacketCreationPreset = {
   overall: number;
   devTrait: "Superstar";
 
-  persona: string;
 
   lockedPhysicals: {
     speed: number;
@@ -66,7 +65,6 @@ const DERRICK_THOMAS: GoldJacketCreationPreset = {
   overall: 70,
   devTrait: "Superstar",
 
-  persona: "AUTO / DO NOT EDIT",
 
   lockedPhysicals: {
     speed: 88,

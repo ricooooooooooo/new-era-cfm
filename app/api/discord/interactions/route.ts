@@ -19,6 +19,11 @@ import {
   supabaseAdmin,
 } from "@/lib/supabase-admin";
 
+import {
+  buildGoldJacketCreatorClaimComponents,
+  parseGoldJacketCreatorClaimId,
+} from "@/lib/gold-jackets/creator-claim.mjs";
+
 export const runtime =
   "nodejs";
 
@@ -473,6 +478,320 @@ export async function POST(
               },
       });
     }
+  }
+
+  /*
+   * GOLD JACKET MISH CREATOR CLAIM.
+   *
+   * First mish to click the green button
+   * permanently receives the build.
+   */
+  const goldJacketCreatorClaimId =
+    parseGoldJacketCreatorClaimId(
+      interaction.data
+        ?.custom_id,
+    );
+
+  if (
+    interaction.type ===
+      DISCORD_MESSAGE_COMPONENT &&
+    goldJacketCreatorClaimId
+  ) {
+    const discordUser =
+      interaction.member
+        ?.user ??
+      interaction.user;
+
+    const userId =
+      discordUser?.id;
+
+    const displayName =
+      interaction.member
+        ?.nick ||
+      interaction.member
+        ?.user
+        ?.global_name ||
+      discordUser
+        ?.global_name ||
+      discordUser
+        ?.username ||
+      "Mish";
+
+    if (!userId) {
+      return NextResponse.json({
+        type:
+          RESPONSE_CHANNEL_MESSAGE,
+
+        data: {
+          content:
+            "❌ Your Discord account could not be identified.",
+
+          flags: 64,
+        },
+      });
+    }
+
+    /*
+     * Atomic first-click-wins.
+     *
+     * This UPDATE can only affect the row
+     * while creator_discord_id is NULL.
+     */
+    const {
+      data: creatorClaim,
+      error: creatorClaimError,
+    } =
+      await supabaseAdmin
+        .from(
+          "gold_jacket_claims",
+        )
+        .update({
+          creator_discord_id:
+            userId,
+
+          creator_display_name:
+            displayName,
+
+          creator_claimed_at:
+            new Date()
+              .toISOString(),
+        })
+        .eq(
+          "id",
+          goldJacketCreatorClaimId,
+        )
+        .is(
+          "creator_discord_id",
+          null,
+        )
+        .select(
+          "id, creator_discord_id, creator_display_name, creator_claimed_at",
+        )
+        .maybeSingle();
+
+    if (creatorClaimError) {
+      console.error(
+        "Unable to claim Gold Jacket creation task:",
+        creatorClaimError,
+      );
+
+      return NextResponse.json({
+        type:
+          RESPONSE_CHANNEL_MESSAGE,
+
+        data: {
+          content:
+            "❌ Unable to claim this Gold Jacket build right now.",
+
+          flags: 64,
+        },
+      });
+    }
+
+    if (!creatorClaim) {
+      const {
+        data: existingCreator,
+        error: existingCreatorError,
+      } =
+        await supabaseAdmin
+          .from(
+            "gold_jacket_claims",
+          )
+          .select(
+            "creator_discord_id, creator_display_name",
+          )
+          .eq(
+            "id",
+            goldJacketCreatorClaimId,
+          )
+          .maybeSingle();
+
+      if (existingCreatorError) {
+        console.error(
+          "Unable to read Gold Jacket creator assignment:",
+          existingCreatorError,
+        );
+
+        return NextResponse.json({
+          type:
+            RESPONSE_CHANNEL_MESSAGE,
+
+          data: {
+            content:
+              "❌ Unable to verify who claimed this build.",
+
+            flags: 64,
+          },
+        });
+      }
+
+      if (!existingCreator) {
+        return NextResponse.json({
+          type:
+            RESPONSE_CHANNEL_MESSAGE,
+
+          data: {
+            content:
+              "❌ This Gold Jacket build no longer exists.",
+
+            flags: 64,
+          },
+        });
+      }
+
+      if (
+        existingCreator
+          .creator_discord_id ===
+        userId
+      ) {
+        return NextResponse.json({
+          type:
+            RESPONSE_CHANNEL_MESSAGE,
+
+          data: {
+            content:
+              "✅ You already claimed this Gold Jacket build.",
+
+            flags: 64,
+          },
+        });
+      }
+
+      const claimedBy =
+        existingCreator
+          .creator_discord_id
+          ? `<@${existingCreator.creator_discord_id}>`
+          : existingCreator
+              .creator_display_name ||
+            "another mish";
+
+      return NextResponse.json({
+        type:
+          RESPONSE_CHANNEL_MESSAGE,
+
+        data: {
+          content:
+            `✅ This Gold Jacket build is already claimed by ${claimedBy}.`,
+
+          flags: 64,
+
+          allowed_mentions: {
+            parse: [],
+          },
+        },
+      });
+    }
+
+    const currentEmbed =
+      interaction.message
+        ?.embeds?.[0];
+
+    if (!currentEmbed) {
+      return NextResponse.json({
+        type:
+          RESPONSE_CHANNEL_MESSAGE,
+
+        data: {
+          content:
+            "✅ Build claimed. Discord could not refresh the card.",
+
+          flags: 64,
+        },
+      });
+    }
+
+    const currentFields =
+      Array.isArray(
+        currentEmbed.fields,
+      )
+        ? currentEmbed.fields.filter(
+            (
+              field: {
+                name?: string;
+              },
+            ) =>
+              field.name !==
+              "✅ CLAIMED BY",
+          )
+        : [];
+
+    const updatedEmbed = {
+      title:
+        currentEmbed.title,
+
+      description:
+        currentEmbed.description,
+
+      color:
+        currentEmbed.color,
+
+      thumbnail:
+        currentEmbed
+          .thumbnail?.url
+          ? {
+              url:
+                currentEmbed
+                  .thumbnail
+                  .url,
+            }
+          : undefined,
+
+      fields: [
+        ...currentFields,
+
+        {
+          name:
+            "✅ CLAIMED BY",
+
+          value:
+            `<@${userId}> • **${displayName}** is making this player.`,
+
+          inline: false,
+        },
+      ],
+
+      footer:
+        currentEmbed
+          .footer?.text
+          ? {
+              text:
+                currentEmbed
+                  .footer
+                  .text,
+            }
+          : undefined,
+
+      timestamp:
+        currentEmbed.timestamp ||
+        new Date()
+          .toISOString(),
+    };
+
+    return NextResponse.json({
+      type:
+        RESPONSE_UPDATE_MESSAGE,
+
+      data: {
+        content:
+          interaction.message
+            ?.content ||
+          "",
+
+        allowed_mentions: {
+          parse: [],
+        },
+
+        embeds: [
+          updatedEmbed,
+        ],
+
+        components:
+          buildGoldJacketCreatorClaimComponents(
+            goldJacketCreatorClaimId,
+            displayName,
+          ),
+      },
+    });
   }
 
   /*

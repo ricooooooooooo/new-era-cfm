@@ -2,6 +2,8 @@ import type { GoldJacketCandidate } from "@/lib/gold-jackets/catalog";
 import { getGoldJacketCreationPreset } from "@/lib/gold-jackets/creation-presets";
 import type { NflTeam } from "@/lib/nfl-teams";
 
+
+import { buildGoldJacketCreatorClaimComponents } from "@/lib/gold-jackets/creator-claim.mjs";
 export type GoldJacketStaffAlertInput = {
   origin: string;
   team: NflTeam;
@@ -193,8 +195,13 @@ export async function sendGoldJacketStaffAlert(
   }
 }
 
+export type GoldJacketCreationCardInput =
+  GoldJacketStaffAlertInput & {
+    claimId: string;
+  };
+
 export async function sendGoldJacketCreationCard(
-  input: GoldJacketStaffAlertInput,
+  input: GoldJacketCreationCardInput,
 ): Promise<GoldJacketStaffAlertResult> {
   const botToken = process.env.DISCORD_BOT_TOKEN;
 
@@ -314,16 +321,6 @@ export async function sendGoldJacketCreationCard(
             inline: false,
           },
 
-          {
-            name: "🧬 PERSONA",
-
-            value:
-              `**${preset.persona}**\n` +
-              "Do not manipulate Persona DNA for a " +
-              "competitive or contract advantage.",
-
-            inline: false,
-          },
 
           {
             name: "💰 CONTRACT",
@@ -424,6 +421,12 @@ export async function sendGoldJacketCreationCard(
             "Gold Jacket creation task.",
 
           embeds: [embed],
+
+          components: preset
+            ? buildGoldJacketCreatorClaimComponents(
+                input.claimId,
+              )
+            : [],
 
           allowed_mentions: {
             roles: [alertRole.roleId],
