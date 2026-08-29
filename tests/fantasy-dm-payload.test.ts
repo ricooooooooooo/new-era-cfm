@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFantasyInviteDmPayload } from "../lib/discord/fantasy-dm-payload.ts";
+import { buildFantasyInviteDmPayload } from "../lib/discord/fantasy-dm-payload";
 
 test("DM explicitly mentions only the signup recipient", () => {
   const payload = buildFantasyInviteDmPayload(

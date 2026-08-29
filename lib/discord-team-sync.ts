@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { canReconcileOfficialTeam } from "@/lib/gold-jacket-team-sync-core.mjs";
 import {
   findTeamFromDiscordRoleNames,
   NFL_TEAMS,
@@ -152,6 +153,17 @@ async function reconcileOfficialTeamAssignment({
   }
 
   const leagueId = await getGoldJacketLeagueId();
+
+  // Gold Jacket intentionally starts unlinked. Until the new Madden
+  // franchise exists, keep the Discord-detected team without touching
+  // official teams.league_id UUID ownership records.
+  if (!canReconcileOfficialTeam(leagueId)) {
+    console.log("Gold Jacket team sync: league is not connected yet; skipping official team reconciliation.", {
+      discordId,
+      teamSlug: detectedTeam.slug,
+    });
+    return false;
+  }
 
   const teamResult = await supabaseAdmin
     .from("teams")

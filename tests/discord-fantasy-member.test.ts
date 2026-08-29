@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   normalizeDiscordUsername,
   selectExactDiscordMember,
-} from "../lib/discord/fantasy-member.ts";
+} from "../lib/discord/fantasy-member";
 
 test("normalizes an entered Discord username", () => {
   assert.equal(normalizeDiscordUsername("  @Rico  "), "rico");

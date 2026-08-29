@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFantasySignupLedger } from "../lib/fantasy-signup-ledger.ts";
+import { buildFantasySignupLedger } from "../lib/fantasy-signup-ledger";
 
 test("builds first-come signup spots from league_sync rows", () => {
   const ledger = buildFantasySignupLedger([

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   normalizeFantasySignup,
   validateFantasySignup,
-} from "../lib/fantasy-signup-validation.ts";
+} from "../lib/fantasy-signup-validation";
 
 test("normalizes Discord and Sleeper usernames", () => {
   assert.deepEqual(
