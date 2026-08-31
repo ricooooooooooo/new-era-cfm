@@ -22,6 +22,7 @@ const EXPECTED = {
     "morten-andersen",
     "tony-gonzalez",
     "dwight-freeney",
+    "devin-hester",
     "brett-favre",
   ],
   ravens: [

@@ -64,6 +64,7 @@ export const GOLD_JACKET_PLAYERS: Record<string, GoldJacketCandidate> = {
   'deion-sanders': player('deion-sanders', 'Deion Sanders', 'CB'),
   'derrick-brooks': player('derrick-brooks', 'Derrick Brooks', 'LB'),
   'derrick-thomas': player('derrick-thomas', 'Derrick Thomas', 'LB'),
+  'devin-hester': player('devin-hester', 'Devin Hester', 'WR/KR', 'Devin Hester', 2024),
   'dick-butkus': player('dick-butkus', 'Dick Butkus', 'LB'),
   'night-train-lane': player('night-train-lane', "Dick 'Night Train' Lane", 'CB', 'Night Train Lane'),
   'doak-walker': player('doak-walker', 'Doak Walker', 'RB'),
@@ -193,7 +194,7 @@ export const GOLD_JACKET_PLAYERS: Record<string, GoldJacketCandidate> = {
 
 export const GOLD_JACKET_TEAM_CANDIDATES: Record<string, string[]> = {
   cardinals: ['larry-fitzgerald', 'larry-wilson', 'aeneas-williams', 'kurt-warner', 'dan-dierdorf', 'edgerrin-james', 'emmitt-smith'],
-  falcons: ['deion-sanders', 'claude-humphrey', 'morten-andersen', 'tony-gonzalez', 'dwight-freeney', 'brett-favre'],
+  falcons: ['deion-sanders', 'claude-humphrey', 'morten-andersen', 'tony-gonzalez', 'dwight-freeney', 'devin-hester', 'brett-favre'],
   ravens: ['ray-lewis', 'ed-reed', 'jonathan-ogden', 'shannon-sharpe', 'rod-woodson', 'deion-sanders'],
   bills: ['jim-kelly', 'bruce-smith', 'thurman-thomas', 'andre-reed', 'james-lofton', 'terrell-owens'],
   panthers: ['luke-kuechly', 'julius-peppers', 'sam-mills', 'kevin-greene', 'jared-allen'],
