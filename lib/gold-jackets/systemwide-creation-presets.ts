@@ -712,6 +712,96 @@ const OVERRIDES:
   },
 };
 
+
+const DEVIN_HESTER_CURATED_PRESET:
+  SystemwideGoldJacketCreationPreset =
+{
+  key:
+    "devin-hester",
+
+  name:
+    "Devin Hester",
+
+  historicalPosition:
+    "WR/KR",
+
+  position:
+    "WR",
+
+  positionName:
+    "Wide Receiver",
+
+  archetype:
+    "Deep Threat / Return Specialist",
+
+  jerseyNumber:
+    23,
+
+  college:
+    "Miami (FL)",
+
+  height:
+    "5'11\"",
+
+  weight:
+    190,
+
+  age:
+    20,
+
+  overall:
+    70,
+
+  devTrait:
+    "Superstar",
+
+  physicalRatings: [
+    { code: "SPD", value: 99 },
+    { code: "ACC", value: 99 },
+    { code: "STR", value: 56 },
+    { code: "AGI", value: 98 },
+    { code: "COD", value: 98 },
+    { code: "JMP", value: 91 },
+    { code: "STA", value: 94 },
+    { code: "TGH", value: 85 },
+    { code: "INJ", value: 88 },
+  ],
+
+  skillRatings: [
+    { code: "AWR", value: 54 },
+    { code: "RET", value: 99 },
+    { code: "BCV", value: 95 },
+    { code: "CAR", value: 84 },
+    { code: "JKM", value: 96 },
+    { code: "SPM", value: 90 },
+    { code: "CTH", value: 72 },
+    { code: "CIT", value: 58 },
+    { code: "SPC", value: 68 },
+    { code: "SRR", value: 63 },
+    { code: "MRR", value: 60 },
+    { code: "DRR", value: 72 },
+    { code: "RLS", value: 67 },
+  ],
+
+  calibrationRatings: [
+    "AWR",
+    "CTH",
+    "SRR",
+    "MRR",
+  ],
+
+  contract: {
+    years:
+      4,
+
+    totalValueMillions:
+      16,
+
+    guaranteedMillions:
+      8,
+  },
+};
+
 export function getSystemwideGoldJacketCreationPreset(
   candidateKey:
     string |
@@ -722,6 +812,16 @@ export function getSystemwideGoldJacketCreationPreset(
     !candidateKey
   ) {
     return null;
+  }
+
+
+  if (
+    candidateKey ===
+      "devin-hester"
+  ) {
+    return (
+      DEVIN_HESTER_CURATED_PRESET
+    );
   }
 
   const candidate =
