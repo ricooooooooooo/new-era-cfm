@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { buildActiveCheckTargetSnapshot } from "@/lib/active-check/targets";
 
 export const runtime = "nodejs";
 
@@ -70,6 +71,38 @@ export async function POST(request: NextRequest) {
 
   if (customMessage.length > 0) {
     description += `\n\n📢 ${customMessage}`;
+  }
+
+  let targetSnapshot:
+    Awaited<
+      ReturnType<
+        typeof buildActiveCheckTargetSnapshot
+      >
+    > = [];
+
+  if (type !== "waitlist") {
+    try {
+      targetSnapshot =
+        await buildActiveCheckTargetSnapshot();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to resolve current Discord team owners.";
+
+      console.error(
+        "Active Check owner snapshot failed:",
+        error,
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: message,
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const startedAt = new Date();
@@ -158,6 +191,65 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 },
       );
+    }
+
+    if (targetSnapshot.length > 0) {
+      const targetResult =
+        await supabaseAdmin
+          .from("active_check_targets")
+          .insert(
+            targetSnapshot.map(
+              (target) => ({
+                active_check_id:
+                  newActiveCheckId,
+
+                team_slug:
+                  target.teamSlug,
+
+                team_abbreviation:
+                  target.teamAbbreviation,
+
+                team_name:
+                  target.teamName,
+
+                member_id:
+                  target.memberId,
+
+                discord_id:
+                  target.discordId,
+
+                display_name:
+                  target.displayName,
+              }),
+            ),
+          );
+
+      if (targetResult.error) {
+        console.error(
+          "Unable to save frozen Active Check owners:",
+          targetResult.error,
+        );
+
+        await fetch(
+          `https://discord.com/api/v10/channels/${channelId}/messages/${newActiveCheckId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization:
+                `Bot ${botToken}`,
+            },
+          },
+        ).catch(() => undefined);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Active Check was cancelled because its owner snapshot could not be saved.",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     const nowIso = new Date().toISOString();

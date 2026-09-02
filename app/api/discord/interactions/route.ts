@@ -5,6 +5,7 @@ import {
 } from "next/server";
 
 import nacl from "tweetnacl";
+import { reconcileActiveCheckTargets } from "@/lib/active-check/targets";
 
 import { handleGoldJacketDevShopCommand } from "@/lib/discord/devshop-command";
 import {
@@ -1112,6 +1113,423 @@ export async function POST(
         components:
           interaction.message
             ?.components ||
+          [],
+      },
+    });
+  }
+
+  if (
+    interaction.type === DISCORD_MESSAGE_COMPONENT &&
+    interaction.data?.custom_id === "active_check_join"
+  ) {
+    const discordUser =
+      interaction.member?.user ??
+      interaction.user;
+
+    const userId =
+      discordUser?.id?.trim();
+
+    const liveDisplayName =
+      interaction.member?.nick ||
+      interaction.member?.user?.global_name ||
+      discordUser?.global_name ||
+      discordUser?.username ||
+      "Unknown User";
+
+    const ephemeral =
+      (content: string) =>
+        NextResponse.json({
+          type:
+            RESPONSE_CHANNEL_MESSAGE,
+          data: {
+            content,
+            flags: 64,
+            allowed_mentions: {
+              parse: [],
+            },
+          },
+        });
+
+    if (!userId) {
+      return ephemeral(
+        "Your Discord account could not be identified. Please try again.",
+      );
+    }
+
+    const activeCheckId =
+      interaction.message?.id?.trim();
+
+    if (!activeCheckId) {
+      return ephemeral(
+        "This Active Check could not be identified.",
+      );
+    }
+
+    const checkResult =
+      await supabaseAdmin
+        .from(
+          "league_health_active_checks",
+        )
+        .select(
+          "active_check_id,status,closes_at",
+        )
+        .eq(
+          "active_check_id",
+          activeCheckId,
+        )
+        .maybeSingle();
+
+    if (checkResult.error) {
+      console.error(
+        "Unable to verify Active Check status:",
+        checkResult.error,
+      );
+
+      return ephemeral(
+        "The Active Check could not be verified. Please try again.",
+      );
+    }
+
+    const check =
+      checkResult.data;
+
+    const closesAt =
+      check?.closes_at
+        ? new Date(
+            check.closes_at,
+          ).getTime()
+        : null;
+
+    if (
+      !check ||
+      check.status !== "open" ||
+      (
+        closesAt !== null &&
+        Number.isFinite(
+          closesAt,
+        ) &&
+        closesAt <= Date.now()
+      )
+    ) {
+      return ephemeral(
+        "This Active Check is closed.",
+      );
+    }
+
+    /*
+     * Eligibility can have TWO rows for the same franchise
+     * because a main owner + substitute may both hold @Jets.
+     */
+    const loadActiveCheckTarget =
+      async () =>
+        supabaseAdmin
+          .from(
+            "active_check_targets",
+          )
+          .select(
+            "team_slug,team_abbreviation,team_name,member_id,discord_id,display_name",
+          )
+          .eq(
+            "active_check_id",
+            activeCheckId,
+          )
+          .eq(
+            "discord_id",
+            userId,
+          );
+
+    let targetResult =
+      await loadActiveCheckTarget();
+
+    if (targetResult.error) {
+      console.error(
+        "Unable to resolve Active Check eligibility:",
+        targetResult.error,
+      );
+
+      return ephemeral(
+        "Your Active Check eligibility could not be verified. Please try again.",
+      );
+    }
+
+    let targets =
+      targetResult.data ?? [];
+
+    if (targets.length === 0) {
+      try {
+        await reconcileActiveCheckTargets(
+          activeCheckId,
+        );
+      } catch (error) {
+        console.error(
+          "Active Check click-time team-role reconciliation failed:",
+          error,
+        );
+
+        return ephemeral(
+          "Your current team role could not be refreshed. Please try the button again in a moment.",
+        );
+      }
+
+      targetResult =
+        await loadActiveCheckTarget();
+
+      if (targetResult.error) {
+        console.error(
+          "Unable to resolve refreshed Active Check eligibility:",
+          targetResult.error,
+        );
+
+        return ephemeral(
+          "Your refreshed Active Check eligibility could not be verified. Please try again.",
+        );
+      }
+
+      targets =
+        targetResult.data ?? [];
+    }
+
+    const teamSlugs =
+      [
+        ...new Set(
+          targets.map(
+            (target) =>
+              target.team_slug,
+          ),
+        ),
+      ];
+
+    if (teamSlugs.length === 0) {
+      return ephemeral(
+        "You are not one of the owners targeted by this Active Check. If that looks wrong, contact a commissioner.",
+      );
+    }
+
+    if (teamSlugs.length > 1) {
+      return ephemeral(
+        "You currently have multiple different NFL team roles. A commissioner needs to remove the extra role before the Active Check can tell which franchise you represent.",
+      );
+    }
+
+    const target =
+      targets.find(
+        (row) =>
+          row.team_slug ===
+          teamSlugs[0],
+      );
+
+    if (!target) {
+      return ephemeral(
+        "Your Active Check team could not be resolved. Please try again.",
+      );
+    }
+
+    /* One successful click satisfies the FRANCHISE. */
+    const existingResult =
+      await supabaseAdmin
+        .from(
+          "active_check_clicks",
+        )
+        .select(
+          "id,discord_id,display_name,team_slug,team_name",
+        )
+        .eq(
+          "active_check_id",
+          activeCheckId,
+        )
+        .eq(
+          "team_slug",
+          target.team_slug,
+        )
+        .maybeSingle();
+
+    if (existingResult.error) {
+      console.error(
+        "Unable to verify existing Active Check team response:",
+        existingResult.error,
+      );
+
+      return ephemeral(
+        "Your team's existing response could not be verified. Please try again.",
+      );
+    }
+
+    if (existingResult.data) {
+      return ephemeral(
+        `✅ The **${target.team_name}** are already checked in.`,
+      );
+    }
+
+    const saveResult =
+      await supabaseAdmin
+        .from(
+          "active_check_clicks",
+        )
+        .insert({
+          discord_id:
+            userId,
+          display_name:
+            target.display_name ||
+            liveDisplayName,
+          team_slug:
+            target.team_slug,
+          team_abbreviation:
+            target.team_abbreviation,
+          team_name:
+            target.team_name,
+          active_check_id:
+            activeCheckId,
+          checked_in_at:
+            new Date()
+              .toISOString(),
+        });
+
+    if (saveResult.error) {
+      /* Two valid holders may click at the same instant. */
+      if (saveResult.error.code === "23505") {
+        const raceResult =
+          await supabaseAdmin
+            .from(
+              "active_check_clicks",
+            )
+            .select("id")
+            .eq(
+              "active_check_id",
+              activeCheckId,
+            )
+            .eq(
+              "team_slug",
+              target.team_slug,
+            )
+            .maybeSingle();
+
+        if (!raceResult.error && raceResult.data) {
+          return ephemeral(
+            `✅ The **${target.team_name}** are already checked in.`,
+          );
+        }
+      }
+
+      console.error(
+        "Unable to save Active Check team response:",
+        saveResult.error,
+      );
+
+      return ephemeral(
+        "Your team's response could not be saved. Please try again.",
+      );
+    }
+
+    const allClicksResult =
+      await supabaseAdmin
+        .from(
+          "active_check_clicks",
+        )
+        .select(
+          "discord_id,team_slug,team_name,checked_in_at",
+        )
+        .eq(
+          "active_check_id",
+          activeCheckId,
+        )
+        .order(
+          "checked_in_at",
+          { ascending: true },
+        );
+
+    if (allClicksResult.error) {
+      console.error(
+        "Unable to reload Active Check responses:",
+        allClicksResult.error,
+      );
+
+      return ephemeral(
+        `✅ The **${target.team_name}** are checked in.`,
+      );
+    }
+
+    const checkedInTeams =
+      Array.from(
+        new Map(
+          (allClicksResult.data ?? [])
+            .map(
+              (row) => [
+                row.team_slug,
+                row.team_name ||
+                  row.team_slug,
+              ],
+            ),
+        ).values(),
+      ).filter(Boolean);
+
+    const currentEmbed =
+      interaction.message?.embeds?.[0];
+
+    const existingFields =
+      Array.isArray(currentEmbed?.fields)
+        ? currentEmbed.fields.filter(
+            (field: { name?: string }) =>
+              !field.name?.includes(
+                "Checked In",
+              ),
+          )
+        : [];
+
+    return NextResponse.json({
+      type:
+        RESPONSE_UPDATE_MESSAGE,
+      data: {
+        content:
+          interaction.message?.content ||
+          "@everyone",
+        allowed_mentions: {
+          parse: [],
+        },
+        embeds: [
+          {
+            title:
+              currentEmbed?.title ||
+              "🏆 GOLD JACKET Active Check",
+            description:
+              currentEmbed?.description ||
+              "Click **I'm Active** below to confirm your activity.",
+            color:
+              currentEmbed?.color ??
+              0xd4af37,
+            fields: [
+              ...existingFields,
+              {
+                name:
+                  `✅ Teams Checked In — ${checkedInTeams.length}`,
+                value:
+                  checkedInTeams.length > 0
+                    ? checkedInTeams
+                        .map(
+                          (team) =>
+                            `✅ ${team}`,
+                        )
+                        .join("\n")
+                    : "No teams have checked in yet.",
+              },
+            ],
+            footer:
+              currentEmbed?.footer || {
+                text:
+                  "GOLD JACKET CFM • Commissioner Activity Center",
+              },
+            timestamp:
+              currentEmbed?.timestamp ||
+              new Date().toISOString(),
+            thumbnail:
+              currentEmbed?.thumbnail,
+            image:
+              currentEmbed?.image,
+            author:
+              currentEmbed?.author,
+          },
+        ],
+        components:
+          interaction.message?.components ||
           [],
       },
     });
