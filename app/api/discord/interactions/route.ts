@@ -7,7 +7,10 @@ import {
 import nacl from "tweetnacl";
 import { reconcileActiveCheckTargets } from "@/lib/active-check/targets";
 
-import { handleGoldJacketDevShopCommand } from "@/lib/discord/devshop-command";
+import {
+  handleGoldJacketDevShopCommand,
+  handleGoldJacketDevShopPageInteraction,
+} from "@/lib/discord/devshop-command";
 import {
   handleGoldJacketCommand,
 } from "@/lib/discord/intelligence-commands";
@@ -324,6 +327,30 @@ async function sendDeferredError(
   }
 }
 
+function makeGoldJacketPublicResult(
+  result: any,
+) {
+  if (
+    !result ||
+    typeof result !== "object" ||
+    !result.data ||
+    typeof result.data !== "object"
+  ) {
+    return result;
+  }
+
+  const data = {
+    ...result.data,
+  };
+
+  delete data.flags;
+
+  return {
+    ...result,
+    data,
+  };
+}
+
 export async function POST(
   request: NextRequest,
 ) {
@@ -377,6 +404,291 @@ export async function POST(
   /*
    * Discord verification ping.
    */
+  // DEVSHOP_PAGE_BUTTON_ROUTING
+  if (
+    String(
+      interaction.data?.custom_id ?? "",
+    ).startsWith("devshop_page_")
+  ) {
+    return handleGoldJacketDevShopPageInteraction(
+      interaction,
+    );
+  }
+
+  // DEVSHOP_DEFERRED_ACK
+  // /devshop performs Discord + Supabase + roster work.
+  // Acknowledge immediately, then finish the existing handler after response.
+  if (
+    interaction.data?.name ===
+    "devshop"
+  ) {
+    const applicationId =
+      String(
+        interaction.application_id ??
+          "",
+      ).trim();
+
+    const interactionToken =
+      String(
+        interaction.token ?? "",
+      ).trim();
+
+    if (
+      !applicationId ||
+      !interactionToken
+    ) {
+      return NextResponse.json({
+        type: 4,
+        data: {
+          content:
+            "❌ Dev Shop could not start because the Discord interaction token was missing.",
+          flags: 64,
+          allowed_mentions: {
+            parse: [],
+          },
+        },
+      });
+    }
+
+    after(async () => {
+      let responseData:
+        Record<string, unknown> = {
+          content:
+            "❌ The Gold Jacket Dev Shop could not finish loading.",
+          allowed_mentions: {
+            parse: [],
+          },
+        };
+
+      try {
+        const result =
+          await handleGoldJacketDevShopCommand(
+            interaction,
+          );
+
+        const payload =
+          await result.json();
+
+        if (
+          payload &&
+          typeof payload === "object" &&
+          payload.data &&
+          typeof payload.data ===
+            "object"
+        ) {
+          responseData = {
+            ...(
+              payload.data as
+                Record<
+                  string,
+                  unknown
+                >
+            ),
+          };
+
+          delete responseData.flags;
+        }
+      } catch (error) {
+        console.error(
+          "Deferred /devshop workflow failed:",
+          error,
+        );
+
+        responseData = {
+          content:
+            "❌ The Gold Jacket Dev Shop couldn't load right now. Try again in a moment or open the website Dev Shop.",
+          allowed_mentions: {
+            parse: [],
+          },
+        };
+      }
+
+      try {
+        const editResponse =
+          await fetch(
+            `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body:
+                JSON.stringify(
+                  responseData,
+                ),
+              cache: "no-store",
+            },
+          );
+
+        if (!editResponse.ok) {
+          const body =
+            await editResponse.text();
+
+          console.error(
+            "Unable to edit deferred /devshop response:",
+            editResponse.status,
+            body.slice(0, 500),
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Deferred /devshop response edit failed:",
+          error,
+        );
+      }
+    });
+
+    return NextResponse.json({
+      type: 5,
+      data: {},
+    });
+  }
+
+  // TRADE_SUBMIT_DEFERRED_ACK
+  // Discord requires a fast initial acknowledgment. Trade creation +
+  // committee posting happens after the deferred ephemeral response.
+  if (
+    interaction.data?.name ===
+    "trade-submit"
+  ) {
+    const applicationId =
+      String(
+        interaction.application_id ??
+          "",
+      ).trim();
+
+    const interactionToken =
+      String(
+        interaction.token ?? "",
+      ).trim();
+
+    if (
+      !applicationId ||
+      !interactionToken
+    ) {
+      return NextResponse.json({
+        type: 4,
+        data: {
+          content:
+            "❌ Trade submission could not start because the Discord interaction token was missing.",
+          flags: 64,
+          allowed_mentions: {
+            parse: [],
+          },
+        },
+      });
+    }
+
+    after(async () => {
+      let responseData:
+        Record<string, unknown> = {
+          content:
+            "❌ The trade submission failed unexpectedly. Check the trade queue before submitting again.",
+          allowed_mentions: {
+            parse: [],
+          },
+        };
+
+      try {
+        const {
+          handleTradeWorkflowInteraction,
+        } = await import(
+          "@/lib/discord/trade-workflow"
+        );
+
+        const tradeResult =
+          await handleTradeWorkflowInteraction(
+            interaction,
+          );
+
+        const tradeData:
+          Record<string, unknown> =
+          tradeResult &&
+          typeof tradeResult ===
+            "object" &&
+          "data" in tradeResult &&
+          tradeResult.data &&
+          typeof tradeResult.data ===
+            "object"
+            ? {
+                ...(
+                  tradeResult.data as
+                    Record<
+                      string,
+                      unknown
+                    >
+                ),
+              }
+            : {
+                content:
+                  "✅ Trade submission finished.",
+                allowed_mentions: {
+                  parse: [],
+                },
+              };
+
+        delete tradeData.flags;
+        responseData = tradeData;
+      } catch (error) {
+        console.error(
+          "Deferred trade-submit workflow failed:",
+          error,
+        );
+
+        responseData = {
+          content:
+            "❌ Trade submission failed before it could be sent to the Trade Committee. A commissioner can check the server logs for the exact error.",
+          allowed_mentions: {
+            parse: [],
+          },
+        };
+      }
+
+      try {
+        const editResponse =
+          await fetch(
+            `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body:
+                JSON.stringify(
+                  responseData,
+                ),
+              cache: "no-store",
+            },
+          );
+
+        if (!editResponse.ok) {
+          const body =
+            await editResponse.text();
+
+          console.error(
+            "Unable to edit deferred trade-submit response:",
+            editResponse.status,
+            body.slice(0, 500),
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Deferred trade-submit response edit failed:",
+          error,
+        );
+      }
+    });
+
+    return NextResponse.json({
+      type: 5,
+      data: {
+        flags: 64,
+      },
+    });
+  }
+
   if (
     interaction.type ===
     DISCORD_PING
@@ -387,9 +699,41 @@ export async function POST(
     });
   }
 
-  if (interaction.data?.name === "devshop") {
-    return handleGoldJacketDevShopCommand(interaction);
+  /*
+   * GOLD JACKET APPROVED-TRADE WORKFLOW.
+   *
+   * Kept outside the general intelligence command dispatcher because
+   * this command has database state + Discord component interactions.
+   */
+  const tradeCustomId =
+    String(
+      interaction.data?.custom_id ??
+        "",
+    );
+
+  if (
+    interaction.data?.name ===
+      "trade-summary" ||
+    tradeCustomId.startsWith(
+      "trade_",
+    )
+  ) {
+    const {
+      handleTradeWorkflowInteraction,
+    } = await import(
+      "@/lib/discord/trade-workflow"
+    );
+
+    const tradeResult =
+      await handleTradeWorkflowInteraction(
+        interaction,
+      );
+
+    return NextResponse.json(
+      tradeResult,
+    );
   }
+
 
   /*
    * GOLD JACKET SLASH / CONTEXT COMMANDS.
@@ -426,14 +770,16 @@ export async function POST(
 
         if (result) {
           return NextResponse.json(
-            result,
-          );
+              makeGoldJacketPublicResult(
+                result,
+              ),
+            );
         }
       }
 
       const isPublic =
-        GOLD_JACKET_PUBLIC_COMMANDS.has(
-          commandName,
+        !commandName.startsWith(
+          "trade-",
         );
 
       after(
@@ -451,9 +797,11 @@ export async function POST(
             }
 
             await editDeferredResponse(
-              interaction,
-              result,
-            );
+                interaction,
+                makeGoldJacketPublicResult(
+                  result,
+                ),
+              );
           } catch (error) {
             console.error(
               `Deferred Gold Jacket /${commandName} failed:`,
@@ -798,326 +1146,6 @@ export async function POST(
   /*
    * EXISTING ACTIVE CHECK.
    */
-  if (
-    interaction.type ===
-      DISCORD_MESSAGE_COMPONENT &&
-    interaction.data
-      ?.custom_id ===
-      "active_check_join"
-  ) {
-    const activeCheckId =
-      interaction.message
-        ?.id ??
-      interaction.message
-        ?.interaction_metadata
-        ?.id ??
-      "default";
-
-    if (
-      await activeCheckIsClosed(
-        activeCheckId,
-      )
-    ) {
-      return NextResponse.json({
-        type:
-          RESPONSE_CHANNEL_MESSAGE,
-
-        data: {
-          content:
-            "⛔ This GOLD JACKET Active Check is closed.",
-
-          flags: 64,
-        },
-      });
-    }
-
-    const discordUser =
-      interaction.member
-        ?.user ??
-      interaction.user;
-
-    const userId =
-      discordUser?.id;
-
-    const displayName =
-      interaction.member
-        ?.nick ||
-      interaction.member
-        ?.user
-        ?.global_name ||
-      discordUser
-        ?.global_name ||
-      discordUser
-        ?.username ||
-      "Unknown User";
-
-    if (!userId) {
-      return NextResponse.json({
-        type:
-          RESPONSE_CHANNEL_MESSAGE,
-
-        data: {
-          content:
-            "Your Discord account could not be identified. Please try again.",
-
-          flags: 64,
-        },
-      });
-    }
-
-    const teamSync =
-      await syncDiscordTeamAssignment(
-        userId,
-      );
-
-    if (!teamSync.team) {
-      return NextResponse.json({
-        type:
-          RESPONSE_CHANNEL_MESSAGE,
-
-        data: {
-          content:
-            "You don't currently have an NFL team role. Contact a commissioner.",
-
-          flags: 64,
-        },
-      });
-    }
-
-    const teamSlug =
-      teamSync.team;
-
-    const prettyTeam =
-      teamSync.roleNames.find(
-        (roleName) =>
-          roleName
-            .toLowerCase()
-            .includes(
-              teamSlug,
-            ),
-      ) ??
-      teamSlug
-        .split("-")
-        .map(
-          (word) =>
-            word
-              .charAt(0)
-              .toUpperCase() +
-            word.slice(1),
-        )
-        .join(" ");
-
-    const currentEmbed =
-      interaction.message
-        ?.embeds?.[0];
-
-    const checkedInField =
-      currentEmbed
-        ?.fields
-        ?.find(
-          (
-            field: {
-              name?: string;
-            },
-          ) =>
-            field.name?.includes(
-              "Checked In",
-            ),
-        );
-
-    const checkedInTeams =
-      parseCheckedInNames(
-        checkedInField
-          ?.value,
-      );
-
-    const alreadyCheckedIn =
-      checkedInTeams.some(
-        (team) =>
-          team.toLowerCase() ===
-          prettyTeam.toLowerCase(),
-      );
-
-    if (
-      alreadyCheckedIn
-    ) {
-      return NextResponse.json({
-        type:
-          RESPONSE_CHANNEL_MESSAGE,
-
-        data: {
-          content:
-            `✅ **${displayName}**, your team already checked in.`,
-
-          flags: 64,
-        },
-      });
-    }
-
-    const {
-      error,
-    } =
-      await supabaseAdmin
-        .from(
-          "active_check_clicks",
-        )
-        .upsert(
-          {
-            discord_id:
-              userId,
-
-            display_name:
-              displayName,
-
-            team_slug:
-              teamSlug,
-
-            team_name:
-              prettyTeam,
-
-            active_check_id:
-              activeCheckId,
-
-            checked_in_at:
-              new Date()
-                .toISOString(),
-          },
-
-          {
-            onConflict:
-              "active_check_id,team_slug",
-          },
-        );
-
-    if (error) {
-      console.error(
-        "Unable to save active check response:",
-        error,
-      );
-
-      return NextResponse.json({
-        type:
-          RESPONSE_CHANNEL_MESSAGE,
-
-        data: {
-          content:
-            "Your response could not be saved. Please try again.",
-
-          flags: 64,
-        },
-      });
-    }
-
-    const updatedCheckedInTeams =
-      [
-        ...checkedInTeams,
-        prettyTeam,
-      ];
-
-    const checkedInValue =
-      updatedCheckedInTeams
-        .map(
-          (team) =>
-            `✅ ${team}`,
-        )
-        .join("\n");
-
-    const existingFields =
-      Array.isArray(
-        currentEmbed
-          ?.fields,
-      )
-        ? currentEmbed.fields.filter(
-            (
-              field: {
-                name?: string;
-              },
-            ) =>
-              !field.name?.includes(
-                "Checked In",
-              ),
-          )
-        : [];
-
-    return NextResponse.json({
-      type:
-        RESPONSE_UPDATE_MESSAGE,
-
-      data: {
-        content:
-          interaction.message
-            ?.content ||
-          "@everyone",
-
-        allowed_mentions: {
-          parse: [],
-        },
-
-        embeds: [
-          {
-            title:
-              currentEmbed
-                ?.title ||
-              "🏈 GOLD JACKET CFM Activity Check",
-
-            description:
-              currentEmbed
-                ?.description ||
-              "Click **I'm Active** below to confirm your activity.",
-
-            color:
-              currentEmbed
-                ?.color ??
-              0xd4af37,
-
-            fields: [
-              ...existingFields,
-
-              {
-                name:
-                  `🏈 Teams Checked In — ${updatedCheckedInTeams.length}`,
-
-                value:
-                  checkedInValue,
-              },
-            ],
-
-            footer:
-              currentEmbed
-                ?.footer ||
-              {
-                text:
-                  "GOLD JACKET CFM • Commissioner Activity Center",
-              },
-
-            timestamp:
-              currentEmbed
-                ?.timestamp ||
-              new Date()
-                .toISOString(),
-
-            thumbnail:
-              currentEmbed
-                ?.thumbnail,
-
-            image:
-              currentEmbed
-                ?.image,
-
-            author:
-              currentEmbed
-                ?.author,
-          },
-        ],
-
-        components:
-          interaction.message
-            ?.components ||
-          [],
-      },
-    });
-  }
-
   if (
     interaction.type === DISCORD_MESSAGE_COMPONENT &&
     interaction.data?.custom_id === "active_check_join"

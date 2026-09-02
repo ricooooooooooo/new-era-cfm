@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
 
-import { getTeamDevUsage } from "@/lib/dev-shop/caps.mjs";
-import { publicCatalog } from "@/lib/dev-shop/catalog.mjs";
-import { flattenActiveLines } from "@/lib/dev-shop/ledger.mjs";
-import {
-  buildAvailabilityByPlayer,
-  loadDevShopLedger,
-  loadGoldJacketLeague,
-  loadMemberTeam,
-  loadTeamPlayers,
-} from "@/lib/dev-shop/server";
-import { buildDevShopInteractionPayload } from "@/lib/discord/gold-jacket-discord-core.mjs";
-import { syncDiscordTeamAssignment } from "@/lib/discord-team-sync";
+import { resolveLiveDiscordTeam } from "@/lib/discord-live-team";
+import { buildDevShopPage } from "@/lib/discord/devshop-pages.mjs";
+import { NFL_TEAMS } from "@/lib/nfl-teams";
 
 type DiscordInteractionLike = {
   member?: { user?: { id?: string | null } | null } | null;
   user?: { id?: string | null } | null;
+  data?: { custom_id?: string | null } | null;
+  message?: { content?: string | null } | null;
 };
 
 function resolveDevShopUrl() {
@@ -23,31 +16,33 @@ function resolveDevShopUrl() {
     process.env.GOLD_JACKET_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim();
-
   if (explicit) return `${explicit.replace(/\/$/, "")}/dev-shop`;
-
-  const vercel =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
-    process.env.VERCEL_URL?.trim();
-
-  if (vercel) {
-    const origin = vercel.startsWith("http") ? vercel : `https://${vercel}`;
-    return `${origin.replace(/\/$/, "")}/dev-shop`;
-  }
-
-  // Current production alias; hidden behind the Discord button label.
-  const legacyHost = ["new", "era", "cfm"].join("-") + ".vercel.app";
-  return `https://${legacyHost}/dev-shop`;
+  return "https://new-era-cfm.vercel.app/dev-shop";
 }
 
-function ephemeralMessage(content: string) {
+function privateError(content: string) {
   return NextResponse.json({
     type: 4,
-    data: {
-      flags: 64,
-      content,
-    },
+    data: { flags: 64, content, allowed_mentions: { parse: [] } },
   });
+}
+
+function withWebsiteButton(payload: ReturnType<typeof buildDevShopPage>) {
+  return {
+    ...payload,
+    components: [
+      ...payload.components,
+      {
+        type: 1,
+        components: [{
+          type: 2,
+          style: 5,
+          label: "Open Gold Jacket Dev Shop",
+          url: resolveDevShopUrl(),
+        }],
+      },
+    ],
+  };
 }
 
 export async function handleGoldJacketDevShopCommand(
@@ -55,64 +50,35 @@ export async function handleGoldJacketDevShopCommand(
 ) {
   const discordId =
     interaction.member?.user?.id?.trim() || interaction.user?.id?.trim() || "";
-
-  if (!discordId) {
-    return ephemeralMessage("I couldn't identify your Discord account for the Gold Jacket Dev Shop.");
-  }
+  if (!discordId) return privateError("I couldn't identify your Discord account for the Gold Jacket Dev Shop.");
 
   try {
-    try {
-      await syncDiscordTeamAssignment(discordId);
-    } catch (error) {
-      console.warn("/devshop Discord team refresh failed; using saved website team:", error);
+    const live = await resolveLiveDiscordTeam(discordId);
+    if (!live.teamSlug) {
+      return privateError("❌ I couldn't verify exactly one current NFL team role. Gold Jacket will not use a saved website team.");
     }
-
-    const [league, memberContext, orders] = await Promise.all([
-      loadGoldJacketLeague(),
-      loadMemberTeam(discordId),
-      loadDevShopLedger(),
-    ]);
-
-    if (!memberContext.team || !memberContext.teamSlug) {
-      return ephemeralMessage(
-        "No Gold Jacket team is connected to your Discord account yet. Make sure you have your NFL team role, then try `/devshop` again.",
-      );
-    }
-
-    const season = Math.max(1, Number(league?.season ?? 1));
-    const players = await loadTeamPlayers({
-      leagueId: league?.id ?? null,
-      teamAbbreviation: memberContext.team.abbreviation,
+    const team = NFL_TEAMS.find((candidate) => candidate.slug === live.teamSlug) ?? null;
+    if (!team) return privateError("❌ Your live Discord team role could not be mapped to a Gold Jacket team.");
+    return NextResponse.json({
+      type: 4,
+      data: withWebsiteButton(buildDevShopPage(1, `${team.city} ${team.name}`)),
     });
-
-    const activeLines = flattenActiveLines(orders);
-    const teamDevUsage = getTeamDevUsage(activeLines, season, {
-      discordId,
-      teamSlug: memberContext.teamSlug,
-    });
-    const availabilityByPlayer = buildAvailabilityByPlayer({
-      players,
-      orders,
-      season,
-      discordId,
-      teamSlug: memberContext.teamSlug,
-    });
-
-    const payload = buildDevShopInteractionPayload({
-      team: memberContext.team,
-      season,
-      catalog: publicCatalog(),
-      teamDevUsage,
-      players,
-      availabilityByPlayer,
-      websiteUrl: resolveDevShopUrl(),
-    });
-
-    return NextResponse.json(payload);
   } catch (error) {
-    console.error("Gold Jacket /devshop command failed:", error);
-    return ephemeralMessage(
-      "The Gold Jacket Dev Shop couldn't load right now. Try again in a moment or open the website Dev Shop.",
-    );
+    console.error("Gold Jacket /devshop live-role resolution failed:", error);
+    return privateError("❌ I couldn't verify exactly one current NFL team role. Check your team roles and try again.");
   }
+}
+
+export async function handleGoldJacketDevShopPageInteraction(
+  interaction: DiscordInteractionLike,
+) {
+  const customId = String(interaction.data?.custom_id ?? "");
+  const page = Number(customId.replace("devshop_page_", ""));
+  const content = String(interaction.message?.content ?? "");
+  const teamMatch = content.match(/DEV MARKET\*\*\s*•\s*([^\n]+)/i);
+  const teamName = teamMatch?.[1]?.trim() || "Gold Jacket Owner";
+  return NextResponse.json({
+    type: 7,
+    data: withWebsiteButton(buildDevShopPage(page, teamName)),
+  });
 }
