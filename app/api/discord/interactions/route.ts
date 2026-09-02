@@ -28,6 +28,7 @@ import {
   parseGoldJacketCreatorClaimId,
 } from "@/lib/gold-jackets/creator-claim.mjs";
 
+import { canonicalizeActiveCheckClickRows } from "@/lib/active-check/display-core.mjs";
 export const runtime =
   "nodejs";
 
@@ -1454,7 +1455,7 @@ export async function POST(
           "active_check_clicks",
         )
         .select(
-          "discord_id,team_slug,team_name,checked_in_at",
+          "discord_id,team_slug,team_name,team_abbreviation,checked_in_at",
         )
         .eq(
           "active_check_id",
@@ -1476,19 +1477,36 @@ export async function POST(
       );
     }
 
+    const allTargetsResult =
+      await supabaseAdmin
+        .from("active_check_targets")
+        .select(
+          "team_slug,team_name,team_abbreviation",
+        )
+        .eq(
+          "active_check_id",
+          activeCheckId,
+        );
+
+    if (allTargetsResult.error) {
+      console.error(
+        "Unable to reload Active Check target franchises:",
+        allTargetsResult.error,
+      );
+
+      return ephemeral(
+        "✅ Your team is checked in. The message display will refresh shortly.",
+      );
+    }
+
     const checkedInTeams =
-      Array.from(
-        new Map(
-          (allClicksResult.data ?? [])
-            .map(
-              (row) => [
-                row.team_slug,
-                row.team_name ||
-                  row.team_slug,
-              ],
-            ),
-        ).values(),
-      ).filter(Boolean);
+      canonicalizeActiveCheckClickRows(
+        allClicksResult.data ?? [],
+        allTargetsResult.data ?? [],
+      ).map(
+        (team) =>
+          team.teamName,
+      );
 
     const currentEmbed =
       interaction.message?.embeds?.[0];
