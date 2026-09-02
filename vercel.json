@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/feature-reminder",
       "schedule": "0 1 */2 * *"
-    },
-    {
-      "path": "/api/cron/active-check-reminders",
-      "schedule": "0 * * * *"
     }
   ]
 }
