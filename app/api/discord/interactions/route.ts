@@ -703,6 +703,175 @@ export async function POST(
     });
   }
 
+  // TRADE_SELECTION_IMMEDIATE_LOADING_ACK
+  // ACK the select-menu interaction before any Supabase/network work.
+  // The user immediately sees a loading state; the real preview is then
+  // resolved in after() and patched back onto this ephemeral message.
+  if (
+    interaction.type ===
+      DISCORD_MESSAGE_COMPONENT &&
+    String(
+      interaction.data?.custom_id ??
+        "",
+    ) ===
+      "trade_summary_select"
+  ) {
+    const applicationId =
+      String(
+        interaction.application_id ??
+          "",
+      ).trim();
+
+    const interactionToken =
+      String(
+        interaction.token ??
+          "",
+      ).trim();
+
+    if (
+      !applicationId ||
+      !interactionToken
+    ) {
+      return NextResponse.json({
+        type:
+          RESPONSE_UPDATE_MESSAGE,
+
+        data: {
+          content:
+            "❌ Trade preview could not start because the Discord interaction token was missing.",
+
+          embeds: [],
+
+          components: [],
+
+          allowed_mentions: {
+            parse: [],
+          },
+        },
+      });
+    }
+
+    after(
+      async () => {
+        let responseData:
+          Record<
+            string,
+            unknown
+          > = {
+            content:
+              "❌ Trade preview could not finish loading.",
+
+            embeds: [],
+
+            components: [],
+
+            allowed_mentions: {
+              parse: [],
+            },
+          };
+
+        try {
+          const {
+            handleTradeWorkflowInteraction,
+          } =
+            await import(
+              "@/lib/discord/trade-workflow"
+            );
+
+          const result =
+            await handleTradeWorkflowInteraction(
+              interaction,
+            );
+
+          if (
+            result?.data &&
+            typeof result.data ===
+              "object"
+          ) {
+            responseData = {
+              ...(
+                result.data as
+                  Record<
+                    string,
+                    unknown
+                  >
+              ),
+            };
+
+            delete responseData.flags;
+          }
+        } catch (error) {
+          console.error(
+            "Deferred trade selection failed:",
+            error,
+          );
+        }
+
+        try {
+          const editResponse =
+            await fetch(
+              `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
+              {
+                method:
+                  "PATCH",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body:
+                  JSON.stringify(
+                    responseData,
+                  ),
+
+                cache:
+                  "no-store",
+              },
+            );
+
+          if (
+            !editResponse.ok
+          ) {
+            console.error(
+              "Unable to edit deferred trade selection preview:",
+              editResponse.status,
+              (
+                await editResponse.text()
+              ).slice(
+                0,
+                500,
+              ),
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Deferred trade selection preview edit failed:",
+            error,
+          );
+        }
+      },
+    );
+
+    return NextResponse.json({
+      type:
+        RESPONSE_UPDATE_MESSAGE,
+
+      data: {
+        content:
+          "⏳ Loading trade preview…",
+
+        embeds: [],
+
+        components: [],
+
+        allowed_mentions: {
+          parse: [],
+        },
+      },
+    });
+  }
+
   // TRADE_PUBLISH_DEFERRED_ACK_V2
   // Publishing renders the Schefter image and uploads it to Discord.
   // The button itself must be ACKed immediately; the slow work follows.
@@ -1042,6 +1211,8 @@ export async function POST(
       tradeCustomId.startsWith(
         "trade_",
       ) &&
+      tradeCustomId !==
+        "trade_summary_select" &&
       !tradeCustomId.startsWith(
         "trade_publish:",
       )
