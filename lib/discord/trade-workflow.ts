@@ -1841,29 +1841,17 @@ async function sendSchefterTradeAlert(
     );
   }
 
-  const imageUrl =
-    `${siteBaseUrl()}/api/trades/` +
-    `${encodeURIComponent(trade.id)}/image`;
-
-  const imageResponse =
-    await fetch(
-      imageUrl,
-      {
-        cache:
-          "no-store",
-      },
+  const {
+    renderSchefterTradeImageBlob,
+  } =
+    await import(
+      "@/lib/discord/schefter-direct-image"
     );
-
-  if (
-    !imageResponse.ok
-  ) {
-    throw new Error(
-      `Trade graphic failed (${imageResponse.status}): ${await imageResponse.text()}`,
-    );
-  }
 
   const image =
-    await imageResponse.blob();
+    await renderSchefterTradeImageBlob(
+      trade,
+    );
 
   const filename =
     `schefter-x-trade-${trade.id}.png`;
@@ -1917,25 +1905,27 @@ async function sendSchefterTradeAlert(
       },
     );
 
-  const text =
+  const body =
     await response.text();
 
   if (
     !response.ok
   ) {
     throw new Error(
-      `Schefter Discord ${response.status}: ${text}`,
+      `Schefter Discord ${response.status}: ${body}`,
     );
   }
 
   const message =
     JSON.parse(
-      text,
+      body,
     ) as DiscordMessage;
 
   return {
     message,
-    imageUrl,
+
+    imageUrl:
+      `attachment://${filename}`,
   };
 }
 
@@ -2138,7 +2128,9 @@ async function handleTradeSummarySelection(
         ?.values?.[0],
     );
 
-  if (!tradeId) {
+  if (
+    !tradeId
+  ) {
     return ephemeral(
       "❌ No trade was selected.",
     );
@@ -2165,28 +2157,20 @@ async function handleTradeSummarySelection(
     });
   }
 
-  const previewImageUrl =
-    `${siteBaseUrl()}/api/trades/` +
-    `${encodeURIComponent(trade.id)}/image?v=${encodeURIComponent(
-      String(
-        trade.updated_at ??
-          Date.now(),
-      ),
-    )}`;
+  const {
+    image:
+      _previewImage,
 
-  const previewEmbed =
+    ...previewEmbed
+  } =
     buildTradeBroadcastEmbed(
       trade,
     );
 
-  previewEmbed.image = {
-    url:
-      previewImageUrl,
-  };
-
+  void _previewImage;
   return updateMessage({
     content:
-      "**GOLD JACKET INSIDER • OFFICIAL TRADE PREVIEW**\nNothing has been posted to Trade Alerts yet.",
+      "**GOLD JACKET INSIDER • OFFICIAL TRADE PREVIEW**\nNothing has been posted to Trade Alerts yet.\n\nThe final Schefter/X graphic is rendered directly and uploaded when you press **Publish with Schefter**.",
 
     embeds: [
       previewEmbed,
@@ -2194,13 +2178,16 @@ async function handleTradeSummarySelection(
 
     components: [
       {
-        type: 1,
+        type:
+          1,
 
         components: [
           {
-            type: 2,
+            type:
+              2,
 
-            style: 3,
+            style:
+              3,
 
             label:
               "Publish with Schefter",
@@ -2210,9 +2197,11 @@ async function handleTradeSummarySelection(
           },
 
           {
-            type: 2,
+            type:
+              2,
 
-            style: 2,
+            style:
+              2,
 
             label:
               "Cancel",
