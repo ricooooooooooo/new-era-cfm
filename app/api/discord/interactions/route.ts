@@ -703,10 +703,10 @@ export async function POST(
     });
   }
 
-  // TRADE_SELECTION_IMMEDIATE_LOADING_ACK
-  // ACK the select-menu interaction before any Supabase/network work.
-  // The user immediately sees a loading state; the real preview is then
-  // resolved in after() and patched back onto this ephemeral message.
+  // TRADE_SUMMARY_SELECT_DIRECT_PUBLISH_ACK
+  // Selecting a trade IS the publish action. ACK the component before
+  // database/render/Discord work, then replace the original ephemeral
+  // trade-summary response with success or failure after publication.
   if (
     interaction.type ===
       DISCORD_MESSAGE_COMPONENT &&
@@ -738,7 +738,7 @@ export async function POST(
 
         data: {
           content:
-            "❌ Trade preview could not start because the Discord interaction token was missing.",
+            "❌ Trade publication could not start because the Discord interaction token was missing.",
 
           embeds: [],
 
@@ -759,7 +759,7 @@ export async function POST(
             unknown
           > = {
             content:
-              "❌ Trade preview could not finish loading.",
+              "❌ Trade publication failed before Adam Schefter could post it.",
 
             embeds: [],
 
@@ -802,7 +802,7 @@ export async function POST(
           }
         } catch (error) {
           console.error(
-            "Deferred trade selection failed:",
+            "Direct trade-summary publication failed:",
             error,
           );
         }
@@ -834,7 +834,7 @@ export async function POST(
             !editResponse.ok
           ) {
             console.error(
-              "Unable to edit deferred trade selection preview:",
+              "Unable to edit direct trade-summary publish response:",
               editResponse.status,
               (
                 await editResponse.text()
@@ -846,7 +846,7 @@ export async function POST(
           }
         } catch (error) {
           console.error(
-            "Deferred trade selection preview edit failed:",
+            "Direct trade-summary publish response edit failed:",
             error,
           );
         }
@@ -855,20 +855,7 @@ export async function POST(
 
     return NextResponse.json({
       type:
-        RESPONSE_UPDATE_MESSAGE,
-
-      data: {
-        content:
-          "⏳ Loading trade preview…",
-
-        embeds: [],
-
-        components: [],
-
-        allowed_mentions: {
-          parse: [],
-        },
-      },
+        RESPONSE_DEFERRED_UPDATE_MESSAGE,
     });
   }
 

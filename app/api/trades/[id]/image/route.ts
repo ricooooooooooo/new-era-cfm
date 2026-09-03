@@ -26,5 +26,5 @@ export async function GET(_request: Request, { params }: Params) {
     return new Response("Trade not found.", { status: 404 });
   }
 
-  return createSchefterTradeImageResponse(data as DirectSchefterTrade);
+  return await createSchefterTradeImageResponse(data as DirectSchefterTrade);
 }

@@ -2072,7 +2072,7 @@ async function handleTradeSummaryCommand(
   }
 
   return ephemeral(
-    "**Select an approved trade to preview.**\nDenied and already-published trades cannot appear here.",
+    "**Select an approved trade to publish with Adam Schefter.**\nSelecting a trade publishes it immediately. Denied and already-published trades cannot appear here.",
     {
       components: [
         {
@@ -2086,7 +2086,7 @@ async function handleTradeSummaryCommand(
                 "trade_summary_select",
 
               placeholder:
-                "Choose approved trade",
+                "Choose trade to publish",
 
               min_values: 1,
               max_values: 1,
@@ -2128,91 +2128,31 @@ async function handleTradeSummarySelection(
         ?.values?.[0],
     );
 
-  if (
-    !tradeId
-  ) {
-    return ephemeral(
-      "❌ No trade was selected.",
-    );
-  }
-
-  const trade =
-    await readTrade(
-      tradeId,
-    );
-
-  if (
-    !trade ||
-    !canPublishTrade(
-      trade,
-    )
-  ) {
+  if (!tradeId) {
     return updateMessage({
       content:
-        "⛔ That trade is not eligible for Schefter. It may be denied, missing committee approval, or already published.",
+        "❌ No trade was selected.",
 
       embeds: [],
 
       components: [],
+
+      allowed_mentions: {
+        parse: [],
+      },
     });
   }
 
-  const {
-    image:
-      _previewImage,
-
-    ...previewEmbed
-  } =
-    buildTradeBroadcastEmbed(
-      trade,
-    );
-
-  void _previewImage;
-  return updateMessage({
-    content:
-      "**GOLD JACKET INSIDER • OFFICIAL TRADE PREVIEW**\nNothing has been posted to Trade Alerts yet.\n\nThe final Schefter/X graphic is rendered directly and uploaded when you press **Publish with Schefter**.",
-
-    embeds: [
-      previewEmbed,
-    ],
-
-    components: [
-      {
-        type:
-          1,
-
-        components: [
-          {
-            type:
-              2,
-
-            style:
-              3,
-
-            label:
-              "Publish with Schefter",
-
-            custom_id:
-              `trade_publish:${trade.id}`,
-          },
-
-          {
-            type:
-              2,
-
-            style:
-              2,
-
-            label:
-              "Cancel",
-
-            custom_id:
-              "trade_cancel",
-          },
-        ],
-      },
-    ],
-  });
+  /*
+   * Permanent behavior:
+   * choosing the trade IS the publication action.
+   * handlePublish keeps the existing authorization,
+   * publication lock, renderer, Discord send, and DB finalization.
+   */
+  return handlePublish(
+    interaction,
+    tradeId,
+  );
 }
 
 async function handlePublish(
