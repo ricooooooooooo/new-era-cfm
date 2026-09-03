@@ -549,149 +549,204 @@ export async function POST(
     });
   }
 
-  // TRADE_PUBLISH_DEFERRED_ACK
-  // Acknowledge the component immediately, then run image rendering,
-  // Schefter posting, and publication-state finalization afterward.
-  if (
-    interaction.type ===
-      DISCORD_MESSAGE_COMPONENT &&
-    String(
-      interaction.data?.custom_id ??
-        "",
-    ).startsWith(
-      "trade_publish:",
-    )
-  ) {
-    const applicationId =
+  // TRADE_SUMMARY_FLOW_DEFERRED_ACK
+  // /trade-summary, its select menu, and Publish with Schefter can all
+  // touch database/network/rendering work. ACK Discord first, then run
+  // the existing workflow in after() and edit the original response.
+  {
+    const customId =
       String(
-        interaction.application_id ??
+        interaction.data?.custom_id ??
           "",
-      ).trim();
+      );
 
-    const interactionToken =
-      String(
-        interaction.token ??
-          "",
-      ).trim();
+    const isTradeSummaryCommand =
+      interaction.data?.name ===
+        "trade-summary";
+
+    const isTradeSummaryComponent =
+      interaction.type ===
+        DISCORD_MESSAGE_COMPONENT &&
+      (
+        customId ===
+          "trade_summary_select" ||
+        customId.startsWith(
+          "trade_publish:",
+        )
+      );
 
     if (
-      !applicationId ||
-      !interactionToken
+      isTradeSummaryCommand ||
+      isTradeSummaryComponent
     ) {
+      const applicationId =
+        String(
+          interaction.application_id ??
+            "",
+        ).trim();
+
+      const interactionToken =
+        String(
+          interaction.token ??
+            "",
+        ).trim();
+
+      if (
+        !applicationId ||
+        !interactionToken
+      ) {
+        return NextResponse.json({
+          type:
+            RESPONSE_CHANNEL_MESSAGE,
+
+          data: {
+            content:
+              "❌ Trade summary could not start because the Discord interaction token was missing.",
+
+            flags:
+              64,
+
+            allowed_mentions: {
+              parse: [],
+            },
+          },
+        });
+      }
+
+      after(
+        async () => {
+          let responseData:
+            Record<
+              string,
+              unknown
+            > = {
+              content:
+                "❌ Trade summary workflow could not finish.",
+
+              embeds: [],
+
+              components: [],
+
+              allowed_mentions: {
+                parse: [],
+              },
+            };
+
+          try {
+            const {
+              handleTradeWorkflowInteraction,
+            } =
+              await import(
+                "@/lib/discord/trade-workflow"
+              );
+
+            const result =
+              await handleTradeWorkflowInteraction(
+                interaction,
+              );
+
+            if (
+              result?.data &&
+              typeof result.data ===
+                "object"
+            ) {
+              responseData = {
+                ...(
+                  result.data as
+                    Record<
+                      string,
+                      unknown
+                    >
+                ),
+              };
+
+              delete responseData.flags;
+            }
+          } catch (error) {
+            console.error(
+              "Deferred trade-summary flow failed:",
+              error,
+            );
+
+            responseData = {
+              content:
+                "❌ Trade summary failed. Nothing was marked published unless the Schefter Discord post completed successfully.",
+
+              embeds: [],
+
+              components: [],
+
+              allowed_mentions: {
+                parse: [],
+              },
+            };
+          }
+
+          try {
+            const editResponse =
+              await fetch(
+                `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
+                {
+                  method:
+                    "PATCH",
+
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+                  },
+
+                  body:
+                    JSON.stringify(
+                      responseData,
+                    ),
+
+                  cache:
+                    "no-store",
+                },
+              );
+
+            if (
+              !editResponse.ok
+            ) {
+              console.error(
+                "Unable to edit deferred trade-summary response:",
+                editResponse.status,
+                (
+                  await editResponse.text()
+                ).slice(
+                  0,
+                  500,
+                ),
+              );
+            }
+          } catch (error) {
+            console.error(
+              "Deferred trade-summary response edit failed:",
+              error,
+            );
+          }
+        },
+      );
+
+      if (
+        isTradeSummaryComponent
+      ) {
+        return NextResponse.json({
+          type:
+            RESPONSE_DEFERRED_UPDATE_MESSAGE,
+        });
+      }
+
       return NextResponse.json({
         type:
-          RESPONSE_CHANNEL_MESSAGE,
+          RESPONSE_DEFERRED_CHANNEL_MESSAGE,
+
         data: {
-          content:
-            "❌ Trade publication could not start because the Discord interaction token was missing.",
           flags:
             64,
-          allowed_mentions: {
-            parse: [],
-          },
         },
       });
     }
-
-    after(
-      async () => {
-        let responseData:
-          Record<string, unknown> = {
-            content:
-              "❌ Schefter publication could not finish.",
-            embeds: [],
-            components: [],
-            allowed_mentions: {
-              parse: [],
-            },
-          };
-
-        try {
-          const {
-            handleTradeWorkflowInteraction,
-          } =
-            await import(
-              "@/lib/discord/trade-workflow"
-            );
-
-          const result =
-            await handleTradeWorkflowInteraction(
-              interaction,
-            );
-
-          const payload =
-            result;
-
-          if (
-            payload &&
-            typeof payload === "object" &&
-            payload.data &&
-            typeof payload.data === "object"
-          ) {
-            responseData = {
-              ...(
-                payload.data as
-                  Record<string, unknown>
-              ),
-            };
-            delete responseData.flags;
-          }
-        } catch (error) {
-          console.error(
-            "Deferred trade publication failed:",
-            error,
-          );
-          responseData = {
-            content:
-              "❌ Schefter publication failed. The trade was not marked published unless the Schefter post completed successfully.",
-            embeds: [],
-            components: [],
-            allowed_mentions: {
-              parse: [],
-            },
-          };
-        }
-
-        try {
-          const editResponse =
-            await fetch(
-              `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
-              {
-                method:
-                  "PATCH",
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-                body:
-                  JSON.stringify(
-                    responseData,
-                  ),
-                cache:
-                  "no-store",
-              },
-            );
-
-          if (!editResponse.ok) {
-            console.error(
-              "Unable to edit deferred trade publication response:",
-              editResponse.status,
-              (await editResponse.text()).slice(0, 500),
-            );
-          }
-        } catch (error) {
-          console.error(
-            "Deferred trade publication response edit failed:",
-            error,
-          );
-        }
-      },
-    );
-
-    return NextResponse.json({
-      type:
-        RESPONSE_DEFERRED_UPDATE_MESSAGE,
-    });
   }
 
   // TRADE_SUBMIT_DEFERRED_ACK
@@ -861,10 +916,15 @@ export async function POST(
     );
 
   if (
-    interaction.data?.name ===
-      "trade-summary" ||
-    tradeCustomId.startsWith(
-      "trade_",
+    (
+      tradeCustomId.startsWith(
+        "trade_",
+      ) &&
+      tradeCustomId !==
+        "trade_summary_select" &&
+      !tradeCustomId.startsWith(
+        "trade_publish:",
+      )
     )
   ) {
     const {
