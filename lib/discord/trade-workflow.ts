@@ -1841,10 +1841,64 @@ async function sendSchefterTradeAlert(
     );
   }
 
-  const embed =
-    buildTradeBroadcastEmbed(
-      trade,
+  const imageUrl =
+    `${siteBaseUrl()}/api/trades/` +
+    `${encodeURIComponent(trade.id)}/image`;
+
+  const imageResponse =
+    await fetch(
+      imageUrl,
+      {
+        cache:
+          "no-store",
+      },
     );
+
+  if (
+    !imageResponse.ok
+  ) {
+    throw new Error(
+      `Trade graphic failed (${imageResponse.status}): ${await imageResponse.text()}`,
+    );
+  }
+
+  const image =
+    await imageResponse.blob();
+
+  const filename =
+    `schefter-x-trade-${trade.id}.png`;
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "payload_json",
+    JSON.stringify({
+      content:
+        "@everyone",
+
+      embeds: [
+        {
+          image: {
+            url:
+              `attachment://${filename}`,
+          },
+        },
+      ],
+
+      allowed_mentions: {
+        parse: [
+          "everyone",
+        ],
+      },
+    }),
+  );
+
+  formData.append(
+    "files[0]",
+    image,
+    filename,
+  );
 
   const response =
     await fetch(
@@ -1856,45 +1910,32 @@ async function sendSchefterTradeAlert(
         headers: {
           Authorization:
             `Bot ${token}`,
-
-          "Content-Type":
-            "application/json",
         },
 
         body:
-          JSON.stringify({
-            embeds: [
-              embed,
-            ],
-
-            allowed_mentions: {
-              parse: [],
-            },
-          }),
+          formData,
       },
     );
 
-  const responseText =
+  const text =
     await response.text();
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
-      `Schefter Discord ${response.status}: ${responseText}`,
+      `Schefter Discord ${response.status}: ${text}`,
     );
   }
 
   const message =
     JSON.parse(
-      responseText,
+      text,
     ) as DiscordMessage;
 
   return {
     message,
-
-    imageUrl:
-      tradeBroadcastImageUrl(
-        trade,
-      ),
+    imageUrl,
   };
 }
 
