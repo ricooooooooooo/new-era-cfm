@@ -67,6 +67,11 @@ export async function GET(
         {
           cache:
             "no-store",
+
+          signal:
+            AbortSignal.timeout(
+              2500,
+            ),
         },
       );
 
@@ -103,13 +108,31 @@ export async function GET(
     );
   }
 
-  const png =
-    await renderSchefterXTrade({
-      trade:
-        data as SchefterTrade,
+  let png: Buffer;
 
-      mediaDataUrl,
-    });
+  try {
+    png =
+      await renderSchefterXTrade({
+        trade:
+          data as SchefterTrade,
+
+        mediaDataUrl,
+      });
+  } catch (error) {
+    console.error(
+      "Schefter X render with media failed; retrying without nested media:",
+      error,
+    );
+
+    png =
+      await renderSchefterXTrade({
+        trade:
+          data as SchefterTrade,
+
+        mediaDataUrl:
+          null,
+      });
+  }
 
   return new Response(
     new Uint8Array(

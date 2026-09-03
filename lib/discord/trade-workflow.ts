@@ -2165,14 +2165,31 @@ async function handleTradeSummarySelection(
     });
   }
 
+  const previewImageUrl =
+    `${siteBaseUrl()}/api/trades/` +
+    `${encodeURIComponent(trade.id)}/image?v=${encodeURIComponent(
+      String(
+        trade.updated_at ??
+          Date.now(),
+      ),
+    )}`;
+
+  const previewEmbed =
+    buildTradeBroadcastEmbed(
+      trade,
+    );
+
+  previewEmbed.image = {
+    url:
+      previewImageUrl,
+  };
+
   return updateMessage({
     content:
       "**GOLD JACKET INSIDER • OFFICIAL TRADE PREVIEW**\nNothing has been posted to Trade Alerts yet.",
 
     embeds: [
-      buildTradeBroadcastEmbed(
-        trade,
-      ),
+      previewEmbed,
     ],
 
     components: [

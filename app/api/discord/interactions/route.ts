@@ -51,6 +51,9 @@ const RESPONSE_CHANNEL_MESSAGE =
 const RESPONSE_DEFERRED_CHANNEL_MESSAGE =
   5;
 
+const RESPONSE_DEFERRED_UPDATE_MESSAGE =
+  6;
+
 const RESPONSE_UPDATE_MESSAGE =
   7;
 
@@ -543,6 +546,151 @@ export async function POST(
     return NextResponse.json({
       type: 5,
       data: {},
+    });
+  }
+
+  // TRADE_PUBLISH_DEFERRED_ACK
+  // Acknowledge the component immediately, then run image rendering,
+  // Schefter posting, and publication-state finalization afterward.
+  if (
+    interaction.type ===
+      DISCORD_MESSAGE_COMPONENT &&
+    String(
+      interaction.data?.custom_id ??
+        "",
+    ).startsWith(
+      "trade_publish:",
+    )
+  ) {
+    const applicationId =
+      String(
+        interaction.application_id ??
+          "",
+      ).trim();
+
+    const interactionToken =
+      String(
+        interaction.token ??
+          "",
+      ).trim();
+
+    if (
+      !applicationId ||
+      !interactionToken
+    ) {
+      return NextResponse.json({
+        type:
+          RESPONSE_CHANNEL_MESSAGE,
+        data: {
+          content:
+            "❌ Trade publication could not start because the Discord interaction token was missing.",
+          flags:
+            64,
+          allowed_mentions: {
+            parse: [],
+          },
+        },
+      });
+    }
+
+    after(
+      async () => {
+        let responseData:
+          Record<string, unknown> = {
+            content:
+              "❌ Schefter publication could not finish.",
+            embeds: [],
+            components: [],
+            allowed_mentions: {
+              parse: [],
+            },
+          };
+
+        try {
+          const {
+            handleTradeWorkflowInteraction,
+          } =
+            await import(
+              "@/lib/discord/trade-workflow"
+            );
+
+          const result =
+            await handleTradeWorkflowInteraction(
+              interaction,
+            );
+
+          const payload =
+            result;
+
+          if (
+            payload &&
+            typeof payload === "object" &&
+            payload.data &&
+            typeof payload.data === "object"
+          ) {
+            responseData = {
+              ...(
+                payload.data as
+                  Record<string, unknown>
+              ),
+            };
+            delete responseData.flags;
+          }
+        } catch (error) {
+          console.error(
+            "Deferred trade publication failed:",
+            error,
+          );
+          responseData = {
+            content:
+              "❌ Schefter publication failed. The trade was not marked published unless the Schefter post completed successfully.",
+            embeds: [],
+            components: [],
+            allowed_mentions: {
+              parse: [],
+            },
+          };
+        }
+
+        try {
+          const editResponse =
+            await fetch(
+              `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`,
+              {
+                method:
+                  "PATCH",
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+                body:
+                  JSON.stringify(
+                    responseData,
+                  ),
+                cache:
+                  "no-store",
+              },
+            );
+
+          if (!editResponse.ok) {
+            console.error(
+              "Unable to edit deferred trade publication response:",
+              editResponse.status,
+              (await editResponse.text()).slice(0, 500),
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Deferred trade publication response edit failed:",
+            error,
+          );
+        }
+      },
+    );
+
+    return NextResponse.json({
+      type:
+        RESPONSE_DEFERRED_UPDATE_MESSAGE,
     });
   }
 
