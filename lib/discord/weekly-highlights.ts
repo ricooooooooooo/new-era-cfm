@@ -794,7 +794,7 @@ async function postPotw({
   }
 
   const marker =
-    `season-${season}-week-${week}-potw-posted`;
+    `gold-jacket-season-${season}-week-${week}-potw-posted`;
 
   if (await markerExists(marker)) {
     return {
@@ -1302,7 +1302,7 @@ async function postGotw({
   >;
 }) {
   const marker =
-    `season-${season}-week-${currentWeek}-gotw-posted`;
+    `gold-jacket-season-${season}-week-${currentWeek}-gotw-posted`;
 
   if (await markerExists(marker)) {
     return {
